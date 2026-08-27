@@ -3,11 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Headless Math Lumina Learning Engine domain kernel — Phase 2 Slice 1.",
+  "description": "Headless Math Lumina Learning Engine domain and deterministic decisioning kernels — Phase 2 Slices 1–2.",
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "tsx --test test/**/*.test.ts",
-    "check": "pnpm typecheck && pnpm test"
+    "check": "pnpm typecheck && pnpm test",
+    "demo:slice2": "tsx demo/slice2-scenario.ts"
   },
   "devDependencies": {
     "@types/node": "^22.15.3",

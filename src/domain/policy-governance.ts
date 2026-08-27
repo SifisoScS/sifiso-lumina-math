@@ -76,12 +76,14 @@ export function assertReflectionPreserved(
 }
 
 /**
- * The StateCommitment authorization type intentionally permits only accepted
- * evidence or a learner choice. This guard makes the boundary explicit for
- * callers at the domain kernel level.
+ * The StateCommitment authorization type intentionally permits only an
+ * accepted explicit learner command, accepted learner evidence, or a learner
+ * choice. This guard makes the boundary explicit at the domain-kernel level.
  */
 export function assertCommitmentHasLearnerAuthorization(commitment: StateCommitment): void {
-  if (commitment.authorization.kind !== "accepted-evidence" && commitment.authorization.kind !== "learner-choice") {
+  if (commitment.authorization.kind !== "accepted-interaction-command" &&
+      commitment.authorization.kind !== "accepted-evidence" &&
+      commitment.authorization.kind !== "learner-choice") {
     throw new DomainValidationError("State commitment lacks permitted learner-originated authorization.");
   }
 }

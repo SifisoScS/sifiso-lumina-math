@@ -139,12 +139,14 @@ export interface CurrentLearnerState {
 }
 
 export type StateCommitmentAuthorization =
+  | { readonly kind: "accepted-interaction-command"; readonly commandId: StableId }
   | { readonly kind: "accepted-evidence"; readonly evidenceId: StableId }
   | { readonly kind: "learner-choice"; readonly learnerChoiceId: StableId };
 
 /**
- * A State Commitment may result from accepted learner evidence or a confirmed
- * learner choice. It intentionally has no authorization form for an AI proposal.
+ * A State Commitment may result from an accepted explicit learner command,
+ * accepted learner evidence, or a confirmed learner choice. It intentionally
+ * has no authorization form for an AI proposal.
  */
 export interface StateCommitment {
   readonly id: StableId;

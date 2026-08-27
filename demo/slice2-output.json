@@ -1,0 +1,85 @@
+{
+  "input": {
+    "commandKind": "explore-concept",
+    "conceptId": "concept.function",
+    "pedagogicalLayer": "intuition"
+  },
+  "engine": {
+    "deterministic": true,
+    "reasoningInvolved": false
+  },
+  "candidateOpportunities": [
+    {
+      "kind": "continue",
+      "conceptId": "concept.function",
+      "pedagogicalLayer": "intuition"
+    },
+    {
+      "kind": "continue",
+      "conceptId": "concept.function",
+      "pedagogicalLayer": "intuition"
+    },
+    {
+      "kind": "explore-representation",
+      "conceptId": "concept.function",
+      "pedagogicalLayer": "intuition"
+    },
+    {
+      "kind": "explore-concept-bridge",
+      "conceptId": "concept.function",
+      "relatedConceptId": "concept.inverse-function"
+    },
+    {
+      "kind": "reflect",
+      "conceptId": "concept.function",
+      "pedagogicalLayer": "intuition"
+    },
+    {
+      "kind": "pause",
+      "conceptId": "concept.function"
+    },
+    {
+      "kind": "allow-learner-choice",
+      "conceptId": "concept.function"
+    }
+  ],
+  "policy": [
+    {
+      "policyId": "policy.command-permission",
+      "outcome": "permitted"
+    },
+    {
+      "policyId": "policy.learner-autonomy",
+      "outcome": "requires-confirmation"
+    }
+  ],
+  "learningDecision": {
+    "type": "material",
+    "status": "offer-available",
+    "conceptIds": [
+      "concept.function"
+    ],
+    "offerCount": 7
+  },
+  "stateEffect": {
+    "kind": "committed",
+    "focus": "active-focus",
+    "activeConceptId": "concept.function"
+  },
+  "historicalEvents": [
+    "concept-viewed",
+    "layer-entered",
+    "state-committed"
+  ],
+  "provenance": {
+    "evidenceReferences": [],
+    "knowledgeReferences": [
+      "concept.function",
+      "relationship.function-bridge-inverse-function",
+      "experience.function.intuition-vending-machine",
+      "experience.function.low-energy-core-insight",
+      "experience.function.mechanics-notation"
+    ],
+    "policyCount": 2
+  }
+}

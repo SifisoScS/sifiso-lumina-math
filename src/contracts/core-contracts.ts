@@ -302,6 +302,8 @@ export interface CandidateLearningOpportunity {
   readonly id: StableId;
   readonly kind: LearningOpportunityKind;
   readonly conceptId: StableId;
+  /** A prerequisite or bridge target where the opportunity crosses concepts. */
+  readonly relatedConceptId?: StableId;
   readonly learningExperienceId?: StableId;
   readonly pedagogicalLayer?: PedagogicalLayer;
 }
@@ -310,6 +312,7 @@ export function candidateLearningOpportunity(input: {
   readonly id: string;
   readonly kind: LearningOpportunityKind;
   readonly conceptId: string;
+  readonly relatedConceptId?: string;
   readonly learningExperienceId?: string;
   readonly pedagogicalLayer?: PedagogicalLayer;
 }): CandidateLearningOpportunity {
@@ -317,6 +320,9 @@ export function candidateLearningOpportunity(input: {
     id: stableId(input.id, "Learning opportunity identifier"),
     kind: input.kind,
     conceptId: stableId(input.conceptId, "Learning opportunity concept identifier"),
+    ...(input.relatedConceptId === undefined
+      ? {}
+      : { relatedConceptId: stableId(input.relatedConceptId, "Learning opportunity related concept identifier") }),
     ...(input.learningExperienceId === undefined
       ? {}
       : { learningExperienceId: stableId(input.learningExperienceId, "Learning opportunity experience identifier") }),
@@ -386,15 +392,18 @@ export function policyEvaluation(input: {
 }
 
 export type LearningDecisionStatus = "offer-available" | "incomplete-context" | "constrained" | "declined";
+export type LearningDecisionType = "material" | "safe-non-material";
 
 /**
- * LearningDecision is authoritative about what the engine may offer or
- * constrain in an evaluated context. It is not a learner choice or state
- * commitment and contains no presentation-specific instructions.
+ * LearningDecision is the canonical semantic outcome of the engine. A material
+ * decision is concept-grounded and may authorize a later state commitment. A
+ * safe non-material outcome records that the engine cannot responsibly form a
+ * concept-specific opportunity; it cannot create opportunities or state effects.
  */
 export interface LearningDecision {
   readonly id: StableId;
   readonly learnerId: LearnerReference;
+  readonly type: LearningDecisionType;
   readonly status: LearningDecisionStatus;
   readonly conceptIds: readonly StableId[];
   readonly opportunities: readonly CandidateLearningOpportunity[];
@@ -407,19 +416,37 @@ export interface LearningDecision {
 export function learningDecision(input: {
   readonly id: string;
   readonly learnerId: string;
+  readonly type: LearningDecisionType;
   readonly status: LearningDecisionStatus;
-  readonly conceptIds: readonly string[];
-  readonly opportunities: readonly CandidateLearningOpportunity[];
+  readonly conceptIds?: readonly string[];
+  readonly opportunities?: readonly CandidateLearningOpportunity[];
   readonly recommendations?: readonly LearningRecommendation[];
   readonly offers?: readonly LearningOffer[];
   readonly policyEvaluations: readonly PolicyEvaluation[];
   readonly provenance: DecisionProvenance;
 }): LearningDecision {
-  if (input.conceptIds.length === 0) {
-    throw new DomainValidationError("Learning decision must reference at least one concept.");
-  }
+  const conceptIds = input.conceptIds ?? [];
+  const opportunities = input.opportunities ?? [];
   const offers = input.offers ?? [];
   const recommendations = input.recommendations ?? [];
+
+  if (input.type === "material" && conceptIds.length === 0) {
+    throw new DomainValidationError("A material learning decision must reference at least one concept.");
+  }
+  if (input.type === "material" && input.status === "incomplete-context") {
+    throw new DomainValidationError("A material learning decision cannot use incomplete-context status.");
+  }
+  if (input.type === "safe-non-material") {
+    if (conceptIds.length > 0) {
+      throw new DomainValidationError("A safe non-material outcome must not fabricate or carry a concept reference.");
+    }
+    if (input.status !== "incomplete-context" && input.status !== "declined") {
+      throw new DomainValidationError("A safe non-material outcome must use incomplete-context or declined status.");
+    }
+    if (opportunities.length > 0 || recommendations.length > 0 || offers.length > 0) {
+      throw new DomainValidationError("A safe non-material outcome must not contain material learning opportunities, recommendations, or offers.");
+    }
+  }
   if (input.status === "offer-available" && offers.length === 0) {
     throw new DomainValidationError("An offer-available learning decision must include at least one offer.");
   }
@@ -430,12 +457,13 @@ export function learningDecision(input: {
   return Object.freeze({
     id: stableId(input.id, "Learning decision identifier"),
     learnerId: learnerReference(input.learnerId),
+    type: input.type,
     status: input.status,
     conceptIds: uniqueStableIds(
-      input.conceptIds.map((id) => stableId(id, "Learning decision concept identifier")),
+      conceptIds.map((id) => stableId(id, "Learning decision concept identifier")),
       "Learning decision concept identifiers",
     ),
-    opportunities: readonlyList(input.opportunities),
+    opportunities: readonlyList(opportunities),
     recommendations: readonlyList(recommendations),
     offers: readonlyList(offers),
     policyEvaluations: readonlyList(input.policyEvaluations),

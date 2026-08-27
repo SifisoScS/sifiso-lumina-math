@@ -71,6 +71,7 @@ test("learning decisions distinguish opportunities, offers, policy, and edge res
   const decision = learningDecision({
     id: "decision.001",
     learnerId: "learner.ada",
+    type: "material",
     status: "offer-available",
     conceptIds: ["concept.function"],
     opportunities: [opportunity],
@@ -100,6 +101,7 @@ test("a policy-prohibited decision cannot expose available offers", () => {
     () => learningDecision({
       id: "decision.002",
       learnerId: "learner.ada",
+      type: "material",
       status: "offer-available",
       conceptIds: ["concept.function"],
       opportunities: [opportunity],
