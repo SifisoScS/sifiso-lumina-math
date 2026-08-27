@@ -162,6 +162,16 @@ export const functionsSeedKnowledge = knowledgeCatalog({
       version: "math-lumina.seed.v1",
     }),
     learningExperience({
+      id: "experience.function.practice-input-output",
+      title: "Practise tracing an input-output rule",
+      intent: "practice",
+      targetConceptIds: ["concept.function"],
+      knowledgeAssetIds: ["asset.function.input-output-example"],
+      pedagogicalLayers: ["intuition"],
+      deliveryRequirements: ["displayed-text", "typed-input"],
+      version: "math-lumina.seed.v1",
+    }),
+    learningExperience({
       id: "experience.function.mechanics-notation",
       title: "Function notation and mechanics",
       intent: "mechanics",

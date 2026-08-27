@@ -18,7 +18,10 @@ export type ProvenanceReferenceKind =
   | "policy"
   | "reasoning-proposal"
   | "learning-decision"
-  | "delivery-capability";
+  | "delivery-capability"
+  | "assessment-boundary"
+  | "assessment-evidence"
+  | "derived-interpretation";
 
 export interface ProvenanceReference {
   readonly kind: ProvenanceReferenceKind;
@@ -26,6 +29,8 @@ export interface ProvenanceReference {
 }
 
 export interface DecisionProvenance {
+  /** Immutable identity for causal references from commitments and events. */
+  readonly id: StableId;
   readonly references: readonly ProvenanceReference[];
   readonly uncertainty: UncertaintyStatement;
   readonly rationale: string;
@@ -40,6 +45,7 @@ export function provenanceReference(kind: ProvenanceReferenceKind, id: string): 
  * deliberately not a representation of hidden model reasoning or chain-of-thought.
  */
 export function decisionProvenance(input: {
+  readonly id: string;
   readonly references: readonly ProvenanceReference[];
   readonly uncertainty: UncertaintyStatement;
   readonly rationale: string;
@@ -53,6 +59,7 @@ export function decisionProvenance(input: {
   uniqueStableIds(referenceKeys, "Decision provenance references");
 
   return Object.freeze({
+    id: stableId(input.id, "Decision provenance identifier"),
     references: readonlyList(input.references),
     uncertainty: input.uncertainty,
     rationale: requiredText(input.rationale, "Decision provenance rationale"),

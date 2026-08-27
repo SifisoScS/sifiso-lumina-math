@@ -1,0 +1,338 @@
+{
+  "engine": {
+    "deterministic": true,
+    "reasoningInvolved": false,
+    "persistenceImplemented": false
+  },
+  "lifecycle": "Interaction → Evidence → Decision → Approved State Effect → Historical Event → Updated Learner Context → Subsequent Decision",
+  "steps": [
+    {
+      "label": "Interaction 1 — explore Function intuition",
+      "command": "explore-concept",
+      "decision": {
+        "type": "material",
+        "status": "offer-available",
+        "opportunities": [
+          "continue",
+          "continue",
+          "practise",
+          "explore-representation",
+          "explore-concept-bridge",
+          "reflect",
+          "pause",
+          "allow-learner-choice"
+        ],
+        "uncertainty": "medium"
+      },
+      "evidenceEvaluation": {
+        "observedPracticeOutcomes": [],
+        "confidencePracticeConflict": false,
+        "supportsRevisit": false,
+        "supportsLayerMovement": false
+      },
+      "evolution": {
+        "disposition": "evolved",
+        "evidenceAdded": [],
+        "interpretationsAdded": [],
+        "eventsAdded": [
+          "event.command.demo.slice3.explore.concept-viewed",
+          "event.command.demo.slice3.explore.layer-entered",
+          "event.command.demo.slice3.explore.state-committed"
+        ],
+        "commitmentsAdded": [
+          "commitment.command.demo.slice3.explore"
+        ],
+        "state": {
+          "learnerId": "learner.demo.slice3",
+          "engagementFocus": "active-focus",
+          "evidenceIds": [],
+          "interpretationIds": [],
+          "activeConceptId": "concept.function",
+          "activePedagogicalLayer": "intuition"
+        }
+      }
+    },
+    {
+      "label": "Interaction 2 — submit reflection",
+      "command": "submit-reflection",
+      "decision": {
+        "type": "material",
+        "status": "offer-available",
+        "opportunities": [
+          "continue",
+          "continue",
+          "practise",
+          "explore-representation",
+          "explore-concept-bridge",
+          "reflect",
+          "pause",
+          "allow-learner-choice"
+        ],
+        "uncertainty": "low"
+      },
+      "evidenceEvaluation": {
+        "observedPracticeOutcomes": [],
+        "confidencePracticeConflict": false,
+        "supportsRevisit": false,
+        "supportsLayerMovement": false
+      },
+      "evolution": {
+        "disposition": "evolved",
+        "evidenceAdded": [
+          "evidence.demo.slice3.reflection"
+        ],
+        "interpretationsAdded": [
+          "interpretation.evidence.demo.slice3.reflection.reflection-opportunity"
+        ],
+        "eventsAdded": [
+          "event.command.demo.slice3.reflection.reflection-submitted",
+          "event.command.demo.slice3.reflection.state-committed"
+        ],
+        "commitmentsAdded": [
+          "commitment.command.demo.slice3.reflection"
+        ],
+        "state": {
+          "learnerId": "learner.demo.slice3",
+          "engagementFocus": "active-focus",
+          "evidenceIds": [
+            "evidence.demo.slice3.reflection"
+          ],
+          "interpretationIds": [
+            "interpretation.evidence.demo.slice3.reflection.reflection-opportunity"
+          ],
+          "activeConceptId": "concept.function",
+          "activePedagogicalLayer": "intuition"
+        }
+      }
+    },
+    {
+      "label": "Interaction 3 — submit high qualitative confidence",
+      "command": "submit-confidence-report",
+      "decision": {
+        "type": "material",
+        "status": "offer-available",
+        "opportunities": [
+          "continue",
+          "continue",
+          "practise",
+          "explore-representation",
+          "explore-concept-bridge",
+          "reflect",
+          "pause",
+          "allow-learner-choice"
+        ],
+        "uncertainty": "low"
+      },
+      "evidenceEvaluation": {
+        "observedPracticeOutcomes": [],
+        "confidencePracticeConflict": false,
+        "supportsRevisit": false,
+        "supportsLayerMovement": false
+      },
+      "evolution": {
+        "disposition": "evolved",
+        "evidenceAdded": [
+          "evidence.demo.slice3.confidence"
+        ],
+        "interpretationsAdded": [],
+        "eventsAdded": [
+          "event.command.demo.slice3.confidence.confidence-reported",
+          "event.command.demo.slice3.confidence.state-committed"
+        ],
+        "commitmentsAdded": [
+          "commitment.command.demo.slice3.confidence"
+        ],
+        "state": {
+          "learnerId": "learner.demo.slice3",
+          "engagementFocus": "active-focus",
+          "evidenceIds": [
+            "evidence.demo.slice3.reflection",
+            "evidence.demo.slice3.confidence"
+          ],
+          "interpretationIds": [
+            "interpretation.evidence.demo.slice3.reflection.reflection-opportunity"
+          ],
+          "activeConceptId": "concept.function",
+          "activePedagogicalLayer": "intuition"
+        }
+      }
+    },
+    {
+      "label": "Interaction 4 — submit practice with external uncertainty observation",
+      "command": "submit-practice-attempt",
+      "decision": {
+        "type": "material",
+        "status": "offer-available",
+        "opportunities": [
+          "continue",
+          "continue",
+          "practise",
+          "explore-representation",
+          "revisit",
+          "explore-concept-bridge",
+          "reflect",
+          "pause",
+          "allow-learner-choice"
+        ],
+        "uncertainty": "high"
+      },
+      "evidenceEvaluation": {
+        "observedPracticeOutcomes": [
+          "evidence-of-uncertainty"
+        ],
+        "confidencePracticeConflict": true,
+        "supportsRevisit": true,
+        "supportsLayerMovement": false
+      },
+      "evolution": {
+        "disposition": "evolved",
+        "evidenceAdded": [
+          "evidence.demo.slice3.practice"
+        ],
+        "interpretationsAdded": [
+          "interpretation.evidence.demo.slice3.practice.evidence-of-uncertainty",
+          "interpretation.evidence.demo.slice3.confidence.evidence.demo.slice3.practice.evidence-conflict"
+        ],
+        "eventsAdded": [
+          "event.command.demo.slice3.practice.practice-attempted",
+          "event.command.demo.slice3.practice.state-committed"
+        ],
+        "commitmentsAdded": [
+          "commitment.command.demo.slice3.practice"
+        ],
+        "state": {
+          "learnerId": "learner.demo.slice3",
+          "engagementFocus": "active-focus",
+          "evidenceIds": [
+            "evidence.demo.slice3.reflection",
+            "evidence.demo.slice3.confidence",
+            "evidence.demo.slice3.practice"
+          ],
+          "interpretationIds": [
+            "interpretation.evidence.demo.slice3.reflection.reflection-opportunity",
+            "interpretation.evidence.demo.slice3.practice.evidence-of-uncertainty",
+            "interpretation.evidence.demo.slice3.confidence.evidence.demo.slice3.practice.evidence-conflict"
+          ],
+          "activeConceptId": "concept.function",
+          "activePedagogicalLayer": "intuition"
+        }
+      }
+    },
+    {
+      "label": "Interaction 5 — request guidance from accumulated context",
+      "command": "request-learning-guidance",
+      "decision": {
+        "type": "material",
+        "status": "offer-available",
+        "opportunities": [
+          "continue",
+          "continue",
+          "practise",
+          "explore-representation",
+          "revisit",
+          "explore-concept-bridge",
+          "reflect",
+          "pause",
+          "allow-learner-choice"
+        ],
+        "uncertainty": "high"
+      },
+      "evidenceEvaluation": {
+        "observedPracticeOutcomes": [
+          "evidence-of-uncertainty"
+        ],
+        "confidencePracticeConflict": true,
+        "supportsRevisit": true,
+        "supportsLayerMovement": false
+      },
+      "evolution": {
+        "disposition": "unchanged",
+        "evidenceAdded": [],
+        "interpretationsAdded": [],
+        "eventsAdded": [],
+        "commitmentsAdded": [],
+        "state": {
+          "learnerId": "learner.demo.slice3",
+          "engagementFocus": "active-focus",
+          "evidenceIds": [
+            "evidence.demo.slice3.reflection",
+            "evidence.demo.slice3.confidence",
+            "evidence.demo.slice3.practice"
+          ],
+          "interpretationIds": [
+            "interpretation.evidence.demo.slice3.reflection.reflection-opportunity",
+            "interpretation.evidence.demo.slice3.practice.evidence-of-uncertainty",
+            "interpretation.evidence.demo.slice3.confidence.evidence.demo.slice3.practice.evidence-conflict"
+          ],
+          "activeConceptId": "concept.function",
+          "activePedagogicalLayer": "intuition"
+        }
+      }
+    }
+  ],
+  "finalLearnerRecord": {
+    "evidenceKinds": [
+      "reflection",
+      "confidence-report",
+      "practice-attempt"
+    ],
+    "interpretationKinds": [
+      "curiosity-thread",
+      "understanding-signal",
+      "understanding-signal"
+    ],
+    "commitmentCount": 4,
+    "eventKinds": [
+      "concept-viewed",
+      "layer-entered",
+      "state-committed",
+      "reflection-submitted",
+      "state-committed",
+      "confidence-reported",
+      "state-committed",
+      "practice-attempted",
+      "state-committed"
+    ],
+    "state": {
+      "learnerId": "learner.demo.slice3",
+      "engagementFocus": "active-focus",
+      "evidenceIds": [
+        "evidence.demo.slice3.reflection",
+        "evidence.demo.slice3.confidence",
+        "evidence.demo.slice3.practice"
+      ],
+      "interpretationIds": [
+        "interpretation.evidence.demo.slice3.reflection.reflection-opportunity",
+        "interpretation.evidence.demo.slice3.practice.evidence-of-uncertainty",
+        "interpretation.evidence.demo.slice3.confidence.evidence.demo.slice3.practice.evidence-conflict"
+      ],
+      "activeConceptId": "concept.function",
+      "activePedagogicalLayer": "intuition"
+    }
+  },
+  "replay": {
+    "appliedCommitmentIds": [
+      "commitment.command.demo.slice3.explore",
+      "commitment.command.demo.slice3.reflection",
+      "commitment.command.demo.slice3.confidence",
+      "commitment.command.demo.slice3.practice"
+    ],
+    "reconstructedState": {
+      "learnerId": "learner.demo.slice3",
+      "engagementFocus": "active-focus",
+      "evidenceIds": [
+        "evidence.demo.slice3.reflection",
+        "evidence.demo.slice3.confidence",
+        "evidence.demo.slice3.practice"
+      ],
+      "interpretationIds": [
+        "interpretation.evidence.demo.slice3.reflection.reflection-opportunity",
+        "interpretation.evidence.demo.slice3.practice.evidence-of-uncertainty",
+        "interpretation.evidence.demo.slice3.confidence.evidence.demo.slice3.practice.evidence-conflict"
+      ],
+      "activeConceptId": "concept.function",
+      "activePedagogicalLayer": "intuition"
+    },
+    "equivalentToEvolvedState": true
+  }
+}

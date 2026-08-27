@@ -15,7 +15,8 @@ test("minimal Functions seed knowledge resolves as a consistent versioned catalo
   assert.equal(functionsSeedKnowledge.concepts.length, 3);
   assert.equal(functionsSeedKnowledge.relationships.length, 2);
   assert.equal(functionsSeedKnowledge.assets.length, 7);
-  assert.equal(functionsSeedKnowledge.experiences.length, 4);
+  assert.equal(functionsSeedKnowledge.experiences.length, 5);
+  assert.equal(functionsSeedKnowledge.experiences.some((experience) => experience.intent === "practice"), true);
   assert.equal(functionsSeedKnowledge.relationships[0]?.kind, "prerequisite");
   assert.equal(functionsSeedKnowledge.relationships[1]?.kind, "concept-bridge");
 });

@@ -10,6 +10,7 @@ import {
   learnerChoice,
   learnerRecord,
   learnerReflection,
+  learnerStateDelta,
   practiceAttempt,
   stateCommitment,
 } from "../src/index.js";
@@ -111,7 +112,9 @@ test("state commitments require learner-originated evidence or a learner choice"
     learnerId: "learner.ada",
     authorization: { kind: "accepted-evidence", evidenceId: practice.id },
     learningDecisionId: "decision.001",
+    contextVersion: "engine.behaviour.v1",
     changedDimensions: ["evidence"],
+    stateDelta: learnerStateDelta({ evidenceIdsToAdd: [practice.id] }),
     committedAt: timestamp,
     provenance: testProvenance,
   });

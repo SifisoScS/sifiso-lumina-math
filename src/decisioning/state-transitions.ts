@@ -5,13 +5,19 @@ import {
   LearningOffer,
 } from "../contracts/core-contracts.js";
 import {
+  applyLearnerStateDelta,
   CurrentLearnerState,
   HistoricalEvent,
   historicalEvent,
+  LearnerStateDelta,
+  learnerStateDelta,
   StateCommitment,
   stateCommitment,
+  stateDeltaDimensions,
 } from "../domain/learner-record.js";
-import { IsoTimestamp, readonlyList } from "../domain/primitives.js";
+import { IsoTimestamp, readonlyList, StableId } from "../domain/primitives.js";
+
+export const DETERMINISTIC_CONTEXT_VERSION = "engine.behaviour.v1";
 
 export type StateTransitionResult =
   | {
@@ -28,10 +34,10 @@ export interface StateTransitionInput {
   readonly currentState: CurrentLearnerState;
   readonly activeOffers: readonly LearningOffer[];
   readonly committedAt: IsoTimestamp;
-}
-
-function appendUnique<T>(items: readonly T[], item: T): readonly T[] {
-  return items.includes(item) ? readonlyList(items) : readonlyList([...items, item]);
+  /** Kept explicit to make rule/context versioning auditable and replay-safe. */
+  readonly contextVersion?: string;
+  /** Qualified derived interpretations formed from the current observed evidence. */
+  readonly derivedInterpretationIds?: readonly StableId[];
 }
 
 function equivalentOpportunity(
@@ -60,17 +66,6 @@ function evidenceSubmission(command: InteractionCommand) {
   }
 }
 
-function nextStateAfterEvidence(
-  current: CurrentLearnerState,
-  evidenceId: string,
-): CurrentLearnerState {
-  return Object.freeze({
-    ...current,
-    engagementFocus: current.engagementFocus === "unobserved" ? "encountered" : current.engagementFocus,
-    evidenceIds: appendUnique(current.evidenceIds, evidenceId as never),
-  });
-}
-
 function selectedOffer(command: InteractionCommand, activeOffers: readonly LearningOffer[]): LearningOffer | undefined {
   if (command.kind !== "submit-learner-choice" || command.learnerChoice.offerId === undefined) {
     return undefined;
@@ -85,97 +80,118 @@ function selectedOpportunityStillAllowed(
   return decision.opportunities.some((candidate) => equivalentOpportunity(candidate, selected.opportunity));
 }
 
-function nextStateAfterSelectedOffer(
-  current: CurrentLearnerState,
-  offer: LearningOffer,
-): CurrentLearnerState {
-  const opportunity = offer.opportunity;
-  const activeConceptId = opportunity.relatedConceptId ?? opportunity.conceptId;
-  return Object.freeze({
-    ...current,
-    engagementFocus: "active-focus" as const,
-    activeConceptId,
-    ...(opportunity.pedagogicalLayer === undefined
-      ? {}
-      : { activePedagogicalLayer: opportunity.pedagogicalLayer }),
+function commitmentFor(input: {
+  readonly command: InteractionCommand;
+  readonly decision: LearningDecision;
+  readonly authorization: StateCommitment["authorization"];
+  readonly delta: LearnerStateDelta;
+  readonly committedAt: IsoTimestamp;
+  readonly contextVersion: string;
+}): StateCommitment {
+  return stateCommitment({
+    id: `commitment.${input.command.id}`,
+    learnerId: input.command.learnerId,
+    authorization: input.authorization,
+    learningDecisionId: input.decision.id,
+    contextVersion: input.contextVersion,
+    changedDimensions: stateDeltaDimensions(input.delta),
+    stateDelta: input.delta,
+    committedAt: input.committedAt,
+    provenance: input.decision.provenance,
   });
 }
 
-function stateCommittedEvent(input: {
+function causalEvent(input: {
+  readonly idSuffix: string;
+  readonly kind: HistoricalEvent["kind"];
   readonly command: InteractionCommand;
+  readonly decision: LearningDecision;
   readonly commitment: StateCommitment;
   readonly occurredAt: IsoTimestamp;
+  readonly contextVersion: string;
   readonly conceptId?: string;
+  readonly evidenceId?: string;
 }): HistoricalEvent {
   return historicalEvent({
-    id: `event.${input.command.id}.state-committed`,
-    kind: "state-committed",
+    id: `event.${input.command.id}.${input.idSuffix}`,
+    kind: input.kind,
     learnerId: input.command.learnerId,
     occurredAt: input.occurredAt,
+    interactionCommandId: input.command.id,
+    learningDecisionId: input.decision.id,
+    provenanceId: input.commitment.provenanceId,
+    contextVersion: input.contextVersion,
     ...(input.conceptId === undefined ? {} : { conceptId: input.conceptId }),
+    ...(input.evidenceId === undefined ? {} : { evidenceId: input.evidenceId }),
     stateCommitmentId: input.commitment.id,
   });
 }
 
-function commandFocusTransition(input: StateTransitionInput): StateTransitionResult | undefined {
+function commandFocusTransition(input: StateTransitionInput, contextVersion: string): StateTransitionResult | undefined {
   if (input.command.kind !== "explore-concept") {
     return undefined;
   }
-  const nextState = Object.freeze({
-    ...input.currentState,
-    engagementFocus: "active-focus" as const,
-    activeConceptId: input.command.conceptId,
+  const delta = learnerStateDelta({
+    engagementFocus: "active-focus",
+    activeConcept: { kind: "set", value: input.command.conceptId },
     ...(input.command.pedagogicalLayer === undefined
       ? {}
-      : { activePedagogicalLayer: input.command.pedagogicalLayer }),
+      : { activePedagogicalLayer: { kind: "set", value: input.command.pedagogicalLayer } }),
   });
-  const changedDimensions = ["engagement-focus", "active-concept"];
-  if (input.command.pedagogicalLayer !== undefined) {
-    changedDimensions.push("active-pedagogical-layer");
-  }
-  const commitment = stateCommitment({
-    id: `commitment.${input.command.id}`,
-    learnerId: input.command.learnerId,
+  const commitment = commitmentFor({
+    command: input.command,
+    decision: input.decision,
     authorization: { kind: "accepted-interaction-command", commandId: input.command.id },
-    learningDecisionId: input.decision.id,
-    changedDimensions,
+    delta,
     committedAt: input.committedAt,
-    provenance: input.decision.provenance,
+    contextVersion,
   });
   const events: HistoricalEvent[] = [
-    historicalEvent({
-      id: `event.${input.command.id}.concept-viewed`,
+    causalEvent({
+      idSuffix: "concept-viewed",
       kind: "concept-viewed",
-      learnerId: input.command.learnerId,
+      command: input.command,
+      decision: input.decision,
+      commitment,
       occurredAt: input.committedAt,
+      contextVersion,
       conceptId: input.command.conceptId,
-      stateCommitmentId: commitment.id,
     }),
   ];
   if (input.command.pedagogicalLayer !== undefined) {
-    events.push(historicalEvent({
-      id: `event.${input.command.id}.layer-entered`,
+    events.push(causalEvent({
+      idSuffix: "layer-entered",
       kind: "layer-entered",
-      learnerId: input.command.learnerId,
+      command: input.command,
+      decision: input.decision,
+      commitment,
       occurredAt: input.committedAt,
+      contextVersion,
       conceptId: input.command.conceptId,
-      stateCommitmentId: commitment.id,
     }));
   }
-  events.push(stateCommittedEvent({
+  events.push(causalEvent({
+    idSuffix: "state-committed",
+    kind: "state-committed",
     command: input.command,
+    decision: input.decision,
     commitment,
     occurredAt: input.committedAt,
+    contextVersion,
     conceptId: input.command.conceptId,
   }));
-  return Object.freeze({ kind: "committed", commitment, events: readonlyList(events), nextState });
+  return Object.freeze({
+    kind: "committed",
+    commitment,
+    events: readonlyList(events),
+    nextState: applyLearnerStateDelta(input.currentState, delta),
+  });
 }
 
 /**
- * Plans the only Slice 2 state effects. It is intentionally separate from
- * context assembly, candidate generation, policy evaluation, and decision
- * construction. A material decision does not itself alter learner state, and
- * a safe non-material outcome never produces a commitment.
+ * Plans state effects without persistence. A StateCommitment carries the sole
+ * authoritative delta for reconstruction; HistoricalEvents form the ordered,
+ * causally linked audit trail. A LearningDecision alone has no state effect.
  */
 export function validateAndPlanStateTransition(input: StateTransitionInput): StateTransitionResult {
   if (input.decision.type === "safe-non-material") {
@@ -193,42 +209,58 @@ export function validateAndPlanStateTransition(input: StateTransitionInput): Sta
     });
   }
 
-  const directFocusResult = commandFocusTransition(input);
+  const contextVersion = input.contextVersion ?? DETERMINISTIC_CONTEXT_VERSION;
+  const directFocusResult = commandFocusTransition(input, contextVersion);
   if (directFocusResult !== undefined) {
     return directFocusResult;
   }
 
   const evidence = evidenceSubmission(input.command);
   if (evidence !== undefined) {
-    const commitment = stateCommitment({
-      id: `commitment.${input.command.id}`,
-      learnerId: input.command.learnerId,
-      authorization: { kind: "accepted-evidence", evidenceId: evidence.evidence.id },
-      learningDecisionId: input.decision.id,
-      changedDimensions: ["evidence"],
-      committedAt: input.committedAt,
-      provenance: input.decision.provenance,
+    const delta = learnerStateDelta({
+      ...(input.currentState.engagementFocus === "unobserved" ? { engagementFocus: "encountered" } : {}),
+      evidenceIdsToAdd: [evidence.evidence.id],
+      interpretationIdsToAdd: input.derivedInterpretationIds ?? [],
     });
-    const nextState = nextStateAfterEvidence(input.currentState, evidence.evidence.id);
+    const commitment = commitmentFor({
+      command: input.command,
+      decision: input.decision,
+      authorization: { kind: "accepted-evidence", evidenceId: evidence.evidence.id },
+      delta,
+      committedAt: input.committedAt,
+      contextVersion,
+    });
     const events: HistoricalEvent[] = [];
     if (evidence.eventKind !== undefined) {
-      events.push(historicalEvent({
-        id: `event.${input.command.id}.${evidence.eventKind}`,
+      events.push(causalEvent({
+        idSuffix: evidence.eventKind,
         kind: evidence.eventKind,
-        learnerId: input.command.learnerId,
+        command: input.command,
+        decision: input.decision,
+        commitment,
         occurredAt: input.committedAt,
+        contextVersion,
         ...("conceptId" in evidence.evidence ? { conceptId: evidence.evidence.conceptId } : {}),
         evidenceId: evidence.evidence.id,
-        stateCommitmentId: commitment.id,
       }));
     }
-    events.push(stateCommittedEvent({
+    events.push(causalEvent({
+      idSuffix: "state-committed",
+      kind: "state-committed",
       command: input.command,
+      decision: input.decision,
       commitment,
       occurredAt: input.committedAt,
+      contextVersion,
       ...("conceptId" in evidence.evidence ? { conceptId: evidence.evidence.conceptId } : {}),
+      evidenceId: evidence.evidence.id,
     }));
-    return Object.freeze({ kind: "committed", commitment, events: readonlyList(events), nextState });
+    return Object.freeze({
+      kind: "committed",
+      commitment,
+      events: readonlyList(events),
+      nextState: applyLearnerStateDelta(input.currentState, delta),
+    });
   }
 
   if (input.command.kind !== "submit-learner-choice") {
@@ -241,26 +273,30 @@ export function validateAndPlanStateTransition(input: StateTransitionInput): Sta
 
   const choice = input.command.learnerChoice;
   if (choice.choiceKind === "pause") {
-    const commitment = stateCommitment({
-      id: `commitment.${input.command.id}`,
-      learnerId: input.command.learnerId,
+    const delta = learnerStateDelta({ engagementFocus: "paused" });
+    const commitment = commitmentFor({
+      command: input.command,
+      decision: input.decision,
       authorization: { kind: "learner-choice", learnerChoiceId: choice.id },
-      learningDecisionId: input.decision.id,
-      changedDimensions: ["engagement-focus"],
+      delta,
       committedAt: input.committedAt,
-      provenance: input.decision.provenance,
+      contextVersion,
     });
-    const nextState = Object.freeze({ ...input.currentState, engagementFocus: "paused" as const });
     return Object.freeze({
       kind: "committed",
       commitment,
-      events: readonlyList([stateCommittedEvent({
+      events: readonlyList([causalEvent({
+        idSuffix: "state-committed",
+        kind: "state-committed",
         command: input.command,
+        decision: input.decision,
         commitment,
         occurredAt: input.committedAt,
+        contextVersion,
         ...(input.currentState.activeConceptId === undefined ? {} : { conceptId: input.currentState.activeConceptId }),
+        evidenceId: choice.id,
       })]),
-      nextState,
+      nextState: applyLearnerStateDelta(input.currentState, delta),
     });
   }
 
@@ -280,25 +316,34 @@ export function validateAndPlanStateTransition(input: StateTransitionInput): Sta
     });
   }
 
-  const commitment = stateCommitment({
-    id: `commitment.${input.command.id}`,
-    learnerId: input.command.learnerId,
+  const opportunity = offer.opportunity;
+  const conceptId = opportunity.relatedConceptId ?? opportunity.conceptId;
+  const delta = learnerStateDelta({
+    engagementFocus: "active-focus",
+    activeConcept: { kind: "set", value: conceptId },
+    ...(opportunity.pedagogicalLayer === undefined
+      ? {}
+      : { activePedagogicalLayer: { kind: "set", value: opportunity.pedagogicalLayer } }),
+  });
+  const commitment = commitmentFor({
+    command: input.command,
+    decision: input.decision,
     authorization: { kind: "learner-choice", learnerChoiceId: choice.id },
-    learningDecisionId: input.decision.id,
-    changedDimensions: ["engagement-focus"],
+    delta,
     committedAt: input.committedAt,
-    provenance: input.decision.provenance,
+    contextVersion,
   });
   const accepted = choice.choiceKind === "select-offer" || choice.choiceKind === "request-alternative";
-  const conceptId = offer.opportunity.relatedConceptId ?? offer.opportunity.conceptId;
-  const pathEvent = historicalEvent({
-    id: `event.${input.command.id}.${accepted ? "learning-path-accepted" : "learning-path-declined"}`,
+  const pathEvent = causalEvent({
+    idSuffix: accepted ? "learning-path-accepted" : "learning-path-declined",
     kind: accepted ? "learning-path-accepted" : "learning-path-declined",
-    learnerId: input.command.learnerId,
+    command: input.command,
+    decision: input.decision,
+    commitment,
     occurredAt: input.committedAt,
+    contextVersion,
     conceptId,
     evidenceId: choice.id,
-    stateCommitmentId: commitment.id,
   });
 
   return Object.freeze({
@@ -306,8 +351,18 @@ export function validateAndPlanStateTransition(input: StateTransitionInput): Sta
     commitment,
     events: readonlyList([
       pathEvent,
-      stateCommittedEvent({ command: input.command, commitment, occurredAt: input.committedAt, conceptId }),
+      causalEvent({
+        idSuffix: "state-committed",
+        kind: "state-committed",
+        command: input.command,
+        decision: input.decision,
+        commitment,
+        occurredAt: input.committedAt,
+        contextVersion,
+        conceptId,
+        evidenceId: choice.id,
+      }),
     ]),
-    nextState: nextStateAfterSelectedOffer(input.currentState, offer),
+    nextState: applyLearnerStateDelta(input.currentState, delta),
   });
 }

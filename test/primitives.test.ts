@@ -35,6 +35,7 @@ test("timestamps and uncertainty statements are validated value objects", () => 
 
 test("decision provenance requires observable references rather than hidden reasoning", () => {
   const provenance = decisionProvenance({
+    id: "provenance.test.observable-basis",
     references: [provenanceReference("knowledge", "concept.function")],
     uncertainty: uncertainty("low", "Known concept context is available."),
     rationale: "Uses a resolved concept reference.",
@@ -42,6 +43,7 @@ test("decision provenance requires observable references rather than hidden reas
   assert.equal(provenance.references[0]?.kind, "knowledge");
   assert.throws(
     () => decisionProvenance({
+      id: "provenance.test.missing-basis",
       references: [],
       uncertainty: uncertainty("unknown", "No basis."),
       rationale: "Missing observable basis.",

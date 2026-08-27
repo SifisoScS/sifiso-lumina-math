@@ -4,6 +4,7 @@ import {
 } from "../contracts/core-contracts.js";
 import { LearningExperience, PedagogicalLayer } from "../domain/mathematical-knowledge.js";
 import { AssembledLearningContext } from "./context.js";
+import { EvidenceEvaluation } from "./evidence-evaluation.js";
 
 function isExperienceCompatible(
   experience: LearningExperience,
@@ -71,6 +72,7 @@ function addLayerMovementCandidates(
  */
 export function generateCandidateLearningOpportunities(
   context: AssembledLearningContext,
+  evidenceEvaluation?: EvidenceEvaluation,
 ): readonly CandidateLearningOpportunity[] {
   const candidates: CandidateLearningOpportunity[] = [];
   const compatibleExperiences = context.knowledge.experiences.filter((experience) =>
@@ -88,7 +90,11 @@ export function generateCandidateLearningOpportunities(
     }));
   }
 
-  if (context.knowledge.assets.some((asset) => asset.kind === "representation")) {
+  const explicitRepresentationRequest = context.command.kind === "request-alternative-representation";
+  const preservesSlice2Baseline = context.command.kind === "explore-concept" || context.command.kind === "submit-learner-choice";
+  const reflectionSupportsRepresentation = evidenceEvaluation?.inferred.supportsAlternativeRepresentation ?? false;
+  if (context.knowledge.assets.some((asset) => asset.kind === "representation") &&
+      (explicitRepresentationRequest || preservesSlice2Baseline || reflectionSupportsRepresentation)) {
     candidates.push(candidateLearningOpportunity({
       id: opportunityId(context, "explore-representation"),
       kind: "explore-representation",
@@ -97,7 +103,7 @@ export function generateCandidateLearningOpportunities(
     }));
   }
 
-  if (context.observedEvidence.length > 0) {
+  if (evidenceEvaluation?.inferred.supportsRevisit ?? false) {
     candidates.push(candidateLearningOpportunity({
       id: opportunityId(context, "revisit"),
       kind: "revisit",
@@ -124,7 +130,9 @@ export function generateCandidateLearningOpportunities(
     }));
   }
 
-  addLayerMovementCandidates(context, candidates);
+  if (evidenceEvaluation?.inferred.supportsMoveTowardAnotherLayer ?? false) {
+    addLayerMovementCandidates(context, candidates);
+  }
 
   candidates.push(candidateLearningOpportunity({
     id: opportunityId(context, "reflect"),

@@ -8,6 +8,7 @@ import {
 export const timestamp = isoTimestamp("2026-08-27T09:00:00.000Z");
 
 export const testProvenance = decisionProvenance({
+  id: "provenance.test.fixture",
   references: [{ kind: "knowledge", id: "concept.function" as never }],
   uncertainty: uncertainty("low", "The fixture uses explicit seed knowledge."),
   rationale: "Fixture provenance for a domain-kernel test.",

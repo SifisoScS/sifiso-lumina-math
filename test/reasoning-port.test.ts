@@ -21,6 +21,7 @@ const task = reasoningTask({
 });
 
 const proposalProvenance = decisionProvenance({
+  id: "provenance.test.reasoning-proposal",
   references: [
     provenanceReference("learner-evidence", "evidence.reflection.003"),
     provenanceReference("knowledge", "concept.function"),

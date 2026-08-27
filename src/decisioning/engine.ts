@@ -4,7 +4,7 @@ import {
   LearningInteractionResponse,
   learningInteractionResponse,
 } from "../contracts/core-contracts.js";
-import { HistoricalEvent, LearnerRecord } from "../domain/learner-record.js";
+import { DerivedInterpretation, HistoricalEvent } from "../domain/learner-record.js";
 import { IsoTimestamp, readonlyList } from "../domain/primitives.js";
 import {
   assembleLearningContext,
@@ -15,6 +15,7 @@ import {
   constructMaterialDecision,
   constructSafeNonMaterialDecision,
 } from "./decision-construction.js";
+import { EvidenceEvaluation, evaluateAccumulatedEvidence } from "./evidence-evaluation.js";
 import { generateCandidateLearningOpportunities } from "./opportunities.js";
 import { evaluateDecisionPolicy, DecisionPolicyResult } from "./policy-evaluation.js";
 import { StateTransitionResult, validateAndPlanStateTransition } from "./state-transitions.js";
@@ -22,11 +23,7 @@ import { StateTransitionResult, validateAndPlanStateTransition } from "./state-t
 export interface EngineExecutionInput extends ContextAssemblyInput {
   /** A supplied time reference keeps the deterministic engine independent of a clock implementation. */
   readonly evaluatedAt: IsoTimestamp;
-  /**
-   * Previously recorded outcomes are supplied by a future persistence boundary.
-   * Slice 2 performs no persistence; it only applies the approved Command
-   * Reference idempotency rule when this context is provided.
-   */
+  /** Previously recorded outcomes are supplied by a future persistence boundary; no persistence is implemented here. */
   readonly priorOutcomes?: readonly InteractionOutcomeRecord[];
 }
 
@@ -37,6 +34,8 @@ export interface EngineDiagnostics {
   readonly policyEvaluations: DecisionPolicyResult["evaluations"];
   readonly reasoningInvolved: false;
   readonly plannedEventKinds: readonly string[];
+  /** A qualified deterministic reading of observations, distinct from learner-owned evidence. */
+  readonly evidenceEvaluation?: EvidenceEvaluation;
 }
 
 export interface InteractionOutcomeRecord {
@@ -45,6 +44,7 @@ export interface InteractionOutcomeRecord {
   readonly decision: LearningDecision;
   readonly transition: StateTransitionResult;
   readonly events: readonly HistoricalEvent[];
+  readonly derivedInterpretations: readonly DerivedInterpretation[];
   readonly diagnostics: EngineDiagnostics;
 }
 
@@ -53,6 +53,7 @@ export interface EngineExecutionResult {
   readonly response: LearningInteractionResponse;
   readonly transition: StateTransitionResult;
   readonly events: readonly HistoricalEvent[];
+  readonly derivedInterpretations: readonly DerivedInterpretation[];
   readonly diagnostics: EngineDiagnostics;
   readonly idempotency: {
     readonly disposition: "new" | "replayed";
@@ -66,6 +67,7 @@ function replayedResult(outcome: InteractionOutcomeRecord): EngineExecutionResul
     response: learningInteractionResponse(outcome.decision),
     transition: outcome.transition,
     events: outcome.events,
+    derivedInterpretations: outcome.derivedInterpretations,
     diagnostics: outcome.diagnostics,
     idempotency: Object.freeze({ disposition: "replayed" as const, outcome }),
   });
@@ -76,6 +78,7 @@ function newResult(input: {
   readonly decision: LearningDecision;
   readonly transition: StateTransitionResult;
   readonly events: readonly HistoricalEvent[];
+  readonly derivedInterpretations: readonly DerivedInterpretation[];
   readonly diagnostics: EngineDiagnostics;
 }): EngineExecutionResult {
   const outcome: InteractionOutcomeRecord = Object.freeze({
@@ -84,6 +87,7 @@ function newResult(input: {
     decision: input.decision,
     transition: input.transition,
     events: input.events,
+    derivedInterpretations: input.derivedInterpretations,
     diagnostics: input.diagnostics,
   });
   return Object.freeze({
@@ -91,6 +95,7 @@ function newResult(input: {
     response: learningInteractionResponse(input.decision),
     transition: input.transition,
     events: input.events,
+    derivedInterpretations: input.derivedInterpretations,
     diagnostics: input.diagnostics,
     idempotency: Object.freeze({ disposition: "new" as const, outcome }),
   });
@@ -106,11 +111,10 @@ function priorOutcomeFor(
 }
 
 /**
- * Executes Slice 2's deterministic lifecycle coordinator. The stages remain
- * delegated to dedicated modules: context assembly, opportunity generation,
- * policy evaluation, decision construction, and transition planning. This
- * function returns a state-change plan only; it does not persist or mutate any
- * external record, call an AI provider, expose an API, or render a UI.
+ * Executes the deterministic, headless learning lifecycle. It assembles
+ * context, evaluates accumulated evidence, generates candidates, applies
+ * policy, constructs a decision, and plans—not persists—state/event effects.
+ * It calls no AI, provider, API, database, or UI layer.
  */
 export function executeDeterministicLearningInteraction(
   input: EngineExecutionInput,
@@ -148,18 +152,21 @@ export function executeDeterministicLearningInteraction(
       decision,
       transition,
       events: readonlyList([]),
+      derivedInterpretations: readonlyList([]),
       diagnostics,
     });
   }
 
-  const candidates = generateCandidateLearningOpportunities(assembly.context);
+  const evidenceEvaluation = evaluateAccumulatedEvidence(assembly.context);
+  const candidates = generateCandidateLearningOpportunities(assembly.context, evidenceEvaluation);
   const policy = evaluateDecisionPolicy(assembly.context, candidates);
-  const decision = constructMaterialDecision(assembly.context, policy);
+  const decision = constructMaterialDecision(assembly.context, policy, evidenceEvaluation);
   const transition = validateAndPlanStateTransition({
     command: assembly.context.command,
     decision,
     currentState: assembly.context.learnerRecord.state,
     activeOffers: assembly.context.activeOffers,
+    derivedInterpretationIds: evidenceEvaluation.newInterpretations.map((interpretation) => interpretation.id),
     committedAt: input.evaluatedAt,
   });
   const events = transition.kind === "committed" ? transition.events : readonlyList([]);
@@ -175,6 +182,14 @@ export function executeDeterministicLearningInteraction(
     policyEvaluations: policy.evaluations,
     reasoningInvolved: false,
     plannedEventKinds: readonlyList(events.map((event) => event.kind)),
+    evidenceEvaluation,
   });
-  return newResult({ command: input.command, decision, transition, events, diagnostics });
+  return newResult({
+    command: input.command,
+    decision,
+    transition,
+    events,
+    derivedInterpretations: evidenceEvaluation.newInterpretations,
+    diagnostics,
+  });
 }

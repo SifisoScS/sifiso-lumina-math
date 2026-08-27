@@ -12,6 +12,7 @@ import { decisionProvenance, provenanceReference } from "../domain/provenance.js
 import { uncertainty } from "../domain/primitives.js";
 import { AssembledLearningContext, ContextIssue } from "./context.js";
 import { CandidatePolicyResult, DecisionPolicyResult } from "./policy-evaluation.js";
+import { EvidenceEvaluation } from "./evidence-evaluation.js";
 
 function baseDecisionProvenance(input: {
   readonly commandId: string;
@@ -28,6 +29,7 @@ function baseDecisionProvenance(input: {
     references.push(provenanceReference("delivery-capability", `capability.${capability}`));
   }
   return decisionProvenance({
+    id: `provenance.${input.commandId}`,
     references,
     uncertainty: uncertainty(input.uncertaintyLevel, input.rationale),
     rationale: input.rationale,
@@ -121,6 +123,7 @@ function offersFromCandidates(candidates: readonly CandidatePolicyResult[]): rea
 export function constructMaterialDecision(
   context: AssembledLearningContext,
   policy: DecisionPolicyResult,
+  evidenceEvaluation?: EvidenceEvaluation,
 ): LearningDecision {
   const commandReference = provenanceReference("interaction-command", context.command.id);
   const actorReference = provenanceReference("trusted-actor-context", context.actor.actorId);
@@ -135,32 +138,48 @@ export function constructMaterialDecision(
     provenanceReference("learner-evidence", evidence.id));
   const declaredConflictEvidenceReferences = context.declaredEvidenceConflicts.flatMap((conflict) =>
     conflict.evidenceIds.map((evidenceId) => provenanceReference("learner-evidence", evidenceId)));
+  const assessmentOutcomeReferences = context.observedEvidence.flatMap((evidence) =>
+    evidence.kind !== "practice-attempt" || evidence.observedOutcome === undefined
+      ? []
+      : [
+          provenanceReference("assessment-boundary", evidence.observedOutcome.assessmentBoundaryRef),
+          provenanceReference("assessment-evidence", evidence.observedOutcome.outcomeEvidenceRef),
+        ]);
   const pedagogyReferences = context.pedagogicalGuidance.map((guidance) =>
     provenanceReference("pedagogical-rule", guidance.ruleRef));
   const policyReferences = policy.evaluations.map((evaluation) =>
     provenanceReference("policy", evaluation.policyId));
   const deliveryReferences = context.deliveryCapabilities.capabilities.map((capability) =>
     provenanceReference("delivery-capability", `capability.${capability}`));
+  const interpretationReferences = evidenceEvaluation === undefined
+    ? []
+    : [
+        ...evidenceEvaluation.relevantExistingInterpretations,
+        ...evidenceEvaluation.newInterpretations,
+      ].map((interpretation) => provenanceReference("derived-interpretation", interpretation.id));
 
   const provenance = decisionProvenance({
+    id: `provenance.${context.command.id}`,
     references: uniqueProvenanceReferences([
       commandReference,
       actorReference,
       ...knowledgeReferences,
       ...evidenceReferences,
       ...declaredConflictEvidenceReferences,
+      ...assessmentOutcomeReferences,
+      ...interpretationReferences,
       ...pedagogyReferences,
       ...policyReferences,
       ...deliveryReferences,
     ]),
     uncertainty: uncertainty(
-      context.declaredEvidenceConflicts.length > 0
+      context.declaredEvidenceConflicts.length > 0 || evidenceEvaluation?.inferred.confidencePracticeConflict === true
         ? "high"
         : context.observedEvidence.length === 0
           ? "medium"
           : "low",
-      context.declaredEvidenceConflicts.length > 0
-        ? "The decision preserves declared conflicting evidence and does not resolve it into fabricated certainty."
+      context.declaredEvidenceConflicts.length > 0 || evidenceEvaluation?.inferred.confidencePracticeConflict === true
+        ? "The decision preserves conflicting observed evidence and does not resolve it into fabricated certainty."
         : context.observedEvidence.length === 0
           ? "The decision is grounded in available knowledge and context without concept-specific learner evidence."
           : "The decision includes relevant observed learner evidence and available knowledge context.",

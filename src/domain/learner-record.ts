@@ -10,6 +10,8 @@ import {
   StableId,
   stableId,
   uniqueStableIds,
+  VersionRef,
+  versionRef,
 } from "./primitives.js";
 
 export type LearnerEvidenceKind =
@@ -49,14 +51,52 @@ export interface LearnerReflection {
   readonly submittedAt: IsoTimestamp;
 }
 
+export type ObservedPracticeOutcomeKind =
+  | "evidence-of-understanding"
+  | "evidence-of-uncertainty";
+
+/**
+ * This is an observed assessment-boundary statement, not an engine-calculated
+ * score or interpretation. Its absence means the attempt is not assessed.
+ */
+export interface ObservedPracticeOutcome {
+  readonly kind: ObservedPracticeOutcomeKind;
+  readonly observedAt: IsoTimestamp;
+  readonly assessmentBoundaryRef: StableId;
+  readonly outcomeEvidenceRef: StableId;
+}
+
+export function observedPracticeOutcome(input: {
+  readonly kind: ObservedPracticeOutcomeKind;
+  readonly observedAt: IsoTimestamp;
+  readonly assessmentBoundaryRef: string;
+  readonly outcomeEvidenceRef: string;
+}): ObservedPracticeOutcome {
+  return Object.freeze({
+    kind: input.kind,
+    observedAt: input.observedAt,
+    assessmentBoundaryRef: stableId(input.assessmentBoundaryRef, "Assessment boundary reference"),
+    outcomeEvidenceRef: stableId(input.outcomeEvidenceRef, "Practice outcome evidence reference"),
+  });
+}
+
+export type PracticeOutcomeStatus = "not-assessed" | ObservedPracticeOutcomeKind;
+
 export interface PracticeAttempt {
   readonly id: StableId;
   readonly kind: "practice-attempt";
   readonly learnerId: LearnerReference;
   readonly conceptId: StableId;
   readonly learningExperienceId: StableId;
+  /** Immutable learner-owned response; it is never interpreted as an outcome. */
   readonly learnerResponse: string;
   readonly submittedAt: IsoTimestamp;
+  /** Optional external observation. Absent means `not-assessed`. */
+  readonly observedOutcome?: ObservedPracticeOutcome;
+}
+
+export function practiceOutcomeStatus(attempt: PracticeAttempt): PracticeOutcomeStatus {
+  return attempt.observedOutcome?.kind ?? "not-assessed";
 }
 
 /**
@@ -110,6 +150,11 @@ export interface HistoricalEvent {
   readonly kind: HistoricalEventKind;
   readonly learnerId: LearnerReference;
   readonly occurredAt: IsoTimestamp;
+  /** Immutable causal chain; transport and UI details are deliberately absent. */
+  readonly interactionCommandId?: StableId;
+  readonly learningDecisionId?: StableId;
+  readonly provenanceId?: StableId;
+  readonly contextVersion?: VersionRef;
   readonly conceptId?: StableId;
   readonly evidenceId?: StableId;
   readonly stateCommitmentId?: StableId;
@@ -138,6 +183,100 @@ export interface CurrentLearnerState {
   readonly interpretationIds: readonly StableId[];
 }
 
+export type StableIdStateChange =
+  | { readonly kind: "set"; readonly value: StableId }
+  | { readonly kind: "clear" };
+
+export type PedagogicalLayerStateChange =
+  | { readonly kind: "set"; readonly value: PedagogicalLayer }
+  | { readonly kind: "clear" };
+
+/**
+ * An explicit delta is the authoritative resulting-state information for a
+ * commitment. It contains no inferred readiness, ranking, or score. The
+ * optional fields mean 'unchanged'; set and clear changes are unambiguous.
+ */
+export interface LearnerStateDelta {
+  readonly engagementFocus?: EngagementFocus;
+  readonly activeConcept?: StableIdStateChange;
+  readonly activePedagogicalLayer?: PedagogicalLayerStateChange;
+  readonly evidenceIdsToAdd: readonly StableId[];
+  readonly interpretationIdsToAdd: readonly StableId[];
+}
+
+export function learnerStateDelta(input: {
+  readonly engagementFocus?: EngagementFocus;
+  readonly activeConcept?: { readonly kind: "set"; readonly value: string } | { readonly kind: "clear" };
+  readonly activePedagogicalLayer?: { readonly kind: "set"; readonly value: PedagogicalLayer } | { readonly kind: "clear" };
+  readonly evidenceIdsToAdd?: readonly string[];
+  readonly interpretationIdsToAdd?: readonly string[];
+}): LearnerStateDelta {
+  const activeConcept = input.activeConcept === undefined
+    ? undefined
+    : input.activeConcept.kind === "clear"
+      ? Object.freeze({ kind: "clear" as const })
+      : Object.freeze({ kind: "set" as const, value: stableId(input.activeConcept.value, "State delta active concept identifier") });
+  const activePedagogicalLayer = input.activePedagogicalLayer === undefined
+    ? undefined
+    : input.activePedagogicalLayer.kind === "clear"
+      ? Object.freeze({ kind: "clear" as const })
+      : Object.freeze({ kind: "set" as const, value: input.activePedagogicalLayer.value });
+  const evidenceIdsToAdd = uniqueStableIds(
+    (input.evidenceIdsToAdd ?? []).map((id) => stableId(id, "State delta evidence identifier")),
+    "State delta evidence identifiers",
+  );
+  const interpretationIdsToAdd = uniqueStableIds(
+    (input.interpretationIdsToAdd ?? []).map((id) => stableId(id, "State delta interpretation identifier")),
+    "State delta interpretation identifiers",
+  );
+  if (input.engagementFocus === undefined && activeConcept === undefined && activePedagogicalLayer === undefined &&
+      evidenceIdsToAdd.length === 0 && interpretationIdsToAdd.length === 0) {
+    throw new DomainValidationError("A state delta must identify at least one resulting state change.");
+  }
+  return Object.freeze({
+    ...(input.engagementFocus === undefined ? {} : { engagementFocus: input.engagementFocus }),
+    ...(activeConcept === undefined ? {} : { activeConcept }),
+    ...(activePedagogicalLayer === undefined ? {} : { activePedagogicalLayer }),
+    evidenceIdsToAdd,
+    interpretationIdsToAdd,
+  });
+}
+
+export function stateDeltaDimensions(delta: LearnerStateDelta): readonly string[] {
+  const dimensions: string[] = [];
+  if (delta.engagementFocus !== undefined) dimensions.push("engagement-focus");
+  if (delta.activeConcept !== undefined) dimensions.push("active-concept");
+  if (delta.activePedagogicalLayer !== undefined) dimensions.push("active-pedagogical-layer");
+  if (delta.evidenceIdsToAdd.length > 0) dimensions.push("evidence");
+  if (delta.interpretationIdsToAdd.length > 0) dimensions.push("interpretation");
+  return readonlyList(dimensions);
+}
+
+/** Applies a validated commitment delta without inspecting an external store. */
+export function applyLearnerStateDelta(
+  previous: CurrentLearnerState,
+  delta: LearnerStateDelta,
+): CurrentLearnerState {
+  const activeConceptId = delta.activeConcept === undefined
+    ? previous.activeConceptId
+    : delta.activeConcept.kind === "clear"
+      ? undefined
+      : delta.activeConcept.value;
+  const activePedagogicalLayer = delta.activePedagogicalLayer === undefined
+    ? previous.activePedagogicalLayer
+    : delta.activePedagogicalLayer.kind === "clear"
+      ? undefined
+      : delta.activePedagogicalLayer.value;
+  return currentLearnerState({
+    learnerId: previous.learnerId,
+    engagementFocus: delta.engagementFocus ?? previous.engagementFocus,
+    ...(activeConceptId === undefined ? {} : { activeConceptId }),
+    ...(activePedagogicalLayer === undefined ? {} : { activePedagogicalLayer }),
+    evidenceIds: uniqueStableIds([...previous.evidenceIds, ...delta.evidenceIdsToAdd], "Replayed learner state evidence identifiers"),
+    interpretationIds: uniqueStableIds([...previous.interpretationIds, ...delta.interpretationIdsToAdd], "Replayed learner state interpretation identifiers"),
+  });
+}
+
 export type StateCommitmentAuthorization =
   | { readonly kind: "accepted-interaction-command"; readonly commandId: StableId }
   | { readonly kind: "accepted-evidence"; readonly evidenceId: StableId }
@@ -153,9 +292,16 @@ export interface StateCommitment {
   readonly learnerId: LearnerReference;
   readonly authorization: StateCommitmentAuthorization;
   readonly learningDecisionId: StableId;
+  /** Version of the deterministic context/rules that formed this commitment. */
+  readonly contextVersion: VersionRef;
   readonly changedDimensions: readonly string[];
+  /** The sole authoritative resulting-state payload for deterministic replay. */
+  readonly stateDelta: LearnerStateDelta;
   readonly committedAt: IsoTimestamp;
+  /** Structured provenance is retained once on the commitment. */
   readonly provenance: DecisionProvenance;
+  /** Events hold this immutable reference instead of duplicating provenance. */
+  readonly provenanceId: StableId;
 }
 
 export interface LearnerRecord {
@@ -191,6 +337,7 @@ export function practiceAttempt(input: {
   readonly learningExperienceId: string;
   readonly learnerResponse: string;
   readonly submittedAt: IsoTimestamp;
+  readonly observedOutcome?: ObservedPracticeOutcome;
 }): PracticeAttempt {
   return Object.freeze({
     id: stableId(input.id, "Practice attempt identifier"),
@@ -200,6 +347,7 @@ export function practiceAttempt(input: {
     learningExperienceId: stableId(input.learningExperienceId, "Practice learning experience identifier"),
     learnerResponse: requiredText(input.learnerResponse, "Practice learner response"),
     submittedAt: input.submittedAt,
+    ...(input.observedOutcome === undefined ? {} : { observedOutcome: input.observedOutcome }),
   });
 }
 
@@ -272,6 +420,10 @@ export function historicalEvent(input: {
   readonly kind: HistoricalEventKind;
   readonly learnerId: string;
   readonly occurredAt: IsoTimestamp;
+  readonly interactionCommandId?: string;
+  readonly learningDecisionId?: string;
+  readonly provenanceId?: string;
+  readonly contextVersion?: string;
   readonly conceptId?: string;
   readonly evidenceId?: string;
   readonly stateCommitmentId?: string;
@@ -284,6 +436,10 @@ export function historicalEvent(input: {
   };
   return Object.freeze({
     ...base,
+    ...(input.interactionCommandId === undefined ? {} : { interactionCommandId: stableId(input.interactionCommandId, "Historical event interaction command identifier") }),
+    ...(input.learningDecisionId === undefined ? {} : { learningDecisionId: stableId(input.learningDecisionId, "Historical event learning decision identifier") }),
+    ...(input.provenanceId === undefined ? {} : { provenanceId: stableId(input.provenanceId, "Historical event provenance identifier") }),
+    ...(input.contextVersion === undefined ? {} : { contextVersion: versionRef(input.contextVersion) }),
     ...(input.conceptId === undefined ? {} : { conceptId: stableId(input.conceptId, "Historical event concept identifier") }),
     ...(input.evidenceId === undefined ? {} : { evidenceId: stableId(input.evidenceId, "Historical event evidence identifier") }),
     ...(input.stateCommitmentId === undefined
@@ -360,7 +516,9 @@ export function stateCommitment(input: {
   readonly learnerId: string;
   readonly authorization: StateCommitmentAuthorization;
   readonly learningDecisionId: string;
+  readonly contextVersion: string;
   readonly changedDimensions: readonly string[];
+  readonly stateDelta: LearnerStateDelta;
   readonly committedAt: IsoTimestamp;
   readonly provenance: DecisionProvenance;
 }): StateCommitment {
@@ -371,14 +529,22 @@ export function stateCommitment(input: {
   if (new Set(changedDimensions).size !== changedDimensions.length) {
     throw new DomainValidationError("State commitment changed dimensions must not contain duplicates.");
   }
+  const resultingDeltaDimensions = stateDeltaDimensions(input.stateDelta);
+  if (changedDimensions.length !== resultingDeltaDimensions.length ||
+      changedDimensions.some((dimension, index) => dimension !== resultingDeltaDimensions[index])) {
+    throw new DomainValidationError("State commitment changed dimensions must exactly describe its resulting state delta.");
+  }
   return Object.freeze({
     id: stableId(input.id, "State commitment identifier"),
     learnerId: learnerReference(input.learnerId),
     authorization: input.authorization,
     learningDecisionId: stableId(input.learningDecisionId, "State commitment learning decision identifier"),
+    contextVersion: versionRef(input.contextVersion),
     changedDimensions: readonlyList(changedDimensions),
+    stateDelta: input.stateDelta,
     committedAt: input.committedAt,
     provenance: input.provenance,
+    provenanceId: input.provenance.id,
   });
 }
 
@@ -415,6 +581,34 @@ export function learnerRecord(input: LearnerRecord): LearnerRecord {
       throw new DomainValidationError("Historical event references a state commitment absent from the learner record.");
     }
   }
+  const commitmentsById = new Map(input.commitments.map((commitment) => [commitment.id, commitment]));
+  for (const event of input.events) {
+    if (event.stateCommitmentId === undefined) {
+      continue;
+    }
+    const commitment = commitmentsById.get(event.stateCommitmentId);
+    if (commitment === undefined) {
+      throw new DomainValidationError("Historical event references a state commitment absent from the learner record.");
+    }
+    if (event.interactionCommandId === undefined || event.learningDecisionId === undefined ||
+        event.provenanceId === undefined || event.contextVersion === undefined) {
+      throw new DomainValidationError("A state-affecting historical event must preserve causal command, decision, provenance, and context references.");
+    }
+    if (event.learningDecisionId !== commitment.learningDecisionId ||
+        event.provenanceId !== commitment.provenanceId ||
+        event.contextVersion !== commitment.contextVersion) {
+      throw new DomainValidationError("Historical event causal references must agree with its StateCommitment.");
+    }
+  }
+  for (const commitment of input.commitments) {
+    const hasStateCommittedEvent = input.events.some((event) =>
+      event.kind === "state-committed" && event.stateCommitmentId === commitment.id,
+    );
+    if (!hasStateCommittedEvent) {
+      throw new DomainValidationError("Every state-affecting commitment requires a state-committed historical event.");
+    }
+  }
+
   for (const interpretation of input.interpretations) {
     if (interpretation.learnerId !== learnerId) {
       throw new DomainValidationError("Derived interpretations must belong to the learner record owner.");
