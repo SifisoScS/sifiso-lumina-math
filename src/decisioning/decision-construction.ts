@@ -134,6 +134,8 @@ export function constructMaterialDecision(
     ...context.knowledge.outgoingConceptBridges.map((relationship) =>
       provenanceReference("knowledge", relationship.id)),
   ];
+  const knowledgeVersionReferences = context.knowledge.versionReferences.map((reference) =>
+    provenanceReference("knowledge-version", `${reference.objectId}.${reference.version}`));
   const evidenceReferences = context.observedEvidence.map((evidence) =>
     provenanceReference("learner-evidence", evidence.id));
   const declaredConflictEvidenceReferences = context.declaredEvidenceConflicts.flatMap((conflict) =>
@@ -164,6 +166,7 @@ export function constructMaterialDecision(
       commandReference,
       actorReference,
       ...knowledgeReferences,
+      ...knowledgeVersionReferences,
       ...evidenceReferences,
       ...declaredConflictEvidenceReferences,
       ...assessmentOutcomeReferences,

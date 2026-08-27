@@ -8,6 +8,7 @@ export * from "./contracts/core-contracts.js";
 export * from "./contracts/reasoning-port.js";
 export * from "./contracts/assessment-boundary.js";
 export * from "./seed/functions-seed.js";
+export * from "./decisioning/knowledge-context.js";
 export * from "./decisioning/context.js";
 export * from "./decisioning/opportunities.js";
 export * from "./decisioning/policy-evaluation.js";

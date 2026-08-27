@@ -3,13 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Headless Math Lumina Learning Engine domain, decisioning, and event-loop kernels — Phase 2 Slices 1–3.",
+  "description": "Headless Math Lumina Learning Engine domain, decisioning, event-loop, and knowledge-pedagogy kernels — Phase 2 Slices 1–4.",
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "tsx --test test/**/*.test.ts",
     "check": "pnpm typecheck && pnpm test",
     "demo:slice2": "tsx demo/slice2-scenario.ts",
-    "demo:slice3": "tsx demo/slice3-event-loop.ts"
+    "demo:slice3": "tsx demo/slice3-event-loop.ts",
+    "demo:slice4": "tsx demo/slice4-knowledge-pedagogy.ts"
   },
   "devDependencies": {
     "@types/node": "^22.15.3",

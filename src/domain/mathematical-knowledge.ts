@@ -20,6 +20,31 @@ export type ConceptRelationshipKind =
   | "concept-bridge"
   | "related";
 
+/** Minimum machine-readable graph semantics approved for Slice 4. */
+export type KnowledgeRelationshipSemantic =
+  | "prerequisite-of"
+  | "related-to"
+  | "represents"
+  | "bridges-to"
+  | "exemplifies"
+  | "contrasts-with";
+
+export function conceptRelationshipSemantic(kind: ConceptRelationshipKind): KnowledgeRelationshipSemantic {
+  switch (kind) {
+    case "prerequisite": return "prerequisite-of";
+    case "related": return "related-to";
+    case "concept-bridge": return "bridges-to";
+  }
+}
+
+export type MathematicalRepresentationForm =
+  | "verbal"
+  | "visual"
+  | "symbolic"
+  | "numerical"
+  | "graphical"
+  | "contextual";
+
 export type KnowledgeAssetKind =
   | "representation"
   | "example"
@@ -83,6 +108,7 @@ export interface Concept {
 export interface ConceptRelationship {
   readonly id: StableId;
   readonly kind: ConceptRelationshipKind;
+  readonly semanticKind: KnowledgeRelationshipSemantic;
   readonly sourceConceptId: StableId;
   readonly targetConceptId: StableId;
   readonly rationale: string;
@@ -100,6 +126,8 @@ export interface KnowledgeAsset {
   readonly kind: KnowledgeAssetKind;
   readonly title: string;
   readonly content: string;
+  /** Required for representation assets; absent for other knowledge asset kinds. */
+  readonly representationForm?: MathematicalRepresentationForm;
   readonly conceptIds: readonly StableId[];
   readonly supportedLayers: readonly PedagogicalLayer[];
   readonly version: VersionRef;
@@ -221,6 +249,7 @@ export function conceptRelationship(input: {
   return Object.freeze({
     id: stableId(input.id, "Concept relationship identifier"),
     kind: input.kind,
+    semanticKind: conceptRelationshipSemantic(input.kind),
     sourceConceptId,
     targetConceptId,
     rationale: requiredText(input.rationale, "Concept relationship rationale"),
@@ -234,6 +263,7 @@ export function knowledgeAsset(input: {
   readonly kind: KnowledgeAssetKind;
   readonly title: string;
   readonly content: string;
+  readonly representationForm?: MathematicalRepresentationForm;
   readonly conceptIds: readonly string[];
   readonly supportedLayers: readonly PedagogicalLayer[];
   readonly version: string;
@@ -241,6 +271,12 @@ export function knowledgeAsset(input: {
 }): KnowledgeAsset {
   if (input.conceptIds.length === 0) {
     throw new DomainValidationError("A knowledge asset must reference at least one concept.");
+  }
+  if (input.kind === "representation" && input.representationForm === undefined) {
+    throw new DomainValidationError("A representation knowledge asset must identify its mathematical representation form.");
+  }
+  if (input.kind !== "representation" && input.representationForm !== undefined) {
+    throw new DomainValidationError("Only a representation knowledge asset may identify a representation form.");
   }
   const conceptIds = uniqueStableIds(
     input.conceptIds.map((id) => stableId(id, "Knowledge asset concept identifier")),
@@ -251,6 +287,7 @@ export function knowledgeAsset(input: {
     kind: input.kind,
     title: requiredText(input.title, "Knowledge asset title"),
     content: requiredText(input.content, "Knowledge asset content"),
+    ...(input.representationForm === undefined ? {} : { representationForm: input.representationForm }),
     conceptIds,
     supportedLayers: distinctLayers(input.supportedLayers, "Knowledge asset supported layers"),
     version: versionRef(input.version),

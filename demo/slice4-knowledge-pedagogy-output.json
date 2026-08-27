@@ -1,0 +1,421 @@
+{
+  "engine": {
+    "deterministic": true,
+    "uiImplemented": false,
+    "persistenceImplemented": false,
+    "providerInvoked": false,
+    "reasoningInvolved": false
+  },
+  "learnerContext": {
+    "learnerId": "learner.demo.slice4",
+    "activeConceptId": "concept.function",
+    "activePedagogicalLayer": "intuition",
+    "observedEvidence": [
+      {
+        "id": "evidence.demo.slice4.reflection",
+        "kind": "reflection"
+      }
+    ]
+  },
+  "relevantConcept": {
+    "id": "concept.function",
+    "version": "math-lumina.seed.v1"
+  },
+  "knowledgeGraphResolution": {
+    "prerequisiteConcepts": [],
+    "relatedConcepts": [
+      "concept.domain-range"
+    ],
+    "bridgeConcepts": [
+      "concept.inverse-function"
+    ],
+    "representations": [
+      {
+        "id": "asset.function.vending-machine-representation",
+        "form": "contextual"
+      },
+      {
+        "id": "asset.function.mapping-representation",
+        "form": "visual"
+      },
+      {
+        "id": "asset.function.table-representation",
+        "form": "numerical"
+      }
+    ],
+    "examples": [
+      "asset.function.input-output-example"
+    ],
+    "nonExamples": [
+      "asset.function.one-input-two-outputs-non-example"
+    ],
+    "procedures": [],
+    "learningExperiences": [
+      {
+        "id": "experience.function.intuition-vending-machine",
+        "layers": [
+          "intuition"
+        ]
+      },
+      {
+        "id": "experience.function.low-energy-core-insight",
+        "layers": [
+          "intuition"
+        ]
+      },
+      {
+        "id": "experience.function.practice-input-output",
+        "layers": [
+          "intuition"
+        ]
+      }
+    ],
+    "semanticRelations": [
+      {
+        "semantic": "related-to",
+        "sourceId": "concept.function",
+        "targetId": "concept.domain-range",
+        "relationshipId": "relationship.function-related-domain-range",
+        "version": "math-lumina.seed.v1"
+      },
+      {
+        "semantic": "bridges-to",
+        "sourceId": "concept.function",
+        "targetId": "concept.inverse-function",
+        "relationshipId": "relationship.function-bridge-inverse-function",
+        "version": "math-lumina.seed.v1"
+      },
+      {
+        "semantic": "represents",
+        "sourceId": "asset.function.vending-machine-representation",
+        "targetId": "concept.function",
+        "version": "math-lumina.seed.v1"
+      },
+      {
+        "semantic": "represents",
+        "sourceId": "asset.function.mapping-representation",
+        "targetId": "concept.function",
+        "version": "math-lumina.seed.v1"
+      },
+      {
+        "semantic": "represents",
+        "sourceId": "asset.function.table-representation",
+        "targetId": "concept.function",
+        "version": "math-lumina.seed.v1"
+      },
+      {
+        "semantic": "exemplifies",
+        "sourceId": "asset.function.input-output-example",
+        "targetId": "concept.function",
+        "version": "math-lumina.seed.v1"
+      },
+      {
+        "semantic": "contrasts-with",
+        "sourceId": "asset.function.one-input-two-outputs-non-example",
+        "targetId": "concept.function",
+        "version": "math-lumina.seed.v1"
+      },
+      {
+        "semantic": "exemplifies",
+        "sourceId": "asset.function.temperature-application",
+        "targetId": "concept.function",
+        "version": "math-lumina.seed.v1"
+      }
+    ],
+    "versionReferences": [
+      {
+        "objectId": "concept.function",
+        "version": "math-lumina.seed.v1"
+      },
+      {
+        "objectId": "relationship.function-related-domain-range",
+        "version": "math-lumina.seed.v1"
+      },
+      {
+        "objectId": "relationship.function-bridge-inverse-function",
+        "version": "math-lumina.seed.v1"
+      },
+      {
+        "objectId": "asset.function.vending-machine-representation",
+        "version": "math-lumina.seed.v1"
+      },
+      {
+        "objectId": "asset.function.mapping-representation",
+        "version": "math-lumina.seed.v1"
+      },
+      {
+        "objectId": "asset.function.table-representation",
+        "version": "math-lumina.seed.v1"
+      },
+      {
+        "objectId": "asset.function.input-output-example",
+        "version": "math-lumina.seed.v1"
+      },
+      {
+        "objectId": "asset.function.one-input-two-outputs-non-example",
+        "version": "math-lumina.seed.v1"
+      },
+      {
+        "objectId": "asset.function.input-output-misconception",
+        "version": "math-lumina.seed.v1"
+      },
+      {
+        "objectId": "asset.function.temperature-application",
+        "version": "math-lumina.seed.v1"
+      },
+      {
+        "objectId": "experience.function.intuition-vending-machine",
+        "version": "math-lumina.seed.v1"
+      },
+      {
+        "objectId": "experience.function.low-energy-core-insight",
+        "version": "math-lumina.seed.v1"
+      },
+      {
+        "objectId": "experience.function.practice-input-output",
+        "version": "math-lumina.seed.v1"
+      }
+    ]
+  },
+  "pedagogicalEvaluation": [],
+  "evidenceEvaluation": {
+    "observed": {
+      "hasReflection": true,
+      "practiceOutcomes": [],
+      "hasUnassessedPractice": false,
+      "hasHighQualitativeConfidence": false
+    },
+    "inferred": {
+      "supportsAlternativeRepresentation": true,
+      "supportsRevisit": false,
+      "supportsMoveTowardAnotherLayer": false,
+      "confidencePracticeConflict": false
+    },
+    "newInterpretations": [
+      {
+        "id": "interpretation.evidence.demo.slice4.reflection.reflection-opportunity",
+        "kind": "curiosity-thread",
+        "learnerId": "learner.demo.slice4",
+        "conceptId": "concept.function",
+        "summary": "A learner reflection is available; an optional alternative representation may be considered without treating the reflection as a mastery claim.",
+        "evidenceIds": [
+          "evidence.demo.slice4.reflection"
+        ],
+        "provenance": {
+          "id": "provenance.interpretation.evidence.demo.slice4.reflection.reflection-opportunity",
+          "references": [
+            {
+              "kind": "learner-evidence",
+              "id": "evidence.demo.slice4.reflection"
+            },
+            {
+              "kind": "pedagogical-rule",
+              "id": "pedagogy.evidence-evaluation.v1"
+            }
+          ],
+          "uncertainty": {
+            "level": "medium",
+            "rationale": "The interpretation is a deterministic, qualified reading of observed evidence and is not learner-owned fact."
+          },
+          "rationale": "The evidence-evaluation rule records a qualified adaptation signal without assigning mastery, score, or psychological state."
+        }
+      }
+    ],
+    "relevantExistingInterpretations": []
+  },
+  "candidateOpportunities": [
+    {
+      "kind": "continue",
+      "conceptId": "concept.function",
+      "learningExperienceId": "experience.function.intuition-vending-machine",
+      "pedagogicalLayer": "intuition"
+    },
+    {
+      "kind": "continue",
+      "conceptId": "concept.function",
+      "learningExperienceId": "experience.function.low-energy-core-insight",
+      "pedagogicalLayer": "intuition"
+    },
+    {
+      "kind": "explore-representation",
+      "conceptId": "concept.function",
+      "knowledgeAssetId": "asset.function.vending-machine-representation",
+      "pedagogicalLayer": "intuition"
+    },
+    {
+      "kind": "explore-concept-bridge",
+      "conceptId": "concept.function",
+      "relatedConceptId": "concept.inverse-function",
+      "knowledgeRelationshipId": "relationship.function-bridge-inverse-function"
+    },
+    {
+      "kind": "reflect",
+      "conceptId": "concept.function",
+      "pedagogicalLayer": "intuition"
+    },
+    {
+      "kind": "pause",
+      "conceptId": "concept.function"
+    },
+    {
+      "kind": "allow-learner-choice",
+      "conceptId": "concept.function"
+    }
+  ],
+  "policy": [
+    {
+      "policyId": "policy.command-permission",
+      "policyVersion": "policy.v1",
+      "outcome": "permitted",
+      "rationale": "The trusted actor is permitted to request a learning decision."
+    },
+    {
+      "policyId": "policy.learner-autonomy",
+      "policyVersion": "policy.v1",
+      "outcome": "requires-confirmation",
+      "rationale": "A candidate learning opportunity requires an explicit learner choice before path commitment."
+    }
+  ],
+  "materialLearningDecision": {
+    "type": "material",
+    "status": "offer-available",
+    "conceptIds": [
+      "concept.function"
+    ],
+    "offerCount": 7
+  },
+  "structuredProvenance": {
+    "id": "provenance.command.demo.slice4.guidance",
+    "references": [
+      {
+        "kind": "interaction-command",
+        "id": "command.demo.slice4.guidance"
+      },
+      {
+        "kind": "trusted-actor-context",
+        "id": "actor.demo.slice4"
+      },
+      {
+        "kind": "knowledge",
+        "id": "concept.function"
+      },
+      {
+        "kind": "knowledge",
+        "id": "relationship.function-bridge-inverse-function"
+      },
+      {
+        "kind": "knowledge-version",
+        "id": "concept.function.math-lumina.seed.v1"
+      },
+      {
+        "kind": "knowledge-version",
+        "id": "relationship.function-related-domain-range.math-lumina.seed.v1"
+      },
+      {
+        "kind": "knowledge-version",
+        "id": "relationship.function-bridge-inverse-function.math-lumina.seed.v1"
+      },
+      {
+        "kind": "knowledge-version",
+        "id": "asset.function.vending-machine-representation.math-lumina.seed.v1"
+      },
+      {
+        "kind": "knowledge-version",
+        "id": "asset.function.mapping-representation.math-lumina.seed.v1"
+      },
+      {
+        "kind": "knowledge-version",
+        "id": "asset.function.rule-representation.math-lumina.seed.v1"
+      },
+      {
+        "kind": "knowledge-version",
+        "id": "asset.function.table-representation.math-lumina.seed.v1"
+      },
+      {
+        "kind": "knowledge-version",
+        "id": "asset.function.graph-representation.math-lumina.seed.v1"
+      },
+      {
+        "kind": "knowledge-version",
+        "id": "asset.function.input-output-example.math-lumina.seed.v1"
+      },
+      {
+        "kind": "knowledge-version",
+        "id": "asset.function.one-input-two-outputs-non-example.math-lumina.seed.v1"
+      },
+      {
+        "kind": "knowledge-version",
+        "id": "asset.function.notation-procedure.math-lumina.seed.v1"
+      },
+      {
+        "kind": "knowledge-version",
+        "id": "asset.function.input-output-misconception.math-lumina.seed.v1"
+      },
+      {
+        "kind": "knowledge-version",
+        "id": "asset.function.temperature-application.math-lumina.seed.v1"
+      },
+      {
+        "kind": "knowledge-version",
+        "id": "asset.function.identifying-function-exam-pattern.math-lumina.seed.v1"
+      },
+      {
+        "kind": "knowledge-version",
+        "id": "experience.function.intuition-vending-machine.math-lumina.seed.v1"
+      },
+      {
+        "kind": "knowledge-version",
+        "id": "experience.function.low-energy-core-insight.math-lumina.seed.v1"
+      },
+      {
+        "kind": "knowledge-version",
+        "id": "experience.function.practice-input-output.math-lumina.seed.v1"
+      },
+      {
+        "kind": "knowledge-version",
+        "id": "experience.function.mechanics-notation.math-lumina.seed.v1"
+      },
+      {
+        "kind": "knowledge-version",
+        "id": "experience.function.exam-patterns-identifying-function.math-lumina.seed.v1"
+      },
+      {
+        "kind": "learner-evidence",
+        "id": "evidence.demo.slice4.reflection"
+      },
+      {
+        "kind": "derived-interpretation",
+        "id": "interpretation.evidence.demo.slice4.reflection.reflection-opportunity"
+      },
+      {
+        "kind": "pedagogical-rule",
+        "id": "pedagogy.intuition.v1"
+      },
+      {
+        "kind": "policy",
+        "id": "policy.command-permission"
+      },
+      {
+        "kind": "policy",
+        "id": "policy.learner-autonomy"
+      },
+      {
+        "kind": "delivery-capability",
+        "id": "capability.displayed-text"
+      },
+      {
+        "kind": "delivery-capability",
+        "id": "capability.displayed-notation"
+      },
+      {
+        "kind": "delivery-capability",
+        "id": "capability.typed-input"
+      }
+    ],
+    "uncertainty": {
+      "level": "low",
+      "rationale": "The decision includes relevant observed learner evidence and available knowledge context."
+    },
+    "rationale": "The decision is grounded in resolved mathematical knowledge, pedagogical guidance, observed evidence, and policy evaluation."
+  }
+}

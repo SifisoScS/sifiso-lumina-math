@@ -304,6 +304,10 @@ export interface CandidateLearningOpportunity {
   readonly conceptId: StableId;
   /** A prerequisite or bridge target where the opportunity crosses concepts. */
   readonly relatedConceptId?: StableId;
+  /** Stable grounding reference for representation/example/procedure knowledge assets. */
+  readonly knowledgeAssetId?: StableId;
+  /** Stable grounding reference for prerequisite, related, or bridge graph edges. */
+  readonly knowledgeRelationshipId?: StableId;
   readonly learningExperienceId?: StableId;
   readonly pedagogicalLayer?: PedagogicalLayer;
 }
@@ -313,6 +317,8 @@ export function candidateLearningOpportunity(input: {
   readonly kind: LearningOpportunityKind;
   readonly conceptId: string;
   readonly relatedConceptId?: string;
+  readonly knowledgeAssetId?: string;
+  readonly knowledgeRelationshipId?: string;
   readonly learningExperienceId?: string;
   readonly pedagogicalLayer?: PedagogicalLayer;
 }): CandidateLearningOpportunity {
@@ -323,6 +329,12 @@ export function candidateLearningOpportunity(input: {
     ...(input.relatedConceptId === undefined
       ? {}
       : { relatedConceptId: stableId(input.relatedConceptId, "Learning opportunity related concept identifier") }),
+    ...(input.knowledgeAssetId === undefined
+      ? {}
+      : { knowledgeAssetId: stableId(input.knowledgeAssetId, "Learning opportunity knowledge asset identifier") }),
+    ...(input.knowledgeRelationshipId === undefined
+      ? {}
+      : { knowledgeRelationshipId: stableId(input.knowledgeRelationshipId, "Learning opportunity knowledge relationship identifier") }),
     ...(input.learningExperienceId === undefined
       ? {}
       : { learningExperienceId: stableId(input.learningExperienceId, "Learning opportunity experience identifier") }),

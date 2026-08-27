@@ -47,6 +47,8 @@ function equivalentOpportunity(
   return left.kind === right.kind &&
     left.conceptId === right.conceptId &&
     left.relatedConceptId === right.relatedConceptId &&
+    left.knowledgeAssetId === right.knowledgeAssetId &&
+    left.knowledgeRelationshipId === right.knowledgeRelationshipId &&
     left.learningExperienceId === right.learningExperienceId &&
     left.pedagogicalLayer === right.pedagogicalLayer;
 }

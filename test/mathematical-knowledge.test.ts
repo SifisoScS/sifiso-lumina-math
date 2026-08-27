@@ -13,12 +13,13 @@ test("minimal Functions seed knowledge resolves as a consistent versioned catalo
   assert.equal(functionsSeedKnowledge.domains.length, 1);
   assert.equal(functionsSeedKnowledge.topics.length, 1);
   assert.equal(functionsSeedKnowledge.concepts.length, 3);
-  assert.equal(functionsSeedKnowledge.relationships.length, 2);
-  assert.equal(functionsSeedKnowledge.assets.length, 7);
-  assert.equal(functionsSeedKnowledge.experiences.length, 5);
+  assert.equal(functionsSeedKnowledge.relationships.length, 3);
+  assert.equal(functionsSeedKnowledge.assets.length, 12);
+  assert.equal(functionsSeedKnowledge.experiences.length, 6);
   assert.equal(functionsSeedKnowledge.experiences.some((experience) => experience.intent === "practice"), true);
-  assert.equal(functionsSeedKnowledge.relationships[0]?.kind, "prerequisite");
-  assert.equal(functionsSeedKnowledge.relationships[1]?.kind, "concept-bridge");
+  assert.equal(functionsSeedKnowledge.relationships[0]?.semanticKind, "prerequisite-of");
+  assert.equal(functionsSeedKnowledge.relationships[1]?.semanticKind, "related-to");
+  assert.equal(functionsSeedKnowledge.relationships[2]?.semanticKind, "bridges-to");
 });
 
 test("concept relationships remain explicit, typed, and non-self-referential", () => {
@@ -47,6 +48,8 @@ test("knowledge assets preserve non-judgmental misconception semantics and layer
   });
   assert.deepEqual(asset.supportedLayers, ["intuition", "mechanics"]);
   assert.equal(asset.kind, "misconception");
+  const representation = functionsSeedKnowledge.assets.find((candidate) => candidate.id === "asset.function.table-representation");
+  assert.equal(representation?.representationForm, "numerical");
 });
 
 test("learning experiences use generic delivery requirements rather than presentation components", () => {

@@ -18,6 +18,12 @@ import {
   PedagogicalLayer,
 } from "../domain/mathematical-knowledge.js";
 import { PedagogicalGuidance } from "../domain/pedagogical-model.js";
+import {
+  KnowledgeContextResolution,
+  resolveKnowledgeContext as resolveKnowledgeGraphContext,
+  ResolvedKnowledgeRelation,
+  VersionedKnowledgeReference,
+} from "./knowledge-context.js";
 import { DomainValidationError, readonlyList, StableId } from "../domain/primitives.js";
 
 export type ContextIssueKind =
@@ -56,9 +62,22 @@ export function declaredEvidenceConflict(input: {
 export interface ResolvedKnowledgeContext {
   readonly concept: Concept;
   readonly prerequisiteRelationships: readonly ConceptRelationship[];
+  readonly prerequisiteConcepts: readonly Concept[];
+  readonly relatedRelationships: readonly ConceptRelationship[];
+  readonly relatedConcepts: readonly Concept[];
   readonly outgoingConceptBridges: readonly ConceptRelationship[];
+  readonly bridgeConcepts: readonly Concept[];
   readonly assets: readonly import("../domain/mathematical-knowledge.js").KnowledgeAsset[];
+  readonly representationAssets: readonly import("../domain/mathematical-knowledge.js").KnowledgeAsset[];
+  readonly exampleAssets: readonly import("../domain/mathematical-knowledge.js").KnowledgeAsset[];
+  readonly nonExampleAssets: readonly import("../domain/mathematical-knowledge.js").KnowledgeAsset[];
+  readonly procedureAssets: readonly import("../domain/mathematical-knowledge.js").KnowledgeAsset[];
+  readonly misconceptionAssets: readonly import("../domain/mathematical-knowledge.js").KnowledgeAsset[];
+  readonly applicationAssets: readonly import("../domain/mathematical-knowledge.js").KnowledgeAsset[];
+  readonly examPatternAssets: readonly import("../domain/mathematical-knowledge.js").KnowledgeAsset[];
   readonly experiences: readonly LearningExperience[];
+  readonly semanticRelations: readonly ResolvedKnowledgeRelation[];
+  readonly versionReferences: readonly VersionedKnowledgeReference[];
 }
 
 export interface AssembledLearningContext {
@@ -181,39 +200,38 @@ function resolveKnowledgeContext(
   catalog: KnowledgeCatalog,
   conceptId: StableId,
 ): ResolvedKnowledgeContext | undefined {
-  const concept = catalog.concepts.find((candidate) => candidate.id === conceptId && candidate.status === "published");
-  if (concept === undefined) {
+  const resolved: KnowledgeContextResolution | undefined = resolveKnowledgeGraphContext({ catalog, conceptId });
+  if (resolved === undefined) {
     return undefined;
   }
+  const assets = readonlyList([
+    ...resolved.representationAssets,
+    ...resolved.exampleAssets,
+    ...resolved.nonExampleAssets,
+    ...resolved.procedureAssets,
+    ...resolved.applicationAssets,
+    ...resolved.misconceptionAssets,
+    ...resolved.examPatternAssets,
+  ]);
   return Object.freeze({
-    concept,
-    prerequisiteRelationships: readonlyList(
-      catalog.relationships.filter(
-        (relationship) =>
-          relationship.kind === "prerequisite" &&
-          relationship.targetConceptId === conceptId &&
-          relationship.status === "published",
-      ),
-    ),
-    outgoingConceptBridges: readonlyList(
-      catalog.relationships.filter(
-        (relationship) =>
-          relationship.kind === "concept-bridge" &&
-          relationship.sourceConceptId === conceptId &&
-          relationship.status === "published",
-      ),
-    ),
-    assets: readonlyList(
-      catalog.assets.filter(
-        (asset) => asset.status === "published" && asset.conceptIds.includes(conceptId),
-      ),
-    ),
-    experiences: readonlyList(
-      catalog.experiences.filter(
-        (experience) =>
-          experience.status === "published" && experience.targetConceptIds.includes(conceptId),
-      ),
-    ),
+    concept: resolved.targetConcept,
+    prerequisiteRelationships: resolved.prerequisiteRelationships,
+    prerequisiteConcepts: resolved.prerequisiteConcepts,
+    relatedRelationships: resolved.relatedRelationships,
+    relatedConcepts: resolved.relatedConcepts,
+    outgoingConceptBridges: resolved.bridgeRelationships,
+    bridgeConcepts: resolved.bridgeConcepts,
+    assets,
+    representationAssets: resolved.representationAssets,
+    exampleAssets: resolved.exampleAssets,
+    nonExampleAssets: resolved.nonExampleAssets,
+    procedureAssets: resolved.procedureAssets,
+    misconceptionAssets: resolved.misconceptionAssets,
+    applicationAssets: resolved.applicationAssets,
+    examPatternAssets: resolved.examPatternAssets,
+    experiences: resolved.relevantExperiences,
+    semanticRelations: resolved.semanticRelations,
+    versionReferences: resolved.versionReferences,
   });
 }
 

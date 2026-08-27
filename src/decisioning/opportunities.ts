@@ -6,6 +6,19 @@ import { LearningExperience, PedagogicalLayer } from "../domain/mathematical-kno
 import { AssembledLearningContext } from "./context.js";
 import { EvidenceEvaluation } from "./evidence-evaluation.js";
 
+function pedagogicallyCompatible(
+  experience: LearningExperience,
+  context: AssembledLearningContext,
+): boolean {
+  const selectedLayer = context.selectedPedagogicalLayer;
+  if (selectedLayer !== undefined && !experience.pedagogicalLayers.includes(selectedLayer)) {
+    return false;
+  }
+  return context.pedagogicalGuidance.some((guidance) =>
+    experience.pedagogicalLayers.includes(guidance.layer) && guidance.suitableExperienceIntents.includes(experience.intent),
+  );
+}
+
 function isExperienceCompatible(
   experience: LearningExperience,
   context: AssembledLearningContext,
@@ -13,29 +26,16 @@ function isExperienceCompatible(
   const hasRequiredCapabilities = experience.deliveryRequirements.every((requirement) =>
     context.deliveryCapabilities.capabilities.includes(requirement),
   );
-  if (!hasRequiredCapabilities) {
-    return false;
-  }
-  if (context.selectedPedagogicalLayer === undefined) {
-    return true;
-  }
-  return experience.pedagogicalLayers.includes(context.selectedPedagogicalLayer);
+  return hasRequiredCapabilities && pedagogicallyCompatible(experience, context);
 }
 
-function opportunityId(
-  context: AssembledLearningContext,
-  suffix: string,
-): string {
+function opportunityId(context: AssembledLearningContext, suffix: string): string {
   return `opportunity.${context.command.id}.${suffix}`;
 }
 
 function experienceOpportunityKind(experience: LearningExperience): "continue" | "practise" | "reflect" {
-  if (experience.intent === "practice") {
-    return "practise";
-  }
-  if (experience.intent === "reflection") {
-    return "reflect";
-  }
+  if (experience.intent === "practice") return "practise";
+  if (experience.intent === "reflection") return "reflect";
   return "continue";
 }
 
@@ -44,31 +44,28 @@ function addLayerMovementCandidates(
   candidates: CandidateLearningOpportunity[],
 ): void {
   const currentLayer = context.selectedPedagogicalLayer;
-  const availableLayers = new Set<PedagogicalLayer>();
-  for (const experience of context.knowledge.experiences) {
-    if (!experience.deliveryRequirements.every((requirement) => context.deliveryCapabilities.capabilities.includes(requirement))) {
-      continue;
-    }
+  const capabilityCompatibleExperiences = context.knowledge.experiences.filter((experience) =>
+    experience.deliveryRequirements.every((requirement) => context.deliveryCapabilities.capabilities.includes(requirement)),
+  );
+  for (const experience of capabilityCompatibleExperiences) {
     for (const layer of experience.pedagogicalLayers) {
-      availableLayers.add(layer);
-    }
-  }
-  for (const layer of availableLayers) {
-    if (layer !== currentLayer) {
-      candidates.push(candidateLearningOpportunity({
-        id: opportunityId(context, `move-toward-${layer}`),
-        kind: "move-toward-layer",
-        conceptId: context.knowledge.concept.id,
-        pedagogicalLayer: layer,
-      }));
+      if (layer !== currentLayer) {
+        candidates.push(candidateLearningOpportunity({
+          id: opportunityId(context, `move-toward-${layer}.${experience.id}`),
+          kind: "move-toward-layer",
+          conceptId: context.knowledge.concept.id,
+          learningExperienceId: experience.id,
+          pedagogicalLayer: layer,
+        }));
+      }
     }
   }
 }
 
 /**
- * Produces semantic candidate opportunities only. It makes no recommendation,
- * offer, policy result, learner choice, state commitment, event, provider call,
- * persistence call, or presentation instruction.
+ * Produces semantic candidate opportunities grounded in resolved, published
+ * knowledge. It does not create a decision, learner choice, commitment, event,
+ * provider call, persistence call, graph query, or presentation instruction.
  */
 export function generateCandidateLearningOpportunities(
   context: AssembledLearningContext,
@@ -90,15 +87,17 @@ export function generateCandidateLearningOpportunities(
     }));
   }
 
+  const representationAsset = context.knowledge.representationAssets[0];
   const explicitRepresentationRequest = context.command.kind === "request-alternative-representation";
   const preservesSlice2Baseline = context.command.kind === "explore-concept" || context.command.kind === "submit-learner-choice";
   const reflectionSupportsRepresentation = evidenceEvaluation?.inferred.supportsAlternativeRepresentation ?? false;
-  if (context.knowledge.assets.some((asset) => asset.kind === "representation") &&
+  if (representationAsset !== undefined &&
       (explicitRepresentationRequest || preservesSlice2Baseline || reflectionSupportsRepresentation)) {
     candidates.push(candidateLearningOpportunity({
-      id: opportunityId(context, "explore-representation"),
+      id: opportunityId(context, `explore-representation.${representationAsset.id}`),
       kind: "explore-representation",
       conceptId: context.knowledge.concept.id,
+      knowledgeAssetId: representationAsset.id,
       ...(context.selectedPedagogicalLayer === undefined ? {} : { pedagogicalLayer: context.selectedPedagogicalLayer }),
     }));
   }
@@ -114,19 +113,21 @@ export function generateCandidateLearningOpportunities(
 
   for (const relationship of context.knowledge.prerequisiteRelationships) {
     candidates.push(candidateLearningOpportunity({
-      id: opportunityId(context, `revisit-prerequisite.${relationship.sourceConceptId}`),
+      id: opportunityId(context, `revisit-prerequisite.${relationship.id}`),
       kind: "revisit-prerequisite",
       conceptId: context.knowledge.concept.id,
       relatedConceptId: relationship.sourceConceptId,
+      knowledgeRelationshipId: relationship.id,
     }));
   }
 
   for (const relationship of context.knowledge.outgoingConceptBridges) {
     candidates.push(candidateLearningOpportunity({
-      id: opportunityId(context, `explore-concept-bridge.${relationship.targetConceptId}`),
+      id: opportunityId(context, `explore-concept-bridge.${relationship.id}`),
       kind: "explore-concept-bridge",
       conceptId: context.knowledge.concept.id,
       relatedConceptId: relationship.targetConceptId,
+      knowledgeRelationshipId: relationship.id,
     }));
   }
 

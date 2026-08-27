@@ -9,16 +9,17 @@ import {
 } from "../domain/mathematical-knowledge.js";
 
 /**
- * Minimal seed data only. It proves the headless knowledge model with stable
- * identifiers, relationships, assets, and experiences; it is not a migration
- * of the existing content library or a presentation-oriented content file.
+ * A deliberately small, published Functions graph. It proves stable identity,
+ * typed relationships, version-aware knowledge resolution, representations,
+ * misconception assets, bridges, and all three pedagogical layers. It is not a
+ * curriculum-management system or a full mathematics catalogue.
  */
 export const functionsSeedKnowledge = knowledgeCatalog({
   domains: [
     mathematicsDomain({
       id: "mathematics.school-foundations",
       title: "School Mathematics Foundations",
-      description: "Seed mathematical scope for exploring foundational function concepts.",
+      description: "Seed mathematical scope for foundational function concepts.",
       version: "math-lumina.seed.v1",
     }),
   ],
@@ -50,7 +51,7 @@ export const functionsSeedKnowledge = knowledgeCatalog({
       id: "concept.inverse-function",
       topicId: "topic.functions",
       title: "Inverse Functions",
-      conceptualDescription: "An inverse function reverses the input-output relationship when an inverse exists.",
+      conceptualDescription: "An inverse function reverses an input-output relationship when an inverse exists.",
       version: "math-lumina.seed.v1",
     }),
   ],
@@ -60,7 +61,15 @@ export const functionsSeedKnowledge = knowledgeCatalog({
       kind: "prerequisite",
       sourceConceptId: "concept.function",
       targetConceptId: "concept.domain-range",
-      rationale: "Understanding the input-output role of a function provides useful context for domain and range.",
+      rationale: "The input-output role of a function is useful context before exploring domain and range.",
+      version: "math-lumina.seed.v1",
+    }),
+    conceptRelationship({
+      id: "relationship.function-related-domain-range",
+      kind: "related",
+      sourceConceptId: "concept.function",
+      targetConceptId: "concept.domain-range",
+      rationale: "Domain and range describe the inputs and outputs of a function relationship.",
       version: "math-lumina.seed.v1",
     }),
     conceptRelationship({
@@ -68,7 +77,7 @@ export const functionsSeedKnowledge = knowledgeCatalog({
       kind: "concept-bridge",
       sourceConceptId: "concept.function",
       targetConceptId: "concept.inverse-function",
-      rationale: "The input-output relationship can later be connected to the idea of reversing a relationship.",
+      rationale: "An input-output relationship can later be connected to reversing a relationship.",
       version: "math-lumina.seed.v1",
     }),
   ],
@@ -76,10 +85,51 @@ export const functionsSeedKnowledge = knowledgeCatalog({
     knowledgeAsset({
       id: "asset.function.vending-machine-representation",
       kind: "representation",
+      representationForm: "contextual",
       title: "Function as a vending machine",
-      content: "Imagine a vending machine: an input selection goes in and one output item comes out according to the machine's rule.",
+      content: "An input selection goes into a vending machine and one output item comes out according to the machine's rule.",
       conceptIds: ["concept.function"],
       supportedLayers: ["intuition"],
+      version: "math-lumina.seed.v1",
+    }),
+    knowledgeAsset({
+      id: "asset.function.mapping-representation",
+      kind: "representation",
+      representationForm: "visual",
+      title: "Input-output mapping arrows",
+      content: "A mapping representation can show each input arrow pointing to one output, without requiring a visual component.",
+      conceptIds: ["concept.function"],
+      supportedLayers: ["intuition", "mechanics"],
+      version: "math-lumina.seed.v1",
+    }),
+    knowledgeAsset({
+      id: "asset.function.rule-representation",
+      kind: "representation",
+      representationForm: "symbolic",
+      title: "Function rule notation",
+      content: "The symbolic representation f(x) = 2x describes an output rule for each input x.",
+      conceptIds: ["concept.function"],
+      supportedLayers: ["mechanics"],
+      version: "math-lumina.seed.v1",
+    }),
+    knowledgeAsset({
+      id: "asset.function.table-representation",
+      kind: "representation",
+      representationForm: "numerical",
+      title: "Input-output value table",
+      content: "A numerical table can pair inputs 1, 2, 3 with outputs 2, 4, 6 for the rule f(x) = 2x.",
+      conceptIds: ["concept.function"],
+      supportedLayers: ["intuition", "mechanics"],
+      version: "math-lumina.seed.v1",
+    }),
+    knowledgeAsset({
+      id: "asset.function.graph-representation",
+      kind: "representation",
+      representationForm: "graphical",
+      title: "Graphical function representation",
+      content: "A graph can represent how x-values and y-values are paired for a rule, independently of any chart component.",
+      conceptIds: ["concept.function"],
+      supportedLayers: ["mechanics", "exam-patterns"],
       version: "math-lumina.seed.v1",
     }),
     knowledgeAsset({
@@ -128,6 +178,15 @@ export const functionsSeedKnowledge = knowledgeCatalog({
       version: "math-lumina.seed.v1",
     }),
     knowledgeAsset({
+      id: "asset.function.identifying-function-exam-pattern",
+      kind: "exam-pattern",
+      title: "Recognising a function-definition question",
+      content: "When deciding whether a relation is a function, examine whether any input is paired with more than one output.",
+      conceptIds: ["concept.function"],
+      supportedLayers: ["exam-patterns"],
+      version: "math-lumina.seed.v1",
+    }),
+    knowledgeAsset({
       id: "asset.function.domain-range-exam-pattern",
       kind: "exam-pattern",
       title: "Recognising a domain-and-range question",
@@ -143,10 +202,7 @@ export const functionsSeedKnowledge = knowledgeCatalog({
       title: "Function intuition through an input-output machine",
       intent: "intuition",
       targetConceptIds: ["concept.function"],
-      knowledgeAssetIds: [
-        "asset.function.vending-machine-representation",
-        "asset.function.input-output-example",
-      ],
+      knowledgeAssetIds: ["asset.function.vending-machine-representation", "asset.function.input-output-example"],
       pedagogicalLayers: ["intuition"],
       deliveryRequirements: ["displayed-text"],
       version: "math-lumina.seed.v1",
@@ -177,11 +233,22 @@ export const functionsSeedKnowledge = knowledgeCatalog({
       intent: "mechanics",
       targetConceptIds: ["concept.function"],
       knowledgeAssetIds: [
+        "asset.function.rule-representation",
         "asset.function.input-output-example",
         "asset.function.notation-procedure",
         "asset.function.one-input-two-outputs-non-example",
       ],
       pedagogicalLayers: ["mechanics"],
+      deliveryRequirements: ["displayed-text", "displayed-notation"],
+      version: "math-lumina.seed.v1",
+    }),
+    learningExperience({
+      id: "experience.function.exam-patterns-identifying-function",
+      title: "Exam pattern: identify a function relation",
+      intent: "exam-patterns",
+      targetConceptIds: ["concept.function"],
+      knowledgeAssetIds: ["asset.function.identifying-function-exam-pattern", "asset.function.one-input-two-outputs-non-example"],
+      pedagogicalLayers: ["exam-patterns"],
       deliveryRequirements: ["displayed-text", "displayed-notation"],
       version: "math-lumina.seed.v1",
     }),
