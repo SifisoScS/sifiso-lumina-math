@@ -1,0 +1,456 @@
+import {
+  LearnerChoice,
+  LearnerReflection,
+  LearningContextReport,
+  PracticeAttempt,
+  ConfidenceReport,
+} from "../domain/learner-record.js";
+import { PedagogicalLayer } from "../domain/mathematical-knowledge.js";
+import { DecisionProvenance } from "../domain/provenance.js";
+import {
+  commandReference,
+  CommandReference,
+  DomainValidationError,
+  IsoTimestamp,
+  learnerReference,
+  LearnerReference,
+  policyVersionRef,
+  PolicyVersionRef,
+  readonlyList,
+  requiredText,
+  StableId,
+  stableId,
+  uniqueStableIds,
+} from "../domain/primitives.js";
+
+export type Permission =
+  | "read-learner-record"
+  | "submit-learner-evidence"
+  | "make-learner-choice"
+  | "request-learning-decision";
+
+/**
+ * Identity technology is intentionally outside the core. This value object is
+ * only the trusted authorization/consent context handed to the engine.
+ */
+export interface TrustedActorContext {
+  readonly actorId: StableId;
+  readonly learnerScope: readonly LearnerReference[];
+  readonly permissions: readonly Permission[];
+  readonly consentReferences: readonly StableId[];
+}
+
+export function trustedActorContext(input: {
+  readonly actorId: string;
+  readonly learnerScope: readonly string[];
+  readonly permissions: readonly Permission[];
+  readonly consentReferences?: readonly string[];
+}): TrustedActorContext {
+  if (input.learnerScope.length === 0) {
+    throw new DomainValidationError("Trusted actor context must provide at least one learner scope reference.");
+  }
+  if (input.permissions.length === 0) {
+    throw new DomainValidationError("Trusted actor context must provide at least one permission.");
+  }
+  const learnerScope = uniqueStableIds(
+    input.learnerScope.map((id) => learnerReference(id)),
+    "Trusted actor learner scope",
+  ) as readonly LearnerReference[];
+  const permissionSet = new Set(input.permissions);
+  if (permissionSet.size !== input.permissions.length) {
+    throw new DomainValidationError("Trusted actor permissions must not contain duplicates.");
+  }
+  return Object.freeze({
+    actorId: stableId(input.actorId, "Trusted actor identifier"),
+    learnerScope,
+    permissions: readonlyList(input.permissions),
+    consentReferences: uniqueStableIds(
+      (input.consentReferences ?? []).map((id) => stableId(id, "Consent reference")),
+      "Consent references",
+    ),
+  });
+}
+
+export type DeliveryCapability =
+  | "spoken-output"
+  | "displayed-text"
+  | "displayed-notation"
+  | "visual-representation"
+  | "typed-input"
+  | "spoken-input";
+
+/**
+ * This profile deliberately contains generic capabilities, not a browser,
+ * client framework, application route, UI component, or device identity.
+ */
+export interface DeliveryCapabilityProfile {
+  readonly capabilities: readonly DeliveryCapability[];
+}
+
+export function deliveryCapabilityProfile(
+  capabilities: readonly DeliveryCapability[],
+): DeliveryCapabilityProfile {
+  if (capabilities.length === 0) {
+    throw new DomainValidationError("Delivery capability profile must include at least one capability.");
+  }
+  if (new Set(capabilities).size !== capabilities.length) {
+    throw new DomainValidationError("Delivery capability profile must not contain duplicates.");
+  }
+  return Object.freeze({ capabilities: readonlyList(capabilities) });
+}
+
+interface CommandBase {
+  readonly id: StableId;
+  readonly commandReference: CommandReference;
+  readonly learnerId: LearnerReference;
+  readonly issuedAt: IsoTimestamp;
+}
+
+export interface ExploreConceptCommand extends CommandBase {
+  readonly kind: "explore-concept";
+  readonly conceptId: StableId;
+  readonly pedagogicalLayer?: PedagogicalLayer;
+}
+
+export interface RequestAlternativeRepresentationCommand extends CommandBase {
+  readonly kind: "request-alternative-representation";
+  readonly conceptId: StableId;
+}
+
+export interface RequestLearningGuidanceCommand extends CommandBase {
+  readonly kind: "request-learning-guidance";
+  readonly conceptId: StableId;
+}
+
+export interface SubmitReflectionCommand extends CommandBase {
+  readonly kind: "submit-reflection";
+  readonly reflection: LearnerReflection;
+}
+
+export interface SubmitPracticeAttemptCommand extends CommandBase {
+  readonly kind: "submit-practice-attempt";
+  readonly practiceAttempt: PracticeAttempt;
+}
+
+export interface SubmitConfidenceReportCommand extends CommandBase {
+  readonly kind: "submit-confidence-report";
+  readonly confidenceReport: ConfidenceReport;
+}
+
+export interface SubmitLearningContextCommand extends CommandBase {
+  readonly kind: "submit-learning-context";
+  readonly learningContextReport: LearningContextReport;
+}
+
+export interface SubmitLearnerChoiceCommand extends CommandBase {
+  readonly kind: "submit-learner-choice";
+  readonly learnerChoice: LearnerChoice;
+}
+
+export type InteractionCommand =
+  | ExploreConceptCommand
+  | RequestAlternativeRepresentationCommand
+  | RequestLearningGuidanceCommand
+  | SubmitReflectionCommand
+  | SubmitPracticeAttemptCommand
+  | SubmitConfidenceReportCommand
+  | SubmitLearningContextCommand
+  | SubmitLearnerChoiceCommand;
+
+function baseCommand(input: {
+  readonly id: string;
+  readonly commandReference: string;
+  readonly learnerId: string;
+  readonly issuedAt: IsoTimestamp;
+}): CommandBase {
+  return Object.freeze({
+    id: stableId(input.id, "Interaction command identifier"),
+    commandReference: commandReference(input.commandReference),
+    learnerId: learnerReference(input.learnerId),
+    issuedAt: input.issuedAt,
+  });
+}
+
+export function exploreConceptCommand(input: {
+  readonly id: string;
+  readonly commandReference: string;
+  readonly learnerId: string;
+  readonly issuedAt: IsoTimestamp;
+  readonly conceptId: string;
+  readonly pedagogicalLayer?: PedagogicalLayer;
+}): ExploreConceptCommand {
+  return Object.freeze({
+    ...baseCommand(input),
+    kind: "explore-concept",
+    conceptId: stableId(input.conceptId, "Explored concept identifier"),
+    ...(input.pedagogicalLayer === undefined ? {} : { pedagogicalLayer: input.pedagogicalLayer }),
+  });
+}
+
+export function requestAlternativeRepresentationCommand(input: {
+  readonly id: string;
+  readonly commandReference: string;
+  readonly learnerId: string;
+  readonly issuedAt: IsoTimestamp;
+  readonly conceptId: string;
+}): RequestAlternativeRepresentationCommand {
+  return Object.freeze({
+    ...baseCommand(input),
+    kind: "request-alternative-representation",
+    conceptId: stableId(input.conceptId, "Alternative representation concept identifier"),
+  });
+}
+
+export function requestLearningGuidanceCommand(input: {
+  readonly id: string;
+  readonly commandReference: string;
+  readonly learnerId: string;
+  readonly issuedAt: IsoTimestamp;
+  readonly conceptId: string;
+}): RequestLearningGuidanceCommand {
+  return Object.freeze({
+    ...baseCommand(input),
+    kind: "request-learning-guidance",
+    conceptId: stableId(input.conceptId, "Learning guidance concept identifier"),
+  });
+}
+
+function evidenceCommand<T extends LearnerReflection | PracticeAttempt | ConfidenceReport | LearningContextReport | LearnerChoice>(
+  input: {
+    readonly id: string;
+    readonly commandReference: string;
+    readonly learnerId: string;
+    readonly issuedAt: IsoTimestamp;
+    readonly evidence: T;
+  },
+): CommandBase & { readonly evidence: T } {
+  const base = baseCommand(input);
+  if (base.learnerId !== input.evidence.learnerId) {
+    throw new DomainValidationError("Interaction command learner must match submitted learner-owned evidence.");
+  }
+  return Object.freeze({ ...base, evidence: input.evidence });
+}
+
+export function submitReflectionCommand(input: {
+  readonly id: string;
+  readonly commandReference: string;
+  readonly learnerId: string;
+  readonly issuedAt: IsoTimestamp;
+  readonly reflection: LearnerReflection;
+}): SubmitReflectionCommand {
+  const command = evidenceCommand({ ...input, evidence: input.reflection });
+  return Object.freeze({ ...command, kind: "submit-reflection", reflection: input.reflection });
+}
+
+export function submitPracticeAttemptCommand(input: {
+  readonly id: string;
+  readonly commandReference: string;
+  readonly learnerId: string;
+  readonly issuedAt: IsoTimestamp;
+  readonly practiceAttempt: PracticeAttempt;
+}): SubmitPracticeAttemptCommand {
+  const command = evidenceCommand({ ...input, evidence: input.practiceAttempt });
+  return Object.freeze({ ...command, kind: "submit-practice-attempt", practiceAttempt: input.practiceAttempt });
+}
+
+export function submitConfidenceReportCommand(input: {
+  readonly id: string;
+  readonly commandReference: string;
+  readonly learnerId: string;
+  readonly issuedAt: IsoTimestamp;
+  readonly confidenceReport: ConfidenceReport;
+}): SubmitConfidenceReportCommand {
+  const command = evidenceCommand({ ...input, evidence: input.confidenceReport });
+  return Object.freeze({ ...command, kind: "submit-confidence-report", confidenceReport: input.confidenceReport });
+}
+
+export function submitLearningContextCommand(input: {
+  readonly id: string;
+  readonly commandReference: string;
+  readonly learnerId: string;
+  readonly issuedAt: IsoTimestamp;
+  readonly learningContextReport: LearningContextReport;
+}): SubmitLearningContextCommand {
+  const command = evidenceCommand({ ...input, evidence: input.learningContextReport });
+  return Object.freeze({ ...command, kind: "submit-learning-context", learningContextReport: input.learningContextReport });
+}
+
+export function submitLearnerChoiceCommand(input: {
+  readonly id: string;
+  readonly commandReference: string;
+  readonly learnerId: string;
+  readonly issuedAt: IsoTimestamp;
+  readonly learnerChoice: LearnerChoice;
+}): SubmitLearnerChoiceCommand {
+  const command = evidenceCommand({ ...input, evidence: input.learnerChoice });
+  return Object.freeze({ ...command, kind: "submit-learner-choice", learnerChoice: input.learnerChoice });
+}
+
+export type LearningOpportunityKind =
+  | "continue"
+  | "practise"
+  | "reflect"
+  | "revisit"
+  | "explore-representation"
+  | "revisit-prerequisite"
+  | "explore-concept-bridge"
+  | "move-toward-layer"
+  | "pause"
+  | "allow-learner-choice";
+
+export interface CandidateLearningOpportunity {
+  readonly id: StableId;
+  readonly kind: LearningOpportunityKind;
+  readonly conceptId: StableId;
+  readonly learningExperienceId?: StableId;
+  readonly pedagogicalLayer?: PedagogicalLayer;
+}
+
+export function candidateLearningOpportunity(input: {
+  readonly id: string;
+  readonly kind: LearningOpportunityKind;
+  readonly conceptId: string;
+  readonly learningExperienceId?: string;
+  readonly pedagogicalLayer?: PedagogicalLayer;
+}): CandidateLearningOpportunity {
+  return Object.freeze({
+    id: stableId(input.id, "Learning opportunity identifier"),
+    kind: input.kind,
+    conceptId: stableId(input.conceptId, "Learning opportunity concept identifier"),
+    ...(input.learningExperienceId === undefined
+      ? {}
+      : { learningExperienceId: stableId(input.learningExperienceId, "Learning opportunity experience identifier") }),
+    ...(input.pedagogicalLayer === undefined ? {} : { pedagogicalLayer: input.pedagogicalLayer }),
+  });
+}
+
+export interface LearningRecommendation {
+  readonly id: StableId;
+  readonly opportunity: CandidateLearningOpportunity;
+  readonly rationale: string;
+}
+
+export interface LearningOffer {
+  readonly id: StableId;
+  readonly opportunity: CandidateLearningOpportunity;
+  readonly requiresLearnerChoice: boolean;
+  readonly status: "available";
+}
+
+export function learningRecommendation(input: {
+  readonly id: string;
+  readonly opportunity: CandidateLearningOpportunity;
+  readonly rationale: string;
+}): LearningRecommendation {
+  return Object.freeze({
+    id: stableId(input.id, "Learning recommendation identifier"),
+    opportunity: input.opportunity,
+    rationale: requiredText(input.rationale, "Learning recommendation rationale"),
+  });
+}
+
+export function learningOffer(input: {
+  readonly id: string;
+  readonly opportunity: CandidateLearningOpportunity;
+  readonly requiresLearnerChoice: boolean;
+}): LearningOffer {
+  return Object.freeze({
+    id: stableId(input.id, "Learning offer identifier"),
+    opportunity: input.opportunity,
+    requiresLearnerChoice: input.requiresLearnerChoice,
+    status: "available",
+  });
+}
+
+export type PolicyOutcome = "permitted" | "constrained" | "prohibited" | "requires-confirmation";
+
+export interface PolicyEvaluation {
+  readonly policyId: StableId;
+  readonly policyVersion: PolicyVersionRef;
+  readonly outcome: PolicyOutcome;
+  readonly rationale: string;
+}
+
+export function policyEvaluation(input: {
+  readonly policyId: string;
+  readonly policyVersion: string;
+  readonly outcome: PolicyOutcome;
+  readonly rationale: string;
+}): PolicyEvaluation {
+  return Object.freeze({
+    policyId: stableId(input.policyId, "Policy identifier"),
+    policyVersion: policyVersionRef(input.policyVersion),
+    outcome: input.outcome,
+    rationale: requiredText(input.rationale, "Policy evaluation rationale"),
+  });
+}
+
+export type LearningDecisionStatus = "offer-available" | "incomplete-context" | "constrained" | "declined";
+
+/**
+ * LearningDecision is authoritative about what the engine may offer or
+ * constrain in an evaluated context. It is not a learner choice or state
+ * commitment and contains no presentation-specific instructions.
+ */
+export interface LearningDecision {
+  readonly id: StableId;
+  readonly learnerId: LearnerReference;
+  readonly status: LearningDecisionStatus;
+  readonly conceptIds: readonly StableId[];
+  readonly opportunities: readonly CandidateLearningOpportunity[];
+  readonly recommendations: readonly LearningRecommendation[];
+  readonly offers: readonly LearningOffer[];
+  readonly policyEvaluations: readonly PolicyEvaluation[];
+  readonly provenance: DecisionProvenance;
+}
+
+export function learningDecision(input: {
+  readonly id: string;
+  readonly learnerId: string;
+  readonly status: LearningDecisionStatus;
+  readonly conceptIds: readonly string[];
+  readonly opportunities: readonly CandidateLearningOpportunity[];
+  readonly recommendations?: readonly LearningRecommendation[];
+  readonly offers?: readonly LearningOffer[];
+  readonly policyEvaluations: readonly PolicyEvaluation[];
+  readonly provenance: DecisionProvenance;
+}): LearningDecision {
+  if (input.conceptIds.length === 0) {
+    throw new DomainValidationError("Learning decision must reference at least one concept.");
+  }
+  const offers = input.offers ?? [];
+  const recommendations = input.recommendations ?? [];
+  if (input.status === "offer-available" && offers.length === 0) {
+    throw new DomainValidationError("An offer-available learning decision must include at least one offer.");
+  }
+  if (input.policyEvaluations.some((evaluation) => evaluation.outcome === "prohibited") && offers.length > 0) {
+    throw new DomainValidationError("A decision with a prohibited policy evaluation cannot contain available offers.");
+  }
+
+  return Object.freeze({
+    id: stableId(input.id, "Learning decision identifier"),
+    learnerId: learnerReference(input.learnerId),
+    status: input.status,
+    conceptIds: uniqueStableIds(
+      input.conceptIds.map((id) => stableId(id, "Learning decision concept identifier")),
+      "Learning decision concept identifiers",
+    ),
+    opportunities: readonlyList(input.opportunities),
+    recommendations: readonlyList(recommendations),
+    offers: readonlyList(offers),
+    policyEvaluations: readonlyList(input.policyEvaluations),
+    provenance: input.provenance,
+  });
+}
+
+/**
+ * An edge response is deliberately a thin representation of the domain decision.
+ * It has no URL, route, JSX, HTML, CSS, screen, or component fields.
+ */
+export interface LearningInteractionResponse {
+  readonly decision: LearningDecision;
+}
+
+export function learningInteractionResponse(decision: LearningDecision): LearningInteractionResponse {
+  return Object.freeze({ decision });
+}
