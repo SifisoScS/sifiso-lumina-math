@@ -3,6 +3,7 @@ import {
   LearningDecision,
   LearningInteractionResponse,
   learningInteractionResponse,
+  policyEvaluation,
 } from "../contracts/core-contracts.js";
 import { DerivedInterpretation, HistoricalEvent } from "../domain/learner-record.js";
 import { IsoTimestamp, readonlyList } from "../domain/primitives.js";
@@ -16,9 +17,13 @@ import {
   constructSafeNonMaterialDecision,
 } from "./decision-construction.js";
 import { EvidenceEvaluation, evaluateAccumulatedEvidence } from "./evidence-evaluation.js";
-import { generateCandidateLearningOpportunities } from "./opportunities.js";
+import {
+  evaluateContextDeliveryCompatibility,
+  generateCandidateLearningOpportunities,
+} from "./opportunities.js";
 import { evaluateDecisionPolicy, DecisionPolicyResult } from "./policy-evaluation.js";
 import { StateTransitionResult, validateAndPlanStateTransition } from "./state-transitions.js";
+import { DeliveryFilteringResult } from "./delivery-compatibility.js";
 
 export interface EngineExecutionInput extends ContextAssemblyInput {
   /** A supplied time reference keeps the deterministic engine independent of a clock implementation. */
@@ -34,6 +39,7 @@ export interface EngineDiagnostics {
   readonly policyEvaluations: DecisionPolicyResult["evaluations"];
   readonly reasoningInvolved: false;
   readonly plannedEventKinds: readonly string[];
+  readonly deliveryCompatibility?: DeliveryFilteringResult;
   /** A qualified deterministic reading of observations, distinct from learner-owned evidence. */
   readonly evidenceEvaluation?: EvidenceEvaluation;
 }
@@ -101,6 +107,31 @@ function newResult(input: {
   });
 }
 
+function applyDeliveryConstraint(
+  policy: DecisionPolicyResult,
+  delivery: DeliveryFilteringResult,
+): DecisionPolicyResult {
+  if (!delivery.noCompatibleExperience) {
+    return policy;
+  }
+  return Object.freeze({
+    permitted: false,
+    evaluations: readonlyList([
+      ...policy.evaluations,
+      policyEvaluation({
+        policyId: "policy.delivery-capability",
+        policyVersion: "policy.v1",
+        outcome: "constrained",
+        rationale: "No pedagogically relevant LearningExperience can be delivered with the declared capability context.",
+      }),
+    ]),
+    candidates: readonlyList(policy.candidates.map((candidate) => Object.freeze({
+      ...candidate,
+      permitted: false,
+    }))),
+  });
+}
+
 function priorOutcomeFor(
   command: InteractionCommand,
   outcomes: readonly InteractionOutcomeRecord[],
@@ -158,9 +189,13 @@ export function executeDeterministicLearningInteraction(
   }
 
   const evidenceEvaluation = evaluateAccumulatedEvidence(assembly.context);
-  const candidates = generateCandidateLearningOpportunities(assembly.context, evidenceEvaluation);
-  const policy = evaluateDecisionPolicy(assembly.context, candidates);
-  const decision = constructMaterialDecision(assembly.context, policy, evidenceEvaluation);
+  const deliveryCompatibility = evaluateContextDeliveryCompatibility(assembly.context);
+  const candidates = generateCandidateLearningOpportunities(assembly.context, evidenceEvaluation, deliveryCompatibility);
+  const policy = applyDeliveryConstraint(
+    evaluateDecisionPolicy(assembly.context, candidates),
+    deliveryCompatibility,
+  );
+  const decision = constructMaterialDecision(assembly.context, policy, evidenceEvaluation, deliveryCompatibility);
   const transition = validateAndPlanStateTransition({
     command: assembly.context.command,
     decision,
@@ -182,6 +217,7 @@ export function executeDeterministicLearningInteraction(
     policyEvaluations: policy.evaluations,
     reasoningInvolved: false,
     plannedEventKinds: readonlyList(events.map((event) => event.kind)),
+    deliveryCompatibility,
     evidenceEvaluation,
   });
   return newResult({

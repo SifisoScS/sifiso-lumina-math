@@ -14,8 +14,8 @@ test("minimal Functions seed knowledge resolves as a consistent versioned catalo
   assert.equal(functionsSeedKnowledge.topics.length, 1);
   assert.equal(functionsSeedKnowledge.concepts.length, 3);
   assert.equal(functionsSeedKnowledge.relationships.length, 3);
-  assert.equal(functionsSeedKnowledge.assets.length, 12);
-  assert.equal(functionsSeedKnowledge.experiences.length, 6);
+  assert.equal(functionsSeedKnowledge.assets.length, 13);
+  assert.equal(functionsSeedKnowledge.experiences.length, 7);
   assert.equal(functionsSeedKnowledge.experiences.some((experience) => experience.intent === "practice"), true);
   assert.equal(functionsSeedKnowledge.relationships[0]?.semanticKind, "prerequisite-of");
   assert.equal(functionsSeedKnowledge.relationships[1]?.semanticKind, "related-to");

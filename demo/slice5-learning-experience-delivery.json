@@ -1,0 +1,122 @@
+{
+  "engineBoundary": {
+    "headless": true,
+    "clientCapabilityDetection": false,
+    "persistenceImplemented": false,
+    "externalAssessmentInvoked": false,
+    "providerInvoked": false
+  },
+  "scenarioACompatibleDelivery": {
+    "declaredDeliveryCapabilities": [
+      "displayed-text",
+      "displayed-notation"
+    ],
+    "deliveryCompatibility": {
+      "compatibleExperiences": [
+        {
+          "id": "experience.function.mechanics-notation",
+          "version": "math-lumina.seed.v1",
+          "requiredCapabilities": [
+            "displayed-text",
+            "displayed-notation"
+          ]
+        }
+      ],
+      "incompatibleExperiences": [],
+      "noCompatibleExperience": false
+    },
+    "materialLearningDecision": {
+      "type": "material",
+      "status": "offer-available",
+      "conceptIds": [
+        "concept.function"
+      ],
+      "offers": [
+        {
+          "id": "offer.opportunity.command.demo.slice5.compatible.continue.experience.function.mechanics-notation"
+        },
+        {
+          "id": "offer.opportunity.command.demo.slice5.compatible.explore-concept-bridge.relationship.function-bridge-inverse-function"
+        },
+        {
+          "id": "offer.opportunity.command.demo.slice5.compatible.reflect.experience.function.mechanics-notation"
+        },
+        {
+          "id": "offer.opportunity.command.demo.slice5.compatible.pause"
+        },
+        {
+          "id": "offer.opportunity.command.demo.slice5.compatible.allow-learner-choice"
+        }
+      ],
+      "experienceOpportunities": [
+        {
+          "id": "opportunity.command.demo.slice5.compatible.continue.experience.function.mechanics-notation",
+          "kind": "continue",
+          "learningExperienceId": "experience.function.mechanics-notation",
+          "pedagogicalLayer": "mechanics"
+        },
+        {
+          "id": "opportunity.command.demo.slice5.compatible.reflect.experience.function.mechanics-notation",
+          "kind": "reflect",
+          "learningExperienceId": "experience.function.mechanics-notation",
+          "pedagogicalLayer": "mechanics"
+        }
+      ]
+    },
+    "stateEffects": {
+      "transitionKind": "not-committed",
+      "commitmentCreated": false,
+      "eventCount": 0,
+      "learnerEvidenceFabricated": false
+    },
+    "structuredProvenance": [
+      {
+        "kind": "learning-experience",
+        "id": "experience.function.mechanics-notation"
+      },
+      {
+        "kind": "learning-experience-version",
+        "id": "experience.function.mechanics-notation.math-lumina.seed.v1"
+      }
+    ]
+  },
+  "scenarioBIncompatibleDelivery": {
+    "declaredDeliveryCapabilities": [
+      "displayed-text"
+    ],
+    "deliveryCompatibility": {
+      "compatibleExperiences": [],
+      "incompatibleExperiences": [
+        {
+          "id": "experience.function.mechanics-notation",
+          "version": "math-lumina.seed.v1",
+          "missingCapabilities": [
+            "displayed-notation"
+          ]
+        }
+      ],
+      "noCompatibleExperience": true
+    },
+    "materialLearningDecision": {
+      "type": "material",
+      "status": "declined",
+      "conceptIds": [
+        "concept.function"
+      ],
+      "offers": [],
+      "experienceOpportunities": []
+    },
+    "stateEffects": {
+      "transitionKind": "not-committed",
+      "commitmentCreated": false,
+      "eventCount": 0,
+      "learnerEvidenceFabricated": false
+    },
+    "structuredProvenance": [
+      {
+        "kind": "delivery-compatibility",
+        "id": "experience.function.mechanics-notation.math-lumina.seed.v1.unavailable"
+      }
+    ]
+  }
+}

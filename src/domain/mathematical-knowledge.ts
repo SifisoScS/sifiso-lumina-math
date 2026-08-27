@@ -75,6 +75,29 @@ export type DeliveryRequirement =
   | "typed-input"
   | "spoken-input";
 
+/** Learner actions an experience may semantically require, independent of client widgets. */
+export type LearnerInteractionRequirement =
+  | "reflection"
+  | "practice-input"
+  | "confidence-report"
+  | "learner-choice"
+  | "interaction-evidence";
+
+/** Evidence an experience may be capable of producing when the learner supplies it. */
+export type ExperienceEvidenceType =
+  | "reflection"
+  | "practice-attempt"
+  | "confidence-report"
+  | "learner-choice"
+  | "interaction-evidence";
+
+export interface ExperienceCompletionSemantics {
+  /** Delivery alone is never treated as learning completion. */
+  readonly deliveryAloneIsCompletion: false;
+  readonly requiresLearnerInteraction: boolean;
+  readonly evidenceRequiredForCompletion: boolean;
+}
+
 export interface MathematicsDomain {
   readonly id: StableId;
   readonly title: string;
@@ -146,6 +169,9 @@ export interface LearningExperience {
   readonly knowledgeAssetIds: readonly StableId[];
   readonly pedagogicalLayers: readonly PedagogicalLayer[];
   readonly deliveryRequirements: readonly DeliveryRequirement[];
+  readonly learnerInteractionRequirements: readonly LearnerInteractionRequirement[];
+  readonly expectedEvidenceTypes: readonly ExperienceEvidenceType[];
+  readonly completionSemantics: ExperienceCompletionSemantics;
   readonly version: VersionRef;
   readonly status: "published" | "retired";
 }
@@ -178,6 +204,24 @@ function distinctRequirements(
     throw new DomainValidationError("Delivery requirements must not contain duplicates.");
   }
   return readonlyList(requirements);
+}
+
+function distinctInteractionRequirements(
+  requirements: readonly LearnerInteractionRequirement[],
+): readonly LearnerInteractionRequirement[] {
+  if (new Set(requirements).size !== requirements.length) {
+    throw new DomainValidationError("Learning experience interaction requirements must not contain duplicates.");
+  }
+  return readonlyList(requirements);
+}
+
+function distinctExpectedEvidenceTypes(
+  types: readonly ExperienceEvidenceType[],
+): readonly ExperienceEvidenceType[] {
+  if (new Set(types).size !== types.length) {
+    throw new DomainValidationError("Learning experience expected evidence types must not contain duplicates.");
+  }
+  return readonlyList(types);
 }
 
 export function mathematicsDomain(input: {
@@ -303,6 +347,9 @@ export function learningExperience(input: {
   readonly knowledgeAssetIds: readonly string[];
   readonly pedagogicalLayers: readonly PedagogicalLayer[];
   readonly deliveryRequirements?: readonly DeliveryRequirement[];
+  readonly learnerInteractionRequirements?: readonly LearnerInteractionRequirement[];
+  readonly expectedEvidenceTypes?: readonly ExperienceEvidenceType[];
+  readonly completionSemantics?: Omit<ExperienceCompletionSemantics, "deliveryAloneIsCompletion">;
   readonly version: string;
   readonly status?: "published" | "retired";
 }): LearningExperience {
@@ -311,6 +358,19 @@ export function learningExperience(input: {
   }
   if (input.knowledgeAssetIds.length === 0) {
     throw new DomainValidationError("A learning experience must reference at least one knowledge asset.");
+  }
+  const learnerInteractionRequirements = distinctInteractionRequirements(input.learnerInteractionRequirements ?? []);
+  const expectedEvidenceTypes = distinctExpectedEvidenceTypes(input.expectedEvidenceTypes ?? []);
+  const completionSemantics = Object.freeze({
+    deliveryAloneIsCompletion: false as const,
+    requiresLearnerInteraction: input.completionSemantics?.requiresLearnerInteraction ?? learnerInteractionRequirements.length > 0,
+    evidenceRequiredForCompletion: input.completionSemantics?.evidenceRequiredForCompletion ?? expectedEvidenceTypes.length > 0,
+  });
+  if (completionSemantics.evidenceRequiredForCompletion && expectedEvidenceTypes.length === 0) {
+    throw new DomainValidationError("An evidence-bearing completion must declare at least one expected evidence type.");
+  }
+  if (completionSemantics.requiresLearnerInteraction && learnerInteractionRequirements.length === 0) {
+    throw new DomainValidationError("A learner-interaction completion must declare at least one interaction requirement.");
   }
   return Object.freeze({
     id: stableId(input.id, "Learning experience identifier"),
@@ -326,6 +386,9 @@ export function learningExperience(input: {
     ),
     pedagogicalLayers: distinctLayers(input.pedagogicalLayers, "Learning experience pedagogical layers"),
     deliveryRequirements: distinctRequirements(input.deliveryRequirements ?? []),
+    learnerInteractionRequirements,
+    expectedEvidenceTypes,
+    completionSemantics,
     version: versionRef(input.version),
     status: publishedByDefault(input.status),
   });

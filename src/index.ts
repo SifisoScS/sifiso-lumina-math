@@ -10,6 +10,7 @@ export * from "./contracts/assessment-boundary.js";
 export * from "./seed/functions-seed.js";
 export * from "./decisioning/knowledge-context.js";
 export * from "./decisioning/context.js";
+export * from "./decisioning/delivery-compatibility.js";
 export * from "./decisioning/opportunities.js";
 export * from "./decisioning/policy-evaluation.js";
 export * from "./decisioning/decision-construction.js";

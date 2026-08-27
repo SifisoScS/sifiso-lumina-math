@@ -3,6 +3,10 @@ import {
   CandidateLearningOpportunity,
 } from "../contracts/core-contracts.js";
 import { LearningExperience, PedagogicalLayer } from "../domain/mathematical-knowledge.js";
+import {
+  DeliveryFilteringResult,
+  filterExperiencesForDelivery,
+} from "./delivery-compatibility.js";
 import { AssembledLearningContext } from "./context.js";
 import { EvidenceEvaluation } from "./evidence-evaluation.js";
 
@@ -19,14 +23,14 @@ function pedagogicallyCompatible(
   );
 }
 
-function isExperienceCompatible(
-  experience: LearningExperience,
-  context: AssembledLearningContext,
-): boolean {
-  const hasRequiredCapabilities = experience.deliveryRequirements.every((requirement) =>
-    context.deliveryCapabilities.capabilities.includes(requirement),
-  );
-  return hasRequiredCapabilities && pedagogicallyCompatible(experience, context);
+/** Published experience candidates before delivery capability filtering. */
+export function deliveryRelevantExperiences(context: AssembledLearningContext): readonly LearningExperience[] {
+  return Object.freeze(context.knowledge.experiences.filter((experience) => pedagogicallyCompatible(experience, context)));
+}
+
+/** Provider-neutral declared-capability evaluation for pedagogically relevant experiences. */
+export function evaluateContextDeliveryCompatibility(context: AssembledLearningContext): DeliveryFilteringResult {
+  return filterExperiencesForDelivery(deliveryRelevantExperiences(context), context.deliveryCapabilities);
 }
 
 function opportunityId(context: AssembledLearningContext, suffix: string): string {
@@ -41,13 +45,14 @@ function experienceOpportunityKind(experience: LearningExperience): "continue" |
 
 function addLayerMovementCandidates(
   context: AssembledLearningContext,
+  delivery: DeliveryFilteringResult,
   candidates: CandidateLearningOpportunity[],
 ): void {
   const currentLayer = context.selectedPedagogicalLayer;
-  const capabilityCompatibleExperiences = context.knowledge.experiences.filter((experience) =>
+  const targetLayerExperiences = context.knowledge.experiences.filter((experience) =>
     experience.deliveryRequirements.every((requirement) => context.deliveryCapabilities.capabilities.includes(requirement)),
   );
-  for (const experience of capabilityCompatibleExperiences) {
+  for (const experience of targetLayerExperiences) {
     for (const layer of experience.pedagogicalLayers) {
       if (layer !== currentLayer) {
         candidates.push(candidateLearningOpportunity({
@@ -62,21 +67,29 @@ function addLayerMovementCandidates(
   }
 }
 
+function firstCompatibleExperienceUsingAsset(
+  delivery: DeliveryFilteringResult,
+  assetId: string,
+): LearningExperience | undefined {
+  return delivery.compatible.find((candidate) =>
+    candidate.experience.knowledgeAssetIds.includes(assetId as never),
+  )?.experience;
+}
+
 /**
- * Produces semantic candidate opportunities grounded in resolved, published
- * knowledge. It does not create a decision, learner choice, commitment, event,
- * provider call, persistence call, graph query, or presentation instruction.
+ * Produces semantic candidates grounded in published experience, asset, or graph
+ * objects. Delivery filtering uses only explicitly supplied capabilities. An
+ * unavailable experience is not silently substituted with an unrelated one.
  */
 export function generateCandidateLearningOpportunities(
   context: AssembledLearningContext,
   evidenceEvaluation?: EvidenceEvaluation,
+  delivery: DeliveryFilteringResult = evaluateContextDeliveryCompatibility(context),
 ): readonly CandidateLearningOpportunity[] {
   const candidates: CandidateLearningOpportunity[] = [];
-  const compatibleExperiences = context.knowledge.experiences.filter((experience) =>
-    isExperienceCompatible(experience, context),
-  );
 
-  for (const experience of compatibleExperiences) {
+  for (const compatible of delivery.compatible) {
+    const experience = compatible.experience;
     const primaryLayer = experience.pedagogicalLayers[0];
     candidates.push(candidateLearningOpportunity({
       id: opportunityId(context, `${experienceOpportunityKind(experience)}.${experience.id}`),
@@ -91,13 +104,17 @@ export function generateCandidateLearningOpportunities(
   const explicitRepresentationRequest = context.command.kind === "request-alternative-representation";
   const preservesSlice2Baseline = context.command.kind === "explore-concept" || context.command.kind === "submit-learner-choice";
   const reflectionSupportsRepresentation = evidenceEvaluation?.inferred.supportsAlternativeRepresentation ?? false;
-  if (representationAsset !== undefined &&
+  const representationExperience = representationAsset === undefined
+    ? undefined
+    : firstCompatibleExperienceUsingAsset(delivery, representationAsset.id);
+  if (representationAsset !== undefined && representationExperience !== undefined &&
       (explicitRepresentationRequest || preservesSlice2Baseline || reflectionSupportsRepresentation)) {
     candidates.push(candidateLearningOpportunity({
       id: opportunityId(context, `explore-representation.${representationAsset.id}`),
       kind: "explore-representation",
       conceptId: context.knowledge.concept.id,
       knowledgeAssetId: representationAsset.id,
+      learningExperienceId: representationExperience.id,
       ...(context.selectedPedagogicalLayer === undefined ? {} : { pedagogicalLayer: context.selectedPedagogicalLayer }),
     }));
   }
@@ -132,15 +149,24 @@ export function generateCandidateLearningOpportunities(
   }
 
   if (evidenceEvaluation?.inferred.supportsMoveTowardAnotherLayer ?? false) {
-    addLayerMovementCandidates(context, candidates);
+    addLayerMovementCandidates(context, delivery, candidates);
   }
 
-  candidates.push(candidateLearningOpportunity({
-    id: opportunityId(context, "reflect"),
-    kind: "reflect",
-    conceptId: context.knowledge.concept.id,
-    ...(context.selectedPedagogicalLayer === undefined ? {} : { pedagogicalLayer: context.selectedPedagogicalLayer }),
-  }));
+  const reflectionExperience = delivery.compatible.find((candidate) =>
+    candidate.experience.expectedEvidenceTypes.includes("reflection"),
+  )?.experience;
+  if (reflectionExperience !== undefined) {
+    candidates.push(candidateLearningOpportunity({
+      id: opportunityId(context, `reflect.${reflectionExperience.id}`),
+      kind: "reflect",
+      conceptId: context.knowledge.concept.id,
+      learningExperienceId: reflectionExperience.id,
+      ...(context.selectedPedagogicalLayer === undefined ? {} : { pedagogicalLayer: context.selectedPedagogicalLayer }),
+    }));
+  }
+
+  // These are learner-autonomy controls, not content-delivery claims. They do
+  // not name a display, component, or fabricated learning completion.
   candidates.push(candidateLearningOpportunity({
     id: opportunityId(context, "pause"),
     kind: "pause",

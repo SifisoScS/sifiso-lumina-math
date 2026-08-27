@@ -22,7 +22,10 @@ export type ProvenanceReferenceKind =
   | "assessment-boundary"
   | "assessment-evidence"
   | "derived-interpretation"
-  | "knowledge-version";
+  | "knowledge-version"
+  | "learning-experience"
+  | "learning-experience-version"
+  | "delivery-compatibility";
 
 export interface ProvenanceReference {
   readonly kind: ProvenanceReferenceKind;

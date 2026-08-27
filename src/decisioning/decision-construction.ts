@@ -13,6 +13,7 @@ import { uncertainty } from "../domain/primitives.js";
 import { AssembledLearningContext, ContextIssue } from "./context.js";
 import { CandidatePolicyResult, DecisionPolicyResult } from "./policy-evaluation.js";
 import { EvidenceEvaluation } from "./evidence-evaluation.js";
+import { DeliveryFilteringResult } from "./delivery-compatibility.js";
 
 function baseDecisionProvenance(input: {
   readonly commandId: string;
@@ -124,6 +125,7 @@ export function constructMaterialDecision(
   context: AssembledLearningContext,
   policy: DecisionPolicyResult,
   evidenceEvaluation?: EvidenceEvaluation,
+  delivery?: DeliveryFilteringResult,
 ): LearningDecision {
   const commandReference = provenanceReference("interaction-command", context.command.id);
   const actorReference = provenanceReference("trusted-actor-context", context.actor.actorId);
@@ -153,6 +155,18 @@ export function constructMaterialDecision(
     provenanceReference("policy", evaluation.policyId));
   const deliveryReferences = context.deliveryCapabilities.capabilities.map((capability) =>
     provenanceReference("delivery-capability", `capability.${capability}`));
+  const offeredExperienceIds = policy.candidates
+    .filter((candidate) => candidate.permitted)
+    .flatMap((candidate) => candidate.opportunity.learningExperienceId === undefined ? [] : [candidate.opportunity.learningExperienceId]);
+  const offeredExperiences = context.knowledge.experiences.filter((experience) => offeredExperienceIds.includes(experience.id));
+  const experienceReferences = offeredExperiences.flatMap((experience) => [
+    provenanceReference("learning-experience", experience.id),
+    provenanceReference("learning-experience-version", `${experience.id}.${experience.version}`),
+  ]);
+  const deliveryCompatibilityReferences = delivery === undefined
+    ? []
+    : delivery.incompatible.map((candidate) =>
+      provenanceReference("delivery-compatibility", `${candidate.experience.id}.${candidate.experience.version}.unavailable`));
   const interpretationReferences = evidenceEvaluation === undefined
     ? []
     : [
@@ -170,6 +184,8 @@ export function constructMaterialDecision(
       ...evidenceReferences,
       ...declaredConflictEvidenceReferences,
       ...assessmentOutcomeReferences,
+      ...experienceReferences,
+      ...deliveryCompatibilityReferences,
       ...interpretationReferences,
       ...pedagogyReferences,
       ...policyReferences,
