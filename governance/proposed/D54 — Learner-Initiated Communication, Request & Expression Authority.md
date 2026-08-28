@@ -58,7 +58,11 @@ A **learner-initiated communication** is an expression originating with the lear
 
 **Admission** is the separately authorised act of entering a received communication into the authoritative record, with declared provenance, scope, purpose, and epistemic status. Reception does not imply admission, and admission does not imply that the content is true, sufficient, authorised, or consequential.
 
-A **response** is an engine action taken in relation to a received communication. It may be an answer, a deferral, a decline, an acknowledgement, or a routing action. A response is itself a governed act under the authority applicable to its content.
+A **response** is an engine action taken in relation to a received communication. It may be an answer, a deferral, a decline, a receipt, or a routing action. A response is itself a governed act under the authority applicable to its content.
+
+A **receipt** is an engine response confirming only that a communication was received. It establishes no understanding of what was communicated, no agreement with it, no acceptance of it, and no authorisation of anything it concerns.
+
+The two directions must not be conflated. **Acknowledgement** is reserved in D54 for the learner-originated act of acknowledging an engine action, which is excluded from D54 by the definition above and remains governed by D29/D30; D54 neither reinterprets nor extends that treatment. **Receipt** is the engine-originated response defined here. Neither is reception, which is a fact rather than an act, and neither establishes agreement, consent, or authorisation.
 
 **Routing** is directing a communication to an authority that may be applicable — safeguarding under D53, contest under D50, accommodation under D44, assessment under D21 — so that the receiving authority may consider it under its own rules.
 
@@ -72,6 +76,7 @@ A **response** is an engine action taken in relation to a received communication
 | **Request** | The learner asked for something. | Permission, entitlement, offer, authorisation, or commitment. |
 | **Expression** | The learner conveyed a condition, difficulty, or view. | Qualified evidence, diagnosis, deficiency, or learner state. |
 | **Response** | An engine action in relation to the communication. | Authorisation of the content, or authority over its subject. |
+| **Receipt** | An engine response confirming only that a communication was received. | Understanding, agreement, acceptance, consent, or authorisation. |
 | **Deferral** | Consideration is postponed under stated conditions. | Refusal, dismissal, resolution, or a finding. |
 | **Decline** | The engine states it will not act on the communication. | A judgement about the learner or the merit of what was said. |
 | **Routing** | The matter was directed to a possibly applicable authority. | Classification, admissibility, or acceptance by that authority. |
@@ -101,7 +106,7 @@ The seven distinctions below are constitutive of D54 and may not be collapsed in
 | **Routing ≠ classification** | The matter was directed to a possibly applicable authority. | Classification as a safeguarding concern, contest, accommodation request, or assessment observation. |
 | **Non-response ≠ refusal** | No response occurred. | Refusal, dismissal, denial, resolution, safety, or a finding about the learner. |
 
-These stages are distinct semantic categories, not a mandatory sequence. A communication may be received and never admitted, admitted and never answered, answered and never routed, or routed and never classified. No stage implies any other.
+The seven distinctions above are semantic boundaries, not lifecycle stages, and they do not constitute a mandatory operational sequence. Each states only what one thing may not become; none requires that anything happen, that it happen in any particular order, or that it happen at all. Where §14 sets out the lifecycle, no stage of that lifecycle implies any other, and nothing in it narrows, reorders, or qualifies these distinctions.
 
 ## 6. Communication and Learner Choice, Delegation, and Consent
 
