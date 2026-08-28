@@ -1,6 +1,6 @@
 # D54 — Learner-Initiated Communication, Request & Expression Authority
 
-> **D54 — PROPOSED / HUMAN REVIEW ONLY**
+> **D54 — APPROVED / LOCKED**
 >
 > This is a governance-specification-only document. D1–D53 are preserved exactly as approved and locked. D54 authorises no code, contract, repository, schema, migration, persistence, governance tooling, communication channel, chat surface, client, transport, parser, intent classifier, natural-language model, embedding, routing engine, safeguarding detector, vulnerability classifier, referral workflow, reviewer-recognition system, approval workflow, escalation system, provenance/lineage system, uncertainty/confidence system, consequence/risk classifier, review-threshold system, source registry, expert-review system, canonical-reference system, mathematical validator, theorem prover, event system, command handler, policy runtime, verification system, release/deployment system, monitoring/incident system, identity/authentication/access-control system, organisational/tenant system, external integration/connector/provider-exchange system, record-linkage or merge/split system, measurement or analytics system, assessment, AI, UI/API, delivery runtime, D55, or Slice 6 work.
 
@@ -313,6 +313,27 @@ Future contracts must not encode a communication as a choice, an expression as e
 
 D54 is presented for human architectural review as the learner-initiated communication, request, and expression boundary required after the complete D1–D53 chain. It protects the distinction between expression, reception, admission, meaning, choice, consent, evidence, interpretation, state, context, response, routing, classification, non-response, and historical truth.
 
-> **D54 — PROPOSED / HUMAN REVIEW ONLY**
+> **D54 — APPROVED / LOCKED**
 
-No repository change beyond the creation of this proposed specification is authorised. No code, contract, schema, migration, persistence, governance tooling, communication channel, parser, intent classifier, routing engine, response generator, event system, command handler, policy runtime, verification system, release/deployment system, monitoring/incident system, identity/authentication/access-control system, organisational/tenant system, external integration/connector/provider-exchange system, record-linkage or merge/split system, measurement or analytics system, assessment, AI, UI/API, delivery runtime, D55, or Slice 6 work has occurred. D1–D53 are preserved exactly as approved and locked, the D1–D19 register-integrity limitation is carried forward unrepaired, and no actor, threshold, taxonomy, duty, jurisdiction, legal rule, clinical rule, or operational procedure has been introduced. After preparation, stop and await human architectural review and approval.
+The text above was the recommendation put to human architectural review. That review has been completed and D54 has been approved.
+
+### 21.1 Approval record
+
+D54's constitutional lifecycle is recorded under the locked D38 framework. Each state is distinct and none supersedes the record of the one before it.
+
+| State | What it was | Status at that state |
+|---|---|---|
+| **Proposal** | D54 prepared as a governance specification and presented for review. | PROPOSED / HUMAN REVIEW ONLY |
+| **Clarification** | Authorised pre-approval clarification pass applying C1 and C2, which also closed C4. No substantive meaning changed. | PROPOSED / HUMAN REVIEW ONLY |
+| **Human approval** | Explicit human architectural approval granted for the clarified text, for constitutional inclusion only. | APPROVED |
+| **Locked decision** | D54 admitted to the locked constitutional chain, which is now D1–D54. | APPROVED / LOCKED |
+
+The approved text is the clarified draft as it stood at the completion of the clarification pass. The earlier proposal state is not rewritten and the clarification history is not erased; both remain separately identifiable in the repository history.
+
+### 21.2 What approval does and does not do
+
+Approval admits D54 to the locked constitutional chain and makes its boundaries binding as governance. It does not authorise implementation. The implementation freeze at §20 remains in force, and any future work requires a separate controlled implementation authorisation for an exact scope.
+
+Approval does not resolve the L1 register-integrity limitation, does not reconstruct or infer D1–D19, and does not name any communication, receiving, responding, routing or reviewing actor. The L2 dependency stands: consequential communication paths remain inert and fail closed until the required recognised authority exists under the already-governed D15/D16/D49 framework.
+
+No repository change beyond this governance record is authorised. No code, contract, schema, migration, persistence, governance tooling, communication channel, parser, intent classifier, routing engine, response generator, event system, command handler, policy runtime, verification system, release/deployment system, monitoring/incident system, identity/authentication/access-control system, organisational/tenant system, external integration/connector/provider-exchange system, record-linkage or merge/split system, measurement or analytics system, assessment, AI, UI/API, delivery runtime, D55, or Slice 6 work has occurred. D1–D53 are preserved exactly as approved and locked, the D1–D19 register-integrity limitation is carried forward unrepaired, and no actor, threshold, taxonomy, duty, jurisdiction, legal rule, clinical rule, or operational procedure has been introduced. After preparation, stop and await human architectural review and approval.
