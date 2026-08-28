@@ -119,9 +119,17 @@ These are semantic boundaries, not lifecycle stages, and they do not constitute 
 
 D55 establishes no authority. It establishes that authority is required, and that it must be separately established.
 
-A learner-side act acquires the authority to override, revoke or ratify a delegated choice only where that authority is explicitly established under the existing constitution — recognised under D15–D16, exercised within a scope that covers the precise delegated choice at issue, supported by effective policy under D11, provenance-linked, current, and free of unresolved conflict, consistent with the conditions D24 requires for the delegated choice itself. **D55 names no such authority and recognises no actor.**
+D55's subject is the constitutional effect of a learner-side act upon a delegated choice. It is not the creation of authority for the learner to act, and not a regime for recognising anyone.
 
-Where that authority is not established, the learner-side act is preserved as an expressed position and effects nothing on the delegated choice. This is not a dismissal of the learner, a finding about the learner, or a determination that the delegated choice was correct. It is the absence of an establishable authority, and it fails closed under §15.
+Two cases must be kept apart, and D24 already separates them. D24's concept table states that a **governance actor** is “an actor recognised under D15–D16 to perform a defined governance action”, and that such recognition is expressly *not* “learner representation or the right to select an offer.”
+
+**A learner acting on their own behalf.** D55 imposes no recognition requirement on a learner acting personally, and adds no precondition to a learner's own act. Whether a learner personally holds authority in respect of a delegated choice is determined by the locked chain, which D55 neither supplies, extends, conditions, nor withholds. Where the locked chain establishes that a learner-side act carries such authority, D55 governs the effect that follows and confines it as set out in §7, §8 and §9. Where the locked chain does not establish it, no effect follows — but that is an absence in the existing chain, not a requirement imposed by D55, and it must never be described as the learner failing to be recognised.
+
+**A representative or other governance actor.** Where an act in respect of a delegated choice is performed by a representative or another recognised governance actor rather than by the learner personally, its authority remains separately established under the existing constitution — recognition under D15–D16, scope and conditions under D24, effective policy under D11 — exactly as those decisions already require. D55 changes none of that, and **transfers none of those conditions to the learner by analogy.**
+
+**D55 names no authority and recognises no actor in either case.**
+
+Where no authority for the act is established, the learner-side act is preserved as an expressed position and effects nothing on the delegated choice. This is not a dismissal of the learner, a finding about the learner, a statement about the learner's standing, or a determination that the delegated choice was correct. It is the absence of an establishable authority, and it fails closed under §15.
 
 Authority over a delegated choice is not created by the learner's wording, apparent intent, preference, confidence, persistence, repetition, participation, silence, session activity, event ordering, operational convenience, technical capability, successful execution, representative status, AI or provider assistance, or completion of any workflow. None of these establishes authority, and their accumulation does not either.
 
@@ -253,7 +261,9 @@ D55 is subordinate to every locked decision and creates no exception. It consume
 
 **L1 — D1–D19 source-verification limitation.** D1–D19 are locked and authoritative, but no standalone specification text for them is available in this repository or in the recovery source. D55 does not repair this gap, does not infer, reconstruct, summarise or substitute the missing decisions, and does not reinterpret them or manufacture authority from their titles. The limitation is material to D55, which depends directly on **D1**'s `select-offer` semantics — what a commitment is, and therefore what could constitutionally alter one — and on **D19** for consent. Those semantics are relied upon here exactly as they are cited across D20–D54 and are not restated, extended or interpreted. The limitation is recorded as a standing governance-record and register-integrity limitation within the already-approved D38 boundary. It is a limitation on the record, not permission to reinterpret those decisions. **D38 remains the authority for the register-integrity matter, and D55 does not modify D38.**
 
-**L2 — recognised authority not yet instantiated.** D55 names no representative, reviewer, officer, clinician, legal actor, institutional authority, competency, duty, jurisdiction, statutory threshold, age or capacity rule, or operational procedure. Recognition is governed by the already-approved D15/D16/D49 framework, which D55 does not modify. D55 is therefore constitutionally defined but **operationally inert**: until the required authority and recognition exist, no learner-side act can have its authority established, and every override, revocation and consequential path remains **fail closed** under §15. Fail-closed behaviour is the intended and correct outcome of that condition and must not be treated as a defect to be bypassed, nor resolved by nominating any actor, threshold, remedy or mechanism within D55.
+**L2 — recognised authority not yet instantiated.** D55 names no representative, reviewer, officer, clinician, legal actor, institutional authority, competency, duty, jurisdiction, statutory threshold, age or capacity rule, or operational procedure. Recognition of governance actors is governed by the already-approved D15/D16/D49 framework, which D55 does not modify. That framework applies to representatives, reviewers and other governance actors; it is not, and must not be read as, a precondition on a learner acting on their own behalf, which D55 does not impose.
+
+D55 is therefore constitutionally defined but **operationally inert wherever a recognised actor is in fact required**: until the required authority and recognition exist for those acts that need them, and where the locked chain does not otherwise establish that a learner-side act carries authority, every override, revocation and consequential path remains **fail closed** under §15. Fail-closed behaviour is the intended and correct outcome of that condition and must not be treated as a defect to be bypassed, nor resolved by nominating any actor, threshold, remedy or mechanism within D55.
 
 ## 17. Prohibited Behaviours
 
@@ -289,7 +299,8 @@ D55 deliberately leaves the following matters unresolved:
 
 | Deferred matter | Reason for deferral |
 |---|---|
-| Who may establish, exercise, review, approve or refuse a learner-side act, and with what competence | D15/D16/D49 require explicit recognition; D55 names none. |
+| Whether, and in what circumstances, a learner personally holds authority in respect of a delegated choice | Determined by the locked chain; D55 governs the effect only and imposes no recognition requirement on a learner acting on their own behalf. |
+| Who, other than the learner, may exercise, review, approve or refuse an act in respect of a delegated choice, and with what competence | D15/D16/D49 require explicit recognition of governance actors; D55 names none. |
 | Legal capacity, age thresholds, guardianship, statutory representation and jurisdiction | D24 already refuses these; D55 must not create legal authority by architectural assertion. |
 | Whether any class of choice must be exclusively learner-controlled, or may never be overridden | D24 expressly declines this and D55 does not answer it. |
 | Remedies, restitution, appeals, escalation procedures, and service expectations | D48/D49/D50 require explicit recognition; these remain deferred. |
