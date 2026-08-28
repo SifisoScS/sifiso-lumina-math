@@ -1,6 +1,6 @@
 # D55 — Learner Override, Revocation & Ratification of Delegated Choice Authority
 
-> **D55 — PROPOSED / HUMAN REVIEW ONLY**
+> **D55 — APPROVED / LOCKED**
 >
 > This is a governance-specification-only document. D1–D54 are preserved exactly as approved and locked. D55 authorises no code, contract, repository, schema, migration, persistence, database, governance tooling, workflow, event handler, command handler, policy runtime, verification system, communication channel, chat surface, parser, intent classifier, natural-language model, routing engine, reviewer-recognition system, approval workflow, escalation system, provenance/lineage system, uncertainty/confidence system, consequence/risk classifier, review-threshold system, source registry, expert-review system, canonical-reference system, mathematical validator, theorem prover, release/deployment system, monitoring/incident system, identity/authentication/access-control system, organisational/tenant system, external integration/connector/provider-exchange system, record-linkage or merge/split system, measurement or analytics system, assessment, AI, UI/API, delivery runtime, D56, or Slice 6 work.
 
@@ -332,6 +332,30 @@ Future contracts must not encode representation revocation as choice revocation,
 
 D55 is presented for human architectural review as the learner override, revocation and ratification boundary that D24 expressly identifies as requiring a separate authority decision, and that D27 and D28 defer back to D24 without resolving. It protects the distinction between representation and delegated choice, between ending a relationship and ending a choice made under it, between contesting and overriding, between withdrawal and invalidation, between the learner's own authorisation and retroactive authorship, and between what happened and what is now wanted.
 
-> **D55 — PROPOSED / HUMAN REVIEW ONLY**
+> **D55 — APPROVED / LOCKED**
 
-No repository change beyond the creation of this proposed specification is authorised. No code, contract, schema, migration, persistence, workflow, mechanism, event system, command handler, policy runtime, verification system, release/deployment system, monitoring/incident system, identity/authentication/access-control system, organisational/tenant system, external integration/connector/provider-exchange system, record-linkage or merge/split system, measurement or analytics system, assessment, AI, UI/API, delivery runtime, D56, or Slice 6 work has occurred. D1–D54 are preserved exactly as approved and locked, D50 and D24 are neither reopened nor amended, the D1–D19 register-integrity limitation is carried forward unrepaired, and no actor, competency, duty, threshold, jurisdiction, legal rule, remedy or operational procedure has been introduced. After preparation, stop and await human architectural review and approval.
+The text above was the recommendation put to human architectural review. That review has been completed and D55 has been approved.
+
+### 21.1 Approval record
+
+D55's constitutional lifecycle is recorded under the locked D38 framework. Each state is distinct and none supersedes the record of the one before it.
+
+| State | What it was | Status at that state |
+|---|---|---|
+| **Proposal** | D55 prepared as a governance specification and presented for review. | PROPOSED / HUMAN REVIEW ONLY |
+| **B1 revision** | Removed a requirement that a learner acting personally be recognised under D15–D16, which conflicted with D24's governance-actor distinction. | PROPOSED / HUMAN REVIEW ONLY |
+| **B2 clarification** | Removed the attribution that the locked chain determines the underlying learner-authority question, which D24 §16 states it does not. Option 2 adopted. | PROPOSED / HUMAN REVIEW ONLY |
+| **Human approval** | Explicit human architectural approval granted for the clarified text, for constitutional inclusion only. | APPROVED |
+| **Locked decision** | D55 admitted to the locked constitutional chain, which is now D1–D55. | APPROVED / LOCKED |
+
+The approved text is the Option-2 clarified draft as it stood at the completion of the B2 clarification. No earlier state is rewritten and no revision history is erased; each remains separately identifiable in the repository history.
+
+### 21.2 What approval does and does not do
+
+Approval admits D55 to the locked constitutional chain and makes its boundaries binding as governance. It does not authorise implementation. The implementation freeze at §20 remains in force, and any future work requires a separate controlled implementation authorisation for an exact scope.
+
+**Approval does not resolve the question D55 records as unresolved.** Whether a learner personally holds the authority to override, revoke or ratify a delegated choice is not determined by this decision, and D24 §16's call for a separate authority decision on that question remains outstanding after D55. Approval of D55 approves the consequence-side boundary and the open record of that question; it approves no answer to it.
+
+Approval likewise does not resolve the L1 register-integrity limitation, does not reconstruct or infer D1–D19, and does not name any actor. The L2 dependency stands: consequential paths remain fail closed wherever a recognised actor is in fact required.
+
+No repository change beyond this governance record is authorised. No code, contract, schema, migration, persistence, workflow, mechanism, event system, command handler, policy runtime, verification system, release/deployment system, monitoring/incident system, identity/authentication/access-control system, organisational/tenant system, external integration/connector/provider-exchange system, record-linkage or merge/split system, measurement or analytics system, assessment, AI, UI/API, delivery runtime, D56, or Slice 6 work has occurred. D1–D54 are preserved exactly as approved and locked, D50 and D24 are neither reopened nor amended, the D1–D19 register-integrity limitation is carried forward unrepaired, and no actor, competency, duty, threshold, jurisdiction, legal rule, remedy or operational procedure has been introduced. After preparation, stop and await human architectural review and approval.
