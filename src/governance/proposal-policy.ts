@@ -145,6 +145,56 @@ export function classifyProvenanceReference(kind: ProvenanceReferenceKind): Prov
   }
 }
 
+export type ProvenanceScope =
+  /** About a specific learner. Must fall within the task's permitted evidence scope. */
+  | "learner-scoped"
+  /** Content or pedagogy. Must fall within the task's permitted basis. */
+  | "content-scoped"
+  /** Capability description. Must fall within the task's permitted basis. */
+  | "delivery-context"
+  /** Downstream, authority, or assessment. Refused outright; never a basis. */
+  | "not-a-basis";
+
+/**
+ * Whose scope a reference falls in, and therefore what it must be checked
+ * against.
+ *
+ * Hostile testing found that only `learner-evidence` was scope-checked, while
+ * `derived-interpretation` and `historical-event` are equally about a specific
+ * person and were not checked at all. A proposal could cite another learner's
+ * interpretation as its basis. That is a leak, not merely scope creep, and it
+ * is why this classifier exists separately from the admissibility one.
+ */
+export function provenanceScope(kind: ProvenanceReferenceKind): ProvenanceScope {
+  switch (kind) {
+    case "learner-evidence":
+    case "historical-event":
+    case "derived-interpretation":
+      return "learner-scoped";
+    case "knowledge":
+    case "knowledge-version":
+    case "pedagogical-rule":
+    case "learning-experience":
+    case "learning-experience-version":
+      return "content-scoped";
+    case "delivery-capability":
+    case "delivery-compatibility":
+      return "delivery-context";
+    case "policy":
+    case "learning-decision":
+    case "reasoning-proposal":
+    case "interaction-command":
+    case "trusted-actor-context":
+    case "assessment-boundary":
+    case "assessment-evidence":
+      return "not-a-basis";
+    default: {
+      const unscoped: never = kind;
+      throw new DomainValidationError(`Provenance reference kind has no scope: ${String(unscoped)}`);
+    }
+  }
+}
+
 const ALL_PROVENANCE_KINDS: readonly ProvenanceReferenceKind[] = Object.freeze([
   "interaction-command",
   "trusted-actor-context",

@@ -30,7 +30,10 @@ export interface ReasoningTask {
   readonly id: StableId;
   readonly kind: ReasoningTaskKind;
   readonly conceptIds: readonly StableId[];
+  /** Learner-scoped references the proposal may cite: evidence, events, interpretations. */
   readonly permittedEvidenceIds: readonly StableId[];
+  /** Content, pedagogy, and delivery references the proposal may cite. */
+  readonly permittedBasisIds: readonly StableId[];
   readonly requestedAt: IsoTimestamp;
   readonly purpose: string;
 }
@@ -65,6 +68,7 @@ export function reasoningTask(input: {
   readonly kind: ReasoningTaskKind;
   readonly conceptIds: readonly string[];
   readonly permittedEvidenceIds?: readonly string[];
+  readonly permittedBasisIds?: readonly string[];
   readonly requestedAt: IsoTimestamp;
   readonly purpose: string;
 }): ReasoningTask {
@@ -81,6 +85,10 @@ export function reasoningTask(input: {
     permittedEvidenceIds: uniqueStableIds(
       (input.permittedEvidenceIds ?? []).map((id) => stableId(id, "Reasoning task evidence identifier")),
       "Reasoning task permitted evidence identifiers",
+    ),
+    permittedBasisIds: uniqueStableIds(
+      (input.permittedBasisIds ?? []).map((id) => stableId(id, "Reasoning task basis identifier")),
+      "Reasoning task permitted basis identifiers",
     ),
     requestedAt: input.requestedAt,
     purpose: requiredText(input.purpose, "Reasoning task purpose"),

@@ -1,6 +1,6 @@
 # A4 — The Authority Seam
 
-*Article 4 of the Math Lumina foundation. Version 1.3.*
+*Article 4 of the Math Lumina foundation. Version 1.4.*
 
 ## The principle
 
@@ -74,13 +74,14 @@ If a change to learner state cannot name its authorisation, it does not happen.
 | Admitting machine material is not a state change | `AuthorizedAction` carries no delta, commitment, or authorization field |
 | A proposal may not claim a downstream stage as its own basis | `admissibleProvenanceKinds`, `src/governance/proposal-policy.ts` |
 | What a policy permits is bound to the policy, not supplied by the caller | `ProposalEnvelope` and `resolveApprovedEnvelope`, `src/governance/proposal-policy.ts` |
-| A hostile proposer cannot cross the seam | `test/hostile-boundary.test.ts` — 19 tests against an adversarial provider |
+| Every provenance reference must fall inside a scope the task declared | `provenanceScope`, `src/governance/proposal-policy.ts` |
+| A hostile proposer cannot cross the seam | `test/hostile-boundary.test.ts` — 22 tests, 18 attack kinds |
 
 The seam is a compile error, not a paragraph, and every row above is built.
 
 Hostile testing earned its place immediately: it found that provenance was a second, unchecked channel into the same decision. A proposal could cite the very policy about to evaluate it — reading as prior approval it did not have — or keep `evidenceIds` clean while smuggling out-of-scope learner evidence through `provenance.references`. Both are now refused. Neither was visible from reading the article.
 
-*Amendment record. v1.1 (2026-08-29): enforcement table reports the seam as built, following Phase 3. v1.2 (2026-08-29): hostile-boundary suite built, two provenance-channel gaps closed. v1.3 (2026-08-29): policy limits bound to the policy after hostile testing found a caller could widen them. All recording updates under A8; normative text unchanged throughout.*
+*Amendment record. v1.1 (2026-08-29): seam reported as built, following Phase 3. v1.2: hostile suite built, two provenance-channel gaps closed. v1.3: policy limits bound to the policy after a caller was found able to widen them. v1.4: every provenance reference now scope-checked, after hostile testing found a proposal could cite another learner's derived interpretation. All recording updates under A8; normative text unchanged throughout.*
 
 ---
 

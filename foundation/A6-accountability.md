@@ -1,6 +1,6 @@
 # A6 — Accountability and Provenance
 
-*Article 6 of the Math Lumina foundation. Version 1.0.*
+*Article 6 of the Math Lumina foundation. Version 1.1.*
 
 ## The rule
 
@@ -62,7 +62,11 @@ Where the same person proposes and approves, or where AI drafts material approve
 | Events form an ordered, causally linked trail tied to a commitment | `historicalEvent`, same file |
 | Replay reconstructs the same state and rejects missing history | `replayLearnerHistory`, `src/decisioning/replay.ts` |
 | Uncertainty is a validated value object, defaulting to unknown | `UncertaintyStatement`, `src/domain/primitives.ts` |
+| A claim may not be more confident than the basis it rests on | `claimsMoreConfidenceThan`, same file; enforced in `evaluateGovernance` |
+| Material about a learner cannot be cited outside the scope declared for them | `provenanceScope`, `src/governance/proposal-policy.ts` |
 | Learner-owned reflection text cannot be silently overwritten | `assertReflectionPreserved`, `src/domain/policy-governance.ts` |
+
+*Amendment record. v1.1 (2026-08-29): recording update under A8. Normative text unchanged. Hostile testing found two ways the rules above were stated but not enforced: a proposal could claim low uncertainty on a basis stated as uncalibrated, laundering confidence out of nothing; and material about one learner could be cited as the basis for material shown to another. Both are now checked.*
 
 ---
 

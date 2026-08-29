@@ -79,6 +79,31 @@ export interface UncertaintyStatement {
   readonly rationale: string;
 }
 
+const UNCERTAINTY_ORDER: Readonly<Record<UncertaintyLevel, number>> = Object.freeze({
+  low: 0,
+  medium: 1,
+  high: 2,
+  unknown: 3,
+});
+
+/**
+ * How uncertain a statement is, on a total order from `low` (least uncertain)
+ * to `unknown` (most). Comparable so that a claim can be checked against the
+ * basis it rests on: under A6, uncertainty survives and is never converted into
+ * confidence along the way.
+ */
+export function uncertaintyRank(statement: UncertaintyStatement): number {
+  return UNCERTAINTY_ORDER[statement.level];
+}
+
+/** True when `claim` asserts more confidence than `basis` supports. */
+export function claimsMoreConfidenceThan(
+  claim: UncertaintyStatement,
+  basis: UncertaintyStatement,
+): boolean {
+  return uncertaintyRank(claim) < uncertaintyRank(basis);
+}
+
 export function uncertainty(level: UncertaintyLevel, rationale: string): UncertaintyStatement {
   return Object.freeze({ level, rationale: requiredText(rationale, "Uncertainty rationale") });
 }

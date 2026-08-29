@@ -10,7 +10,7 @@ Eight articles governing the Math Lumina learning engine.
 
 | | |
 |---|---|
-| **Articles** | A1–A8 · A4 and A5 at v1.3, A7 at v1.1, the rest at v1.0 |
+| **Articles** | A1–A8 · A4 v1.4 · A5 v1.3 · A6 v1.1 · A7 v1.1 · rest v1.0 |
 | **Adopted** | Yes — [ADOPTION.md](ADOPTION.md), 2026-08-29 |
 | **In force** | **Yes** |
 | **Founder** | Sifiso Cyprian Shezi — [RECOGNITION.md](RECOGNITION.md) R1 |
@@ -62,7 +62,7 @@ The point of this foundation is that its load-bearing rules are **types and test
 | Admission needs a policy scoped to `ai-proposal-acceptance` | A5 | `evaluateGovernance` | **live** |
 | Assessment-bearing proposal kinds are inadmissible | A5, O4 | `admissibleProposalKinds`, `src/governance/proposal-policy.ts` | **live** |
 | Only learner-originated authorisation may back a commitment, as a reportable policy | A2, A6 | `evaluateStateMutationPolicy`, same file | **live** |
-| A hostile proposer cannot cross the seam | A4, A5 | `test/hostile-boundary.test.ts` — 19 tests, 15 attack kinds | **live** |
+| A hostile proposer cannot cross the seam | A4, A5 | `test/hostile-boundary.test.ts` — 22 tests, 18 attack kinds | **live** |
 | A proposal may not claim a downstream stage as its basis | A4, A5 | `admissibleProvenanceKinds`, `src/governance/proposal-policy.ts` | **live** |
 | Out-of-scope evidence cannot be smuggled via provenance | A4, A6 | `evaluateGovernance` | **live** |
 | Claimed confidence buys no privilege | A4 | `test/hostile-boundary.test.ts` | **live** |
@@ -73,6 +73,10 @@ The point of this foundation is that its load-bearing rules are **types and test
 | Admissible lists are derived from classifications, not hand-listed | A5 | `src/governance/proposal-policy.ts` | **live** |
 | Judgement cannot evade the phrase guard by presentation | A7 | `evaluateNonEvaluativeText` — folds homoglyphs, invisibles, separators | **live** |
 | Learner-facing text beyond the bound is refused, not truncated | A7 | `maxSummaryCharacters` | **live** |
+| Material about one learner cannot be cited as basis for another | A2, A6 | `provenanceScope` — covers evidence, events, and interpretations | **live** |
+| Content outside the task's declared basis cannot be cited | A4, A6 | `permittedBasisIds` on `ReasoningTask` | **live** |
+| A claim may not be more confident than its basis | A6 | `claimsMoreConfidenceThan`, `src/domain/primitives.ts` | **live** |
+| The two provenance classifiers cannot drift apart | A4 | `test/governance-authorization.test.ts` | **live** |
 
 Every row is built. Where a claim is not enforceable — a model's calibration cannot be checked from outside it — the article says so rather than implying a guarantee it cannot give.
 

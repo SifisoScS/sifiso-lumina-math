@@ -7,6 +7,10 @@ import {
   approvedPolicyIds,
   classifyProposalKind,
   classifyProvenanceReference,
+  claimsMoreConfidenceThan,
+  provenanceScope,
+  uncertainty,
+  uncertaintyRank,
   resolveApprovedEnvelope,
   aiProposalAcceptancePolicy,
   AuthorizedAction,
@@ -34,6 +38,7 @@ const task = reasoningTask({
   kind: "explanation-generation",
   conceptIds: ["concept.function"],
   permittedEvidenceIds: ["evidence.reflection.001"],
+  permittedBasisIds: ["concept.function"],
   requestedAt: timestamp,
   purpose: "Offer another way to describe a function.",
 });
@@ -158,6 +163,26 @@ test("the approved policy set is exactly what governance will act on", () => {
   assert.equal(resolveApprovedEnvelope("policy.not-approved.001"), undefined);
 });
 
+test("the two provenance classifiers cannot drift apart", () => {
+  // One asks whether a kind may be a basis at all; the other asks whose scope it
+  // falls in. They answer different questions over the same union, so they are
+  // pinned to each other rather than maintained in parallel.
+  for (const kind of admissibleProvenanceKinds) {
+    assert.notEqual(provenanceScope(kind), "not-a-basis", `${kind} is admissible but has no scope`);
+  }
+  assert.equal(provenanceScope("policy"), "not-a-basis");
+  assert.equal(provenanceScope("derived-interpretation"), "learner-scoped");
+  assert.equal(provenanceScope("historical-event"), "learner-scoped");
+  assert.equal(provenanceScope("knowledge"), "content-scoped");
+});
+
+test("a claim may not be more confident than the basis it rests on", () => {
+  assert.equal(claimsMoreConfidenceThan(uncertainty("low", "x"), uncertainty("unknown", "y")), true);
+  assert.equal(claimsMoreConfidenceThan(uncertainty("unknown", "x"), uncertainty("low", "y")), false);
+  assert.equal(claimsMoreConfidenceThan(uncertainty("medium", "x"), uncertainty("medium", "y")), false);
+  assert.equal(uncertaintyRank(uncertainty("low", "x")) < uncertaintyRank(uncertainty("high", "y")), true);
+});
+
 test("admissible kind and provenance lists are derived from their classifications", () => {
   // Hand-maintained lists drift from the reasons that justify them. These are
   // filtered from the classifiers, so they cannot.
@@ -205,6 +230,7 @@ test("an inadmissible task kind is refused even when the proposal is otherwise w
     kind: "misconception-hypothesis",
     conceptIds: ["concept.function"],
     permittedEvidenceIds: ["evidence.reflection.001"],
+    permittedBasisIds: ["concept.function"],
     requestedAt: timestamp,
     purpose: "Hypothesise a misconception.",
   });

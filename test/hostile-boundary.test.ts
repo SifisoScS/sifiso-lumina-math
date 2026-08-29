@@ -24,6 +24,7 @@ const task = reasoningTask({
   kind: "explanation-generation",
   conceptIds: ["concept.function"],
   permittedEvidenceIds: ["evidence.reflection.001"],
+  permittedBasisIds: ["concept.function"],
   requestedAt: timestamp,
   purpose: "Offer another way to describe a function.",
 });
@@ -107,6 +108,22 @@ test("judgement hidden by homoglyph, zero-width, or separators is still refused"
       `${kind} evaded the non-evaluative guard`,
     );
   }
+});
+
+test("a proposal citing another learner's derived interpretation is refused", () => {
+  // Only learner-evidence was scope-checked before. A derived interpretation is
+  // equally about a specific person, and this cited someone else's.
+  assert.ok(refusalReasons("cross-learner-interpretation").some((r) => r.includes("learner-scoped")));
+});
+
+test("a proposal citing content the task never put in scope is refused", () => {
+  assert.ok(refusalReasons("unscoped-knowledge").some((r) => r.includes("permitted basis")));
+});
+
+test("a confident claim resting on an uncalibrated basis is refused", () => {
+  // A6: uncertainty survives and is never converted into confidence along the
+  // way. This is distinct from lying about calibration, which is undetectable.
+  assert.ok(refusalReasons("confidence-laundering").some((r) => r.includes("more confident")));
 });
 
 test("a caller cannot widen what a policy permits", () => {
@@ -229,9 +246,12 @@ test("every attack kind is exercised by this suite", () => {
     "homoglyph-evaluative",
     "zero-width-evaluative",
     "separator-evaluative",
+    "cross-learner-interpretation",
+    "unscoped-knowledge",
+    "confidence-laundering",
   ];
   type Unexercised = Exclude<AttackKind, (typeof exercised)[number]>;
   const allExercised: Unexercised extends never ? true : never = true;
   assert.equal(allExercised, true);
-  assert.equal(exercised.length, 15);
+  assert.equal(exercised.length, 18);
 });

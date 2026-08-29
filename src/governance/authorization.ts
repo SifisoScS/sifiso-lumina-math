@@ -1,8 +1,14 @@
 import { kernelPolicyEvaluation, policyDefinition } from "../domain/policy-governance.js";
-import { ProposalEnvelope, resolveApprovedEnvelope } from "./proposal-policy.js";
+import { ProposalEnvelope, provenanceScope, resolveApprovedEnvelope } from "./proposal-policy.js";
 import { PolicyEvaluation } from "../contracts/core-contracts.js";
 import { ReasoningProposal, ReasoningTask, validateReasoningProposal } from "../contracts/reasoning-port.js";
-import { IsoTimestamp, PolicyVersionRef, readonlyList, StableId } from "../domain/primitives.js";
+import {
+  claimsMoreConfidenceThan,
+  IsoTimestamp,
+  PolicyVersionRef,
+  readonlyList,
+  StableId,
+} from "../domain/primitives.js";
 
 /**
  * The authority seam (foundation A4). Permission is a value, not a state of
@@ -144,14 +150,38 @@ export function evaluateGovernance(input: {
     );
   }
 
+  // Every reference must fall inside the scope the task actually declared.
+  // Checking only `learner-evidence` was not enough: `derived-interpretation`
+  // and `historical-event` are equally about a specific person, and a proposal
+  // could cite another learner's interpretation as its basis.
   const permittedEvidence = new Set<string>(input.task.permittedEvidenceIds);
-  if (
-    input.proposal.provenance.references.some(
-      (reference) => reference.kind === "learner-evidence" && !permittedEvidence.has(reference.id),
-    )
-  ) {
+  const permittedBasis = new Set<string>(input.task.permittedBasisIds);
+
+  const outOfScopeLearner = input.proposal.provenance.references.filter(
+    (reference) =>
+      provenanceScope(reference.kind) === "learner-scoped" && !permittedEvidence.has(reference.id),
+  );
+  if (outOfScopeLearner.length > 0) {
     reasons.push(
-      "Reasoning proposal provenance references learner evidence outside the task's permitted evidence scope.",
+      "Reasoning proposal provenance references learner-scoped material outside the task's permitted evidence scope.",
+    );
+  }
+
+  const outOfScopeBasis = input.proposal.provenance.references.filter((reference) => {
+    const scope = provenanceScope(reference.kind);
+    return (scope === "content-scoped" || scope === "delivery-context") && !permittedBasis.has(reference.id);
+  });
+  if (outOfScopeBasis.length > 0) {
+    reasons.push(
+      "Reasoning proposal provenance references content outside the task's permitted basis.",
+    );
+  }
+
+  // A6: uncertainty survives and is never converted into confidence along the
+  // way. A shaky basis cannot yield a confident claim.
+  if (claimsMoreConfidenceThan(input.proposal.uncertainty, input.proposal.provenance.uncertainty)) {
+    reasons.push(
+      `Reasoning proposal claims ${input.proposal.uncertainty.level} uncertainty on a basis stated as ${input.proposal.provenance.uncertainty.level}; a claim may not be more confident than what it rests on.`,
     );
   }
 
