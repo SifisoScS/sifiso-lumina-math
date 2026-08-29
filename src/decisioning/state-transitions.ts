@@ -302,6 +302,25 @@ export function validateAndPlanStateTransition(input: StateTransitionInput): Sta
     });
   }
 
+  // Declining, deferring, and requesting an alternative must not move the
+  // learner toward the offered opportunity. Only an explicit choice applicable
+  // to that opportunity may authorise the commitment, and none of these three
+  // is applicable to it. A commitment cannot express "no movement" — a state
+  // commitment must identify at least one changed dimension — so these choices
+  // plan no state effect at all. The guard precedes offer resolution so the
+  // invariant does not depend on offer validity.
+  if (
+    choice.choiceKind === "decline-offer" ||
+    choice.choiceKind === "defer-offer" ||
+    choice.choiceKind === "request-alternative"
+  ) {
+    return Object.freeze({
+      kind: "not-committed",
+      reason: "Declining, deferring, or requesting an alternative does not authorize a commitment toward the offered opportunity.",
+      nextState: input.currentState,
+    });
+  }
+
   const offer = selectedOffer(input.command, input.activeOffers);
   if (offer === undefined) {
     return Object.freeze({
@@ -335,10 +354,12 @@ export function validateAndPlanStateTransition(input: StateTransitionInput): Sta
     committedAt: input.committedAt,
     contextVersion,
   });
-  const accepted = choice.choiceKind === "select-offer" || choice.choiceKind === "request-alternative";
+  // Only `select-offer` reaches here: `pause` and the three non-advancing
+  // choice kinds have already returned. The `learning-path-declined` event kind
+  // is retained in the domain so previously recorded histories remain replayable.
   const pathEvent = causalEvent({
-    idSuffix: accepted ? "learning-path-accepted" : "learning-path-declined",
-    kind: accepted ? "learning-path-accepted" : "learning-path-declined",
+    idSuffix: "learning-path-accepted",
+    kind: "learning-path-accepted",
     command: input.command,
     decision: input.decision,
     commitment,

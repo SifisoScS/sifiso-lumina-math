@@ -135,6 +135,65 @@ test("a learner can choose an alternative offered representation without the ori
   assert.ok(selected.events.some((event) => event.kind === "learning-path-accepted"));
 });
 
+function respondToActiveOffer(choiceKind: "decline-offer" | "defer-offer" | "request-alternative", idPart: string) {
+  const first = execute(exploreConceptCommand({
+    id: `command.slice2.${idPart}.initial`,
+    commandReference: `occurrence.slice2.${idPart}.initial`,
+    learnerId,
+    issuedAt: timestamp,
+    conceptId: "concept.function",
+    pedagogicalLayer: "intuition",
+  }));
+  const offer = first.decision.offers.find((candidate) => candidate.opportunity.kind === "explore-representation");
+  assert.ok(offer, "the setup requires a currently active offer so the guard is not reached by offer invalidity");
+
+  const responded = execute(submitLearnerChoiceCommand({
+    id: `command.slice2.${idPart}.choice`,
+    commandReference: `occurrence.slice2.${idPart}.choice`,
+    learnerId,
+    issuedAt: timestamp,
+    learnerChoice: learnerChoice({
+      id: `choice.slice2.${idPart}.001`,
+      learnerId,
+      choiceKind,
+      offerId: offer?.id,
+      chosenAt: timestamp,
+    }),
+  }), {
+    learnerRecord: recordWithState(first.transition.nextState),
+    activeOffers: first.decision.offers,
+  });
+
+  return { priorState: first.transition.nextState, responded };
+}
+
+test("declining an offer creates no commitment and does not move the learner toward it", () => {
+  const { priorState, responded } = respondToActiveOffer("decline-offer", "decline");
+
+  assert.equal(responded.transition.kind, "not-committed");
+  assert.deepEqual(responded.transition.nextState, priorState);
+  assert.equal(responded.events.some((event) => event.kind === "learning-path-accepted"), false);
+  assert.equal(responded.events.some((event) => event.kind === "state-committed"), false);
+});
+
+test("deferring an offer creates no commitment and does not move the learner toward it", () => {
+  const { priorState, responded } = respondToActiveOffer("defer-offer", "defer");
+
+  assert.equal(responded.transition.kind, "not-committed");
+  assert.deepEqual(responded.transition.nextState, priorState);
+  assert.equal(responded.events.some((event) => event.kind === "learning-path-accepted"), false);
+  assert.equal(responded.events.some((event) => event.kind === "state-committed"), false);
+});
+
+test("requesting an alternative creates no commitment and does not move the learner toward the original offer", () => {
+  const { priorState, responded } = respondToActiveOffer("request-alternative", "request-alternative");
+
+  assert.equal(responded.transition.kind, "not-committed");
+  assert.deepEqual(responded.transition.nextState, priorState);
+  assert.equal(responded.events.some((event) => event.kind === "learning-path-accepted"), false);
+  assert.equal(responded.events.some((event) => event.kind === "state-committed"), false);
+});
+
 test("a prerequisite relationship produces a voluntary revisit opportunity and no automatic state change", () => {
   const result = execute(requestLearningGuidanceCommand({
     id: "command.slice2.prerequisite.001",
