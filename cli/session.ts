@@ -1,6 +1,7 @@
 import {
   canonicalPedagogicalGuidance,
   currentLearnerState,
+  CurrentLearnerState,
   deliveryCapabilityProfile,
   EngineExecutionResult,
   evolveLearnerRecord,
@@ -84,6 +85,54 @@ function ids(session: Session, prefix: string) {
   };
 }
 
+/**
+ * Re-asks the engine what is on offer, now that the learner has moved.
+ *
+ * Offers belong to a decision, and a decision is computed before the state
+ * change it causes -- so the list shown after a choice described where the
+ * learner had been, not where they now were. A learner who followed a bridge to
+ * another concept was still offered the one they had left, and picking it would
+ * have been refused as no longer compatible and reported as "put off for now",
+ * for something they had actively chosen.
+ *
+ * Only done when the learner has actually moved, because that is the only time
+ * the list can be wrong -- if nothing changed, the offers still describe where
+ * they are. A guidance request looked like the instrument for this, but
+ * guidance deliberately withholds an alternative representation until the
+ * learner's own reflection supports offering one, so refreshing that way would
+ * quietly remove an option they could see a moment earlier.
+ */
+function refreshed(session: Session, before: CurrentLearnerState): Session {
+  const after = session.record.state;
+  const conceptId = after.activeConceptId;
+  if (conceptId === undefined) return session;
+  if (after.activeConceptId === before.activeConceptId &&
+      after.activePedagogicalLayer === before.activePedagogicalLayer) {
+    return session;
+  }
+
+  const execution = executeDeterministicLearningInteraction({
+    command: exploreConceptCommand({
+      ...ids(session, "arrived"),
+      learnerId: LEARNER_ID,
+      issuedAt: now(),
+      conceptId,
+      ...(after.activePedagogicalLayer === undefined
+        ? {}
+        : { pedagogicalLayer: after.activePedagogicalLayer }),
+    }),
+    actor,
+    deliveryCapabilities: capabilities,
+    learnerRecord: session.record,
+    knowledgeCatalog: functionsSeedKnowledge,
+    pedagogicalGuidance: canonicalPedagogicalGuidance,
+    activeOffers: session.offers,
+    evaluatedAt: now(),
+  });
+
+  return { ...session, offers: execution.decision.offers, step: session.step + 1 };
+}
+
 function advance(
   session: Session,
   command: Parameters<typeof executeDeterministicLearningInteraction>[0]["command"],
@@ -98,15 +147,13 @@ function advance(
     activeOffers: session.offers,
     evaluatedAt: now(),
   });
-  return {
-    session: {
-      record: evolveLearnerRecord(session.record, command, execution).learnerRecord,
-      offers: execution.decision.offers,
-      step: session.step + 1,
-      token: session.token,
-    },
-    execution,
+  const moved: Session = {
+    record: evolveLearnerRecord(session.record, command, execution).learnerRecord,
+    offers: execution.decision.offers,
+    step: session.step + 1,
+    token: session.token,
   };
+  return { session: refreshed(moved, session.record.state), execution };
 }
 
 /**

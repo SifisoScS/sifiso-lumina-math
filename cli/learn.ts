@@ -197,6 +197,7 @@ async function main(): Promise<void> {
     // Captured before the choice is applied, because applying it replaces the
     // offer list. This is the thing the learner asked for.
     const offerTaken = choiceKind === "pause" ? undefined : session.offers[index];
+    const depthBefore = session.record.state.activePedagogicalLayer;
     const result = applyChoice(session, choiceKind, index);
     session = result.session;
     if (result.outcome.kind !== "no-such-offer") saveRecord(session.record);
@@ -241,6 +242,14 @@ async function main(): Promise<void> {
       stdout.write("  s to see where you are, w to write, a number to pick this up\n");
       stdout.write("  again, q to close.\n");
       continue;
+    }
+
+    // Changing depth changes what is on offer, sometimes dramatically. Watching
+    // most of the list disappear with no explanation reads as the system
+    // withdrawing things rather than the learner having gone deeper.
+    const depthAfter = session.record.state.activePedagogicalLayer;
+    if (depthAfter !== undefined && depthAfter !== depthBefore) {
+      stdout.write(`  You are now at ${depthAfter} depth, so what is on offer has changed.\n`);
     }
 
     if (offerTaken !== undefined &&

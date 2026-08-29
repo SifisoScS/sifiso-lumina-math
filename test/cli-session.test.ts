@@ -412,3 +412,100 @@ test("a retired asset is never shown to a learner", () => {
     assert.equal(lines.includes(asset.content), false, "retired material reached a learner");
   }
 });
+
+// ---------------------------------------------------------------------------
+// Offers describe where the learner is now
+//
+// Offers belong to a decision, and a decision is computed before the state
+// change it causes. So the list shown after a choice described where the
+// learner had been. Following a bridge to another concept left them being
+// offered the one they had just left, and picking it would have been refused as
+// no longer compatible and reported as "put off for now" -- for something they
+// had actively chosen.
+// ---------------------------------------------------------------------------
+
+test("after moving to another concept, every offer belongs to the new one", () => {
+  let session = startSession("concept.function");
+  const bridge = session.offers.findIndex((offer) => offer.opportunity.kind === "explore-concept-bridge");
+  assert.ok(bridge >= 0, "there is no bridge to follow");
+
+  session = applyChoice(session, "select-offer", bridge).session;
+  const now = session.record.state.activeConceptId;
+  assert.equal(now, "concept.inverse-function");
+
+  for (const offer of session.offers) {
+    assert.equal(
+      offer.opportunity.conceptId,
+      now,
+      `offered ${offer.opportunity.id} while the learner is on ${now}`,
+    );
+  }
+});
+
+test("a learner is never offered something the engine would then refuse", () => {
+  // The failure this prevents: being shown an option, choosing it, and being
+  // told it was put off for now.
+  let session = startSession("concept.function");
+  const bridge = session.offers.findIndex((offer) => offer.opportunity.kind === "explore-concept-bridge");
+  session = applyChoice(session, "select-offer", bridge).session;
+
+  for (let index = 0; index < session.offers.length; index += 1) {
+    const outcome = applyChoice(session, "select-offer", index).outcome;
+    assert.notEqual(
+      outcome.kind,
+      "no-such-offer",
+      `offer ${index + 1} was shown but could not be taken`,
+    );
+    if (outcome.kind === "held") {
+      assert.fail(`offer ${index + 1} was shown, chosen, and then refused`);
+    }
+  }
+});
+
+test("changing depth changes what is on offer straight away", () => {
+  let session = startSession("concept.function");
+  const exam = session.offers.findIndex(
+    (offer) => offer.opportunity.learningExperienceId === "experience.function.exam-patterns-identifying-function",
+  );
+  assert.ok(exam >= 0);
+  const before = session.offers.length;
+
+  session = applyChoice(session, "select-offer", exam).session;
+
+  assert.equal(session.record.state.activePedagogicalLayer, "exam-patterns");
+  assert.notEqual(session.offers.length, before, "the offer list still describes the old depth");
+  for (const offer of session.offers) {
+    const layer = offer.opportunity.pedagogicalLayer;
+    if (layer !== undefined) assert.equal(layer, "exam-patterns");
+  }
+});
+
+test("re-asking what is on offer is not the learner doing something", () => {
+  let session = startSession("concept.function");
+  const commitments = session.record.commitments.length;
+  const bridge = session.offers.findIndex((offer) => offer.opportunity.kind === "explore-concept-bridge");
+
+  session = applyChoice(session, "select-offer", bridge).session;
+
+  // One commitment for the move the learner made, and none for the terminal
+  // asking again afterwards.
+  assert.equal(session.record.commitments.length, commitments + 1);
+  for (const commitment of session.record.commitments) {
+    assert.equal(evaluateStateMutationPolicy(commitment).outcome, "permitted");
+  }
+});
+
+test("asking to see a representation shows the representation, not everything near it", () => {
+  // Five assets were wired into the experience holding the vending machine, and
+  // asking to see it a different way returned all five, burying the one thing
+  // that was asked for.
+  const session = startSession("concept.function");
+  const offer = session.offers.find((candidate) => candidate.opportunity.kind === "explore-representation");
+  assert.ok(offer);
+
+  const lines = materialFor(offer.opportunity, catalogue);
+  const asset = catalogue.assets.find((item) => item.id === offer.opportunity.knowledgeAssetId);
+  assert.ok(asset);
+  assert.deepEqual(lines, [asset.title, asset.content]);
+});
+

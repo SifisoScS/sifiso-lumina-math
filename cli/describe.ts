@@ -133,10 +133,15 @@ export function materialFor(
 
   show(opportunity.knowledgeAssetId);
 
-  const experience = opportunity.learningExperienceId === undefined
-    ? undefined
-    : catalogue.experiences.find((candidate) => candidate.id === opportunity.learningExperienceId);
-  for (const assetId of experience?.knowledgeAssetIds ?? []) show(assetId);
+  // "See this shown a different way" is a request for one representation, not
+  // for everything the experience holding it contains. Answering it with five
+  // assets buries the thing that was asked for.
+  if (opportunity.kind !== "explore-representation") {
+    const experience = opportunity.learningExperienceId === undefined
+      ? undefined
+      : catalogue.experiences.find((candidate) => candidate.id === opportunity.learningExperienceId);
+    for (const assetId of experience?.knowledgeAssetIds ?? []) show(assetId);
+  }
 
   // A prerequisite or bridge leads somewhere else. Say where, in its own words.
   const related = opportunity.relatedConceptId === undefined

@@ -83,7 +83,7 @@ The point of this foundation is that its load-bearing rules are **types and test
 | Real model output passes the seam | A4, A5 | `live/anthropic-conformance.test.ts` — 5 tests, run against Claude Opus 5 | **live** |
 | The two provenance classifiers cannot drift apart | A4 | `test/governance-authorization.test.ts` | **live** |
 | A learner drives the engine directly, with no model in the path | A5 | `cli/learn.ts` — deterministic execution only; no provider, no key, no network | **live** |
-| Declining, deferring and pausing are honoured in front of a person | A2 | `cli/session.ts`; `test/cli-session.test.ts` — 23 tests over the session, without a terminal | **live** |
+| Declining, deferring and pausing are honoured in front of a person | A2 | `cli/session.ts`; `test/cli-session.test.ts` — 28 tests over the session, without a terminal | **live** |
 | The same opportunity is never offered twice | A2 | `generateCandidateLearningOpportunities` — proven: removing the guard fails both the engine and session tests | **live** |
 | The engine's reading of a reflection is never shown as the learner's own words | A2, A6 | `test/cli-session.test.ts` asserts evidence and interpretation stay distinct | **live** |
 | A learner's record is kept only on their own machine | A2, O2 | `cli/store.ts` — one gitignored file, no network call anywhere in the path | **live** |
@@ -99,6 +99,10 @@ The point of this foundation is that its load-bearing rules are **types and test
 | A new opportunity kind cannot be added unclassified | A2 | `never` assertion in `opportunityAcceptanceEffect`, plus a compile-time coverage check in `test/learner-agency.test.ts` | **live** |
 | No pedagogical depth is chosen on the learner's behalf | A2 | `startSession` pins no layer; every concept opens with something on offer | **live** |
 | A learner with nothing on offer is told their exits | A7 | `cli/learn.ts` | **live** |
+| Offers always describe where the learner is now | A2, A6 | `refreshed`, `cli/session.ts` — proven: removing it fails two tests | **live** |
+| A learner is never shown an option the engine would then refuse | A2 | `test/cli-session.test.ts` walks every offer after a move | **live** |
+| Re-asking what is on offer is not the learner acting | A6 | the refresh writes no commitment | **live** |
+| Asking to see a representation shows that representation | A1 | `materialFor` is kind-aware | **live** |
 | The terminal never reports movement that did not happen | A6 | the `already-there` outcome; `test/cli-session.test.ts` | **live** |
 | A union cannot grow without the paths that consume it being reconsidered | A2, A7 | `never` assertions in `experienceOpportunityKind` and the three command-evidence switches — proven: adding an intent, or dropping a case, fails typecheck | **live** |
 | A learner is never told they wrote something they did not write | A6 | `reflectionsWritten` counts reflections; choices are counted separately | **live** |
