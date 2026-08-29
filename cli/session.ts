@@ -205,16 +205,17 @@ export function applyChoice(
   }
 
   if (next.execution.transition.kind === "not-committed") {
+    // O8. Taking up an offer for where you already are is not a decline, and
+    // must not be reported as one. The engine says which it was; this reads it
+    // rather than guessing from whether the state looks different.
+    if (choiceKind === "select-offer" &&
+        next.execution.transition.learnerAction === "learner-action-stands") {
+      return { session: next.session, outcome: { kind: "already-there" } };
+    }
     return {
       session: next.session,
       outcome: { kind: "held", choice: choiceKind, stateUnchanged: unchanged },
     };
-  }
-
-  // A commitment can be recorded whose every value already held. Saying "right,
-  // off we go" then tells the learner something happened when nothing did.
-  if (unchanged) {
-    return { session: next.session, outcome: { kind: "already-there" } };
   }
 
   return {

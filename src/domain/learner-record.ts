@@ -283,6 +283,56 @@ export function stateDeltaDimensions(delta: LearnerStateDelta): readonly string[
   return readonlyList(dimensions);
 }
 
+function changesNothing<T>(
+  change: { readonly kind: "set"; readonly value: T } | { readonly kind: "clear" } | undefined,
+  current: T | undefined,
+): boolean {
+  if (change === undefined) return true;
+  return change.kind === "clear" ? current === undefined : change.value === current;
+}
+
+/**
+ * Reduces a delta to what it would actually change.
+ *
+ * `stateDeltaDimensions` reports what a delta *mentions*, and it never receives
+ * a state to compare against, so it cannot do otherwise. A learner selecting the
+ * offer they were already on therefore produced a commitment recording an
+ * `active-concept` change to the concept they had never left: the record
+ * claimed a movement that did not happen (O8).
+ *
+ * A reduced delta naming nothing cannot become a commitment, because a state
+ * commitment must identify at least one changed dimension. That is the intended
+ * outcome rather than an obstacle. The learner acted, and their action is kept
+ * as evidence and as an event; what is not written is a commitment asserting a
+ * change nobody made.
+ */
+export function effectiveStateDelta(
+  delta: LearnerStateDelta,
+  state: CurrentLearnerState,
+): LearnerStateDelta {
+  const alreadyKnown = new Set<string>(state.evidenceIds);
+  const alreadyInterpreted = new Set<string>(state.interpretationIds);
+  // Built directly rather than through `learnerStateDelta`, which rejects a
+  // delta that changes nothing. Here that is the meaningful answer, not an
+  // invalid input: these values were validated when the delta was first made,
+  // and this only removes the ones that would change nothing.
+  return Object.freeze({
+    ...(delta.engagementFocus === undefined || delta.engagementFocus === state.engagementFocus
+      ? {}
+      : { engagementFocus: delta.engagementFocus }),
+    ...(changesNothing(delta.activeConcept, state.activeConceptId)
+      ? {}
+      : { activeConcept: delta.activeConcept }),
+    ...(changesNothing(delta.activePedagogicalLayer, state.activePedagogicalLayer)
+      ? {}
+      : { activePedagogicalLayer: delta.activePedagogicalLayer }),
+    evidenceIdsToAdd: readonlyList(delta.evidenceIdsToAdd.filter((id) => !alreadyKnown.has(id))),
+    interpretationIdsToAdd: readonlyList(
+      delta.interpretationIdsToAdd.filter((id) => !alreadyInterpreted.has(id)),
+    ),
+  });
+}
+
 /** Applies a validated commitment delta without inspecting an external store. */
 export function applyLearnerStateDelta(
   previous: CurrentLearnerState,

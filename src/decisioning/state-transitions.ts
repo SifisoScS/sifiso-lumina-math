@@ -11,6 +11,7 @@ import {
   HistoricalEvent,
   historicalEvent,
   LearnerStateDelta,
+  effectiveStateDelta,
   learnerStateDelta,
   offerAdvancement,
   StateCommitment,
@@ -146,7 +147,11 @@ function causalEvent(input: {
   readonly kind: HistoricalEvent["kind"];
   readonly command: InteractionCommand;
   readonly decision: LearningDecision;
-  readonly commitment: StateCommitment;
+  /**
+   * Absent when the action changed no state. The event still records that the
+   * learner acted; the missing commitment records that nothing moved.
+   */
+  readonly commitment?: StateCommitment;
   readonly occurredAt: IsoTimestamp;
   readonly contextVersion: string;
   readonly conceptId?: string;
@@ -159,11 +164,12 @@ function causalEvent(input: {
     occurredAt: input.occurredAt,
     interactionCommandId: input.command.id,
     learningDecisionId: input.decision.id,
-    provenanceId: input.commitment.provenanceId,
     contextVersion: input.contextVersion,
     ...(input.conceptId === undefined ? {} : { conceptId: input.conceptId }),
     ...(input.evidenceId === undefined ? {} : { evidenceId: input.evidenceId }),
-    stateCommitmentId: input.commitment.id,
+    ...(input.commitment === undefined
+      ? {}
+      : { provenanceId: input.commitment.provenanceId, stateCommitmentId: input.commitment.id }),
   });
 }
 
@@ -178,11 +184,32 @@ function commandFocusTransition(input: StateTransitionInput, contextVersion: str
       ? {}
       : { activePedagogicalLayer: { kind: "set", value: input.command.pedagogicalLayer } }),
   });
+  const effective = effectiveStateDelta(delta, input.currentState);
+  if (stateDeltaDimensions(effective).length === 0) {
+    // Looking again at the concept already open, at the layer already selected.
+    // It happened, and it moved nothing.
+    const seen: HistoricalEvent[] = [causalEvent({
+      idSuffix: "concept-viewed",
+      kind: "concept-viewed",
+      command: input.command,
+      decision: input.decision,
+      occurredAt: input.committedAt,
+      contextVersion,
+      conceptId: input.command.conceptId,
+    })];
+    return Object.freeze({
+      kind: "not-committed",
+      reason: "The learner is already where this command would place them.",
+      nextState: input.currentState,
+      learnerAction: "learner-action-stands",
+      events: readonlyList(seen),
+    });
+  }
   const commitment = commitmentFor({
     command: input.command,
     decision: input.decision,
     authorization: { kind: "accepted-interaction-command", commandId: input.command.id },
-    delta,
+    delta: effective,
     committedAt: input.committedAt,
     contextVersion,
   });
@@ -224,7 +251,7 @@ function commandFocusTransition(input: StateTransitionInput, contextVersion: str
     kind: "committed",
     commitment,
     events: readonlyList(events),
-    nextState: applyLearnerStateDelta(input.currentState, delta),
+    nextState: applyLearnerStateDelta(input.currentState, effective),
   });
 }
 
@@ -266,11 +293,21 @@ export function validateAndPlanStateTransition(input: StateTransitionInput): Sta
       evidenceIdsToAdd: [evidence.evidence.id],
       interpretationIdsToAdd: input.derivedInterpretationIds ?? [],
     });
+    const effective = effectiveStateDelta(delta, input.currentState);
+    if (stateDeltaDimensions(effective).length === 0) {
+      return Object.freeze({
+        kind: "not-committed",
+        reason: "This evidence is already part of the learner's state.",
+        nextState: input.currentState,
+        learnerAction: "learner-action-stands",
+        events: readonlyList([]),
+      });
+    }
     const commitment = commitmentFor({
       command: input.command,
       decision: input.decision,
       authorization: { kind: "accepted-evidence", evidenceId: evidence.evidence.id },
-      delta,
+      delta: effective,
       committedAt: input.committedAt,
       contextVersion,
     });
@@ -319,7 +356,19 @@ export function validateAndPlanStateTransition(input: StateTransitionInput): Sta
 
   const choice = input.command.learnerChoice;
   if (choice.choiceKind === "pause") {
-    const delta = learnerStateDelta({ engagementFocus: "paused" });
+    const delta = effectiveStateDelta(
+      learnerStateDelta({ engagementFocus: "paused" }),
+      input.currentState,
+    );
+    if (stateDeltaDimensions(delta).length === 0) {
+      return Object.freeze({
+        kind: "not-committed",
+        reason: "The learner is already paused.",
+        nextState: input.currentState,
+        learnerAction: "learner-action-stands",
+        events: readonlyList([]),
+      });
+    }
     const commitment = commitmentFor({
       command: input.command,
       decision: input.decision,
@@ -365,13 +414,12 @@ export function validateAndPlanStateTransition(input: StateTransitionInput): Sta
     // them -- labelling them `learning-path-declined` would put a claim in the
     // history the learner never made. Their choice is still kept as evidence,
     // which carries the exact choiceKind.
-    const declined = choice.choiceKind !== "decline-offer" ? undefined : historicalEvent({
-      id: `event.${input.command.id}.learning-path-declined`,
+    const declined = choice.choiceKind !== "decline-offer" ? undefined : causalEvent({
+      idSuffix: "learning-path-declined",
       kind: "learning-path-declined",
-      learnerId: input.command.learnerId,
+      command: input.command,
+      decision: input.decision,
       occurredAt: input.committedAt,
-      interactionCommandId: input.command.id,
-      learningDecisionId: input.decision.id,
       contextVersion,
       ...(input.currentState.activeConceptId === undefined
         ? {}
@@ -438,11 +486,38 @@ export function validateAndPlanStateTransition(input: StateTransitionInput): Sta
           ? {}
           : { activePedagogicalLayer: { kind: "set", value: opportunity.pedagogicalLayer } }),
       });
+  // O8. A commitment must not claim a change that was not made. Accepting an
+  // offer for the concept and layer already open moves nothing, and most offers
+  // are within the concept the learner is already on -- so this is the common
+  // case, not an edge one. The acceptance is still recorded as an event; it
+  // simply carries no commitment, which is what says nothing moved.
+  const effective = effectiveStateDelta(delta, input.currentState);
+  if (stateDeltaDimensions(effective).length === 0) {
+    const acceptedEvents: HistoricalEvent[] = acceptanceEffect !== "advance-toward-opportunity"
+      ? []
+      : [causalEvent({
+          idSuffix: "learning-path-accepted",
+          kind: "learning-path-accepted",
+          command: input.command,
+          decision: input.decision,
+          occurredAt: input.committedAt,
+          contextVersion,
+          conceptId,
+          evidenceId: choice.id,
+        })];
+    return Object.freeze({
+      kind: "not-committed",
+      reason: "The learner took up an offer that changes nothing about where they are.",
+      nextState: input.currentState,
+      learnerAction: "learner-action-stands",
+      events: readonlyList(acceptedEvents),
+    });
+  }
   const commitment = commitmentFor({
     command: input.command,
     decision: input.decision,
     authorization: { kind: "learner-choice", learnerChoiceId: choice.id },
-    delta,
+    delta: effective,
     committedAt: input.committedAt,
     contextVersion,
   });
@@ -466,7 +541,7 @@ export function validateAndPlanStateTransition(input: StateTransitionInput): Sta
       kind: "committed",
       commitment,
       events: readonlyList([stateEvent]),
-      nextState: applyLearnerStateDelta(input.currentState, delta),
+      nextState: applyLearnerStateDelta(input.currentState, effective),
     });
   }
 
@@ -489,6 +564,6 @@ export function validateAndPlanStateTransition(input: StateTransitionInput): Sta
     kind: "committed",
     commitment,
     events: readonlyList([pathEvent, stateEvent]),
-    nextState: applyLearnerStateDelta(input.currentState, delta),
+    nextState: applyLearnerStateDelta(input.currentState, effective),
   });
 }

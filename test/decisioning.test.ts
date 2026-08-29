@@ -130,9 +130,15 @@ test("a learner can choose an alternative offered representation without the ori
   });
 
   assert.equal(first.transition.kind, "committed");
-  assert.equal(selected.transition.kind, "committed");
-  assert.equal(selected.transition.nextState.activeConceptId, "concept.function");
+
+  // The claim here is that an alternative is never selected silently -- it took
+  // an explicit choice, and that choice is in the history. Under O8 the choice
+  // writes no commitment, because the alternative representation is for the
+  // concept and layer the learner already had open; nothing about where they
+  // are changed, and the record no longer says otherwise.
   assert.ok(selected.events.some((event) => event.kind === "learning-path-accepted"));
+  assert.equal(selected.transition.kind, "not-committed");
+  assert.equal(selected.transition.nextState.activeConceptId, "concept.function");
 });
 
 function respondToActiveOffer(choiceKind: "decline-offer" | "defer-offer" | "request-alternative", idPart: string) {

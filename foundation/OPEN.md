@@ -82,21 +82,31 @@ Screening it well is harder than the existing non-evaluative check, which matche
 
 ---
 
-## O8 — Commitments that change nothing
-
-A state commitment is recorded whenever a delta names a dimension, whether or not the value differs from the one already held. A learner who selects the same offer three times produces three commitments, each recording an `active-concept` change to the concept they were already on.
-
-**Why open:** `stateDeltaDimensions` reports what a delta mentions, not what it altered, and a commitment requires at least one named dimension. Making dimensions reflect actual change would turn a repeat selection into a non-commitment — arguably the honest answer — but it alters replay, the event history, and what every existing commitment means. That is a decision about what the record *is*, not a defect to quietly patch.
-
-**Current behaviour:** the commitment is recorded. Nothing false reaches the learner — the terminal says "you are already there" rather than reporting movement — but the history still contains a change that did not happen.
-
-**Found by:** the first real session, 2026-08-29. Raised by the engineer, not decided by them.
-
----
-
 ## Closed
 
 An open question leaves this register by being decided, never by being forgotten. What it said is kept, so that the reasoning stays inspectable after the fact.
+
+### O8 — Commitments that change nothing · **closed 2026-08-29**
+
+**Was:** a state commitment was recorded whenever a delta named a dimension, whether or not the value differed from the one already held. A learner selecting the offer they were already on produced a commitment recording an `active-concept` change to the concept they had never left.
+
+**Closed by:** the Founder, instructing "Do D" against a five-part proposal. Drafted and implemented by Claude (Opus 5).
+
+**Self-review declared under A8:** the same author wrote O8, assessed the proposal, recommended one part of it over the other four, and implemented that part. The Founder chose it; nothing else in the sequence is independent. The recommended option was also the one that made the author's own O9 work load-bearing, which was declared at the time of recommending.
+
+**How it was closed:** `effectiveStateDelta(delta, state)` reduces a delta to what it would actually change, and every delta in `validateAndPlanStateTransition` now passes through it before a commitment is built. `stateDeltaDimensions` was never the place to fix this — it receives no state and structurally cannot know what changed.
+
+A reduced delta naming nothing cannot become a commitment, because a commitment must identify at least one changed dimension. The transition therefore falls through to `not-committed` with `learnerAction: "learner-action-stands"`, and the machinery built for [O9](#o9--a-decline-leaves-no-trace-closed-2026-08-29) records the learner's action without one. Taking up an offer that moves nothing emits `learning-path-accepted` carrying no `stateCommitmentId`, exactly as a decline does — the action is visible, and the missing commitment is what says nothing moved.
+
+This also fixed partial over-claiming, which the register entry had not noticed: accepting an offer that changed only the layer previously recorded a commitment claiming `engagement-focus` and `active-concept` as well.
+
+**Four parts of the proposal were not taken.** A new event kind was unnecessary — O9 had already established that an event may stand without a commitment. Splitting commitments into mutating and non-mutating kinds, or adding an `effect` flag, was rejected: `evaluateStateMutationPolicy` and `assertCommitmentHasLearnerAuthorization` currently get to treat *a commitment exists* as meaning *state changed, authorised by this learner*, and a commitment that commits nothing is an object that looks authorised while authorising nothing. Replay needed no change once that was declined. The terminal already said the right thing.
+
+**The consequence, stated plainly:** the commitment log is now sparse. Most offers are within the concept a learner already has open, so most acceptances write no commitment. In a three-selection walk the log went from four commitments to two. Commitments are a record of movement; engagement lives in events and evidence. That was put to the Founder before implementation and accepted.
+
+**Enforced by:** `test/learner-agency.test.ts` and `test/slice3-event-loop.test.ts`. Proven by mutation: restoring the old behaviour fails five tests.
+
+---
 
 ### O9 — A decline leaves no trace · **closed 2026-08-29**
 

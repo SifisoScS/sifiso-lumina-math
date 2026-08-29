@@ -147,11 +147,38 @@ test("only acceptance may advance the learner toward an offer", () => {
 // ---------------------------------------------------------------------------
 
 test("select-offer commits and moves the learner toward the offered concept", () => {
-  const { responded } = respondToOffer("select-offer", "select");
+  // Deliberately an offer that leads somewhere else. Accepting an offer for the
+  // concept already open moves nobody, so testing movement with one of those
+  // proved only that a commitment was written -- which is what O8 was about.
+  const { responded } = respondToOffer("select-offer", "select", "explore-concept-bridge");
 
   assert.equal(responded.transition.kind, "committed");
-  assert.equal(responded.transition.nextState.activeConceptId, "concept.function");
+  assert.equal(responded.transition.nextState.activeConceptId, "concept.inverse-function");
   assert.equal(responded.events.some((event) => event.kind === "learning-path-accepted"), true);
+});
+
+test("accepting an offer for where the learner already is commits nothing", () => {
+  // O8. `stateDeltaDimensions` reported what a delta mentioned rather than what
+  // it altered, so this wrote a commitment recording an `active-concept` change
+  // to the concept the learner had never left.
+  const { priorState, responded } = respondToOffer("select-offer", "already-here", "explore-representation");
+
+  assert.equal(responded.transition.kind, "not-committed");
+  assert.deepEqual(responded.transition.nextState, priorState);
+  if (responded.transition.kind === "not-committed") {
+    assert.equal(responded.transition.learnerAction, "learner-action-stands");
+  }
+});
+
+test("taking up an offer is recorded even when it moves nothing", () => {
+  const { responded } = respondToOffer("select-offer", "still-recorded", "explore-representation");
+
+  // The acceptance happened and is in the history. What is absent is a
+  // commitment, and that absence is what says the learner did not move.
+  const accepted = responded.events.find((event) => event.kind === "learning-path-accepted");
+  assert.ok(accepted, "the learner took up an offer and nothing recorded it");
+  assert.equal(accepted.stateCommitmentId, undefined);
+  assert.equal(accepted.evidenceId, "choice.agency.still-recorded.001");
 });
 
 test("decline-offer creates no commitment and leaves state untouched", () => {

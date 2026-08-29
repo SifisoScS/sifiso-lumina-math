@@ -109,6 +109,9 @@ The point of this foundation is that its load-bearing rules are **types and test
 | A decline is provable from the record alone | A6, O9 | `learning-path-declined` with no `stateCommitmentId` — the absence is the proof | **live** |
 | A refused command writes nothing to a learner's record | A2, A3 | `evolveLearnerRecord` — proven: removing the check lets an out-of-scope actor write | **live** |
 | Every non-commitment says whether the learner acted | A6 | required field on the `not-committed` variant, so a new path cannot omit it | **live** |
+| A commitment never claims a change that was not made | A6, O8 | `effectiveStateDelta`, `src/domain/learner-record.ts` | **live** |
+| Taking up an offer that moves nothing is still recorded | A2, A6, O8 | `learning-path-accepted` with no `stateCommitmentId` | **live** |
+| A commitment means state changed, with no exceptions to check | A4, A6 | no non-mutating commitment kind exists — the proposal to add one was declined | **live** |
 
 Every row is built. Where a claim is not enforceable — a model's calibration cannot be checked from outside it — the article says so rather than implying a guarantee it cannot give.
 

@@ -298,10 +298,20 @@ test("Scenario D: a learner offer waits for explicit choice before an additional
     learnerChoice: choice,
   }), time(41), { activeOffers: exploration.execution.decision.offers });
 
-  assert.equal(selected.execution.transition.kind, "committed");
-  assert.equal(sequence.record.commitments.length, commitmentCountAfterDirectCommand + 1);
+  // What this scenario protects is that an offer alone does nothing and only an
+  // explicit choice has any effect. It used to observe that by counting
+  // commitments. Under O8 the choice writes no commitment -- the offer was for
+  // the concept already open -- so the effect is observed where it actually is:
+  // the learner's choice is in their evidence and the acceptance is in the
+  // history, neither of which existed before the choice was made.
+  assert.equal(sequence.record.commitments.length, commitmentCountAfterDirectCommand);
   assert.equal(sequence.record.evidence.some((evidence) => evidence.id === choice.id), true);
   assert.equal(selected.execution.events.some((event) => event.kind === "learning-path-accepted"), true);
+  assert.equal(
+    selected.execution.events.every((event) => event.kind !== "state-committed"),
+    true,
+    "nothing changed, so nothing should have been committed",
+  );
 });
 
 test("Scenario E: ordered commitment replay reconstructs the same learner state deterministically and rejects missing history", () => {
