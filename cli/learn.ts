@@ -3,6 +3,7 @@ import { stdin, stdout } from "node:process";
 
 import { functionsSeedKnowledge, LearnerChoiceKind } from "../src/index.js";
 import { conceptSummary, describeOffers, materialFor } from "./describe.js";
+import { DEFAULT_RECORD_PATH, forgetRecord, loadRecord, saveRecord } from "./store.js";
 import {
   applyChoice,
   applyReflection,
@@ -36,6 +37,7 @@ const HELP = `
   p      pause
   w      write down what you are thinking
   s      show where you are
+  forget delete everything kept about you, permanently
   ?      this help
   q      quit
 `;
@@ -104,14 +106,32 @@ async function main(): Promise<void> {
   const rl = createInterface({ input: stdin, output: stdout });
 
   stdout.write("\n  Math Lumina\n  ───────────\n");
-  stdout.write("  Nothing you type is saved or sent anywhere. It is held in memory\n");
-  stdout.write("  for this session and gone when you quit.\n\n");
+  stdout.write("  What you write here is kept on this computer, in\n");
+  stdout.write(`  ${DEFAULT_RECORD_PATH}, so you can pick up where you left off.\n`);
+  stdout.write("  Nothing is sent anywhere. No account, no server, no one else\n");
+  stdout.write("  can read it. Type forget at any time and the file is deleted.\n\n");
   stdout.write("  You decide what happens. If you decline something it does not\n");
   stdout.write("  happen — you will not be quietly moved along.\n\n");
 
+  // Read before anything is asked, so a learner who cannot be resumed is told
+  // before they start rather than after they have done work.
+  const stored = loadRecord();
+  if (stored.kind === "unreadable") {
+    stdout.write(`  There is a record at ${DEFAULT_RECORD_PATH} that cannot be read:\n`);
+    stdout.write(`    ${stored.reason}\n\n`);
+    stdout.write("  It has not been changed or deleted. Starting over would write\n");
+    stdout.write("  over it, so nothing will happen until you decide. Move or delete\n");
+    stdout.write("  the file yourself if you want to begin again.\n\n");
+    rl.close();
+    return;
+  }
+  if (stored.kind === "loaded") {
+    stdout.write("  Picking up where you left off.\n\n");
+  }
+
   const consent = (await rl.question("  Happy to carry on? (yes/no) ")).trim().toLowerCase();
   if (consent !== "yes" && consent !== "y") {
-    stdout.write("\n  No problem. Nothing was recorded.\n\n");
+    stdout.write("\n  No problem. Nothing new was written down.\n\n");
     rl.close();
     return;
   }
@@ -129,7 +149,8 @@ async function main(): Promise<void> {
     return;
   }
 
-  let session = startSession(chosen.id);
+  let session = startSession(chosen.id, stored.kind === "loaded" ? stored.record : undefined);
+  saveRecord(session.record);
 
   stdout.write(`\n  ${conceptSummary(chosen).split("\n").join("\n  ")}\n`);
   showOffers(session);
@@ -138,11 +159,20 @@ async function main(): Promise<void> {
   for (;;) {
     const answer = (await rl.question("\n  > ")).trim().toLowerCase();
     if (answer === "q") break;
+    if (answer === "forget") {
+      const existed = forgetRecord();
+      stdout.write(existed
+        ? "  Deleted. Nothing about you is kept on this computer any more.\n"
+        : "  There was nothing kept to delete.\n");
+      stdout.write("  This session is still open; anything further will start a new file.\n");
+      continue;
+    }
     if (answer === "?") { stdout.write(HELP); continue; }
     if (answer === "s") { showState(session); continue; }
 
     if (answer === "w") {
       session = await writeSomething(rl, session, chosen.id);
+      saveRecord(session.record);
       showOffers(session);
       continue;
     }
@@ -169,6 +199,7 @@ async function main(): Promise<void> {
     const offerTaken = choiceKind === "pause" ? undefined : session.offers[index];
     const result = applyChoice(session, choiceKind, index);
     session = result.session;
+    if (result.outcome.kind !== "no-such-offer") saveRecord(session.record);
 
     switch (result.outcome.kind) {
       case "no-such-offer":
@@ -220,13 +251,14 @@ async function main(): Promise<void> {
       // Listing it again and waiting would be an odd answer to that.
       if (offerTaken.opportunity.kind === "reflect") {
         session = await writeSomething(rl, session, chosen.id);
+        saveRecord(session.record);
       }
     }
 
     showOffers(session);
   }
 
-  stdout.write("\n  That is everything. Nothing was saved.\n\n");
+  stdout.write(`\n  Saved to ${DEFAULT_RECORD_PATH}. It will be here next time.\n\n`);
   rl.close();
 }
 

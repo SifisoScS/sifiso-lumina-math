@@ -6,3 +6,6 @@ coverage/
 .env.*
 !.env.example
 .DS_Store
+
+# A learner's record. Their words, on their machine, never in this repository.
+.lumina/

@@ -24,7 +24,17 @@ What is retained, for how long, who may see it, how a learner deletes it, and wh
 
 **Why open:** these are legal obligations, not design preferences, and they depend on where the system operates and who uses it. Neither is settled.
 
-**Current behaviour:** the engine is headless and stores nothing itself, and the terminal in `cli/` holds a session in memory and writes no file. Nothing persists yet, so nothing is retained, seen, or deleted. This question becomes urgent the moment anything does persist, which is the next thing a real learner will need.
+**Narrowed 2026-08-29, not closed.** The terminal now keeps a record between sessions. The slice that made this answerable without settling the rest:
+
+- **What is retained:** the learner's own evidence, the interpretations formed from it, the causal events, and the state commitments. One file, `.lumina/learner-record.json`, gitignored.
+- **Where:** the learner's own machine. Nothing is transmitted, so no third party holds it.
+- **Who may see it:** whoever can read that learner's filesystem. No account, no server, no operator.
+- **How a learner deletes it:** `forget` in the terminal, or deleting the file. Both are the same act, and deletion is complete — nothing survives it.
+- **Which jurisdiction:** none is engaged, because nothing leaves the machine. The US data geography noted below still applies to the provider workspace, which remains unused by this path.
+
+**What is still open.** Everything that arrives with a second party: retention periods once a record outlives the person's interest in it; deletion when a copy exists somewhere the learner does not control; who may see a record that is not their own; what a shared or hosted deployment retains, and under whose law. None of that is answered, and none of it is engaged by a local file. The moment a record is transmitted, backed up, or read by anyone other than its subject, this question is open again in full and this narrowing does not cover it.
+
+**Enforced by:** `test/cli-store.test.ts` — the file holds the learner's record and nothing else, deletion leaves nothing to load, and a record belonging to another learner is refused.
 
 **One irreversible choice already made:** the Anthropic workspace Lumina's provider key belongs to was created with a US data geography, which cannot be changed after creation. It carries no learner data today — the adapter sends concept text only — but it is the jurisdiction any future provider-bound learner material would land in.
 

@@ -51,6 +51,15 @@ export interface Session {
   readonly record: LearnerRecord;
   readonly offers: readonly LearningOffer[];
   readonly step: number;
+  /**
+   * Distinguishes this session's command identifiers from every earlier one.
+   *
+   * A returning learner carries a record that already contains
+   * `command.cli.open.001`. Numbering from one again would mint identifiers
+   * that collide with their own history, and the record would silently absorb
+   * the new work as a duplicate of the old.
+   */
+  readonly token: string;
 }
 
 /** What the caller needs to say back to the learner, decided without any I/O. */
@@ -68,7 +77,7 @@ function now() {
 }
 
 function ids(session: Session, prefix: string) {
-  const suffix = String(session.step + 1).padStart(3, "0");
+  const suffix = `${session.token}.${String(session.step + 1).padStart(3, "0")}`;
   return {
     id: `command.cli.${prefix}.${suffix}`,
     commandReference: `occurrence.cli.${prefix}.${suffix}`,
@@ -94,13 +103,14 @@ function advance(
       record: evolveLearnerRecord(session.record, command, execution).learnerRecord,
       offers: execution.decision.offers,
       step: session.step + 1,
+      token: session.token,
     },
     execution,
   };
 }
 
 /**
- * Opens a session on a concept. Nothing exists before this.
+ * Opens a session on a concept, continuing an existing record when there is one.
  *
  * No pedagogical layer is pinned. An earlier version opened every session at
  * `intuition`, which the learner had never asked for; for a concept whose only
@@ -108,13 +118,13 @@ function advance(
  * learner was shown "nothing on offer" on the first screen. Choosing a depth on
  * someone's behalf and then hiding what it excluded is not a small thing.
  */
-export function startSession(conceptId: string): Session {
+export function startSession(conceptId: string, prior?: LearnerRecord): Session {
   const openingState = currentLearnerState({
     learnerId: LEARNER_ID,
     engagementFocus: "unobserved",
   });
-  const empty: Session = {
-    record: learnerRecord({
+  const opening: Session = {
+    record: prior ?? learnerRecord({
       learnerId: openingState.learnerId,
       evidence: [],
       events: [],
@@ -124,12 +134,13 @@ export function startSession(conceptId: string): Session {
     }),
     offers: [],
     step: 0,
+    token: Date.now().toString(36),
   };
 
   return advance(
-    empty,
+    opening,
     exploreConceptCommand({
-      ...ids(empty, "open"),
+      ...ids(opening, "open"),
       learnerId: LEARNER_ID,
       issuedAt: now(),
       conceptId,
@@ -178,7 +189,7 @@ export function applyChoice(
       learnerId: LEARNER_ID,
       issuedAt: now(),
       learnerChoice: learnerChoice({
-        id: `choice.cli.${session.step + 1}`,
+        id: `choice.cli.${session.token}.${session.step + 1}`,
         learnerId: LEARNER_ID,
         choiceKind,
         ...(offer === undefined ? {} : { offerId: offer.id }),
@@ -237,7 +248,7 @@ export function applyReflection(
       learnerId: LEARNER_ID,
       issuedAt: now(),
       reflection: learnerReflection({
-        id: `evidence.reflection.${session.step + 1}`,
+        id: `evidence.reflection.${session.token}.${session.step + 1}`,
         learnerId: LEARNER_ID,
         conceptId: session.record.state.activeConceptId ?? conceptId,
         originalText: text,

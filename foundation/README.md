@@ -86,7 +86,13 @@ The point of this foundation is that its load-bearing rules are **types and test
 | Declining, deferring and pausing are honoured in front of a person | A2 | `cli/session.ts`; `test/cli-session.test.ts` — 23 tests over the session, without a terminal | **live** |
 | The same opportunity is never offered twice | A2 | `generateCandidateLearningOpportunities` — proven: removing the guard fails both the engine and session tests | **live** |
 | The engine's reading of a reflection is never shown as the learner's own words | A2, A6 | `test/cli-session.test.ts` asserts evidence and interpretation stay distinct | **live** |
-| Nothing a learner types is stored or transmitted | A2, O2 | `cli/session.ts` holds the record in memory only — no file write, no network call | **live** |
+| A learner's record is kept only on their own machine | A2, O2 | `cli/store.ts` — one gitignored file, no network call anywhere in the path | **live** |
+| A learner is told what is kept, where, and how to delete it | A2, O2 | `cli/learn.ts` says so before consent is asked | **live** |
+| Deleting means deleting — nothing survives it | A2, O2 | `forgetRecord`; asserted there is nothing left to load | **live** |
+| A stored record is rebuilt from its own history, never trusted | A6, A7 | `replayLearnerHistory` on every load — proven: trusting the stored state fails the test | **live** |
+| A record that does not reconstruct is refused, not repaired | A7 | `loadRecord` returns `unreadable` and leaves the file untouched | **live** |
+| A refusal never silently starts a learner over | A2, A7 | the terminal stops rather than overwrite what it could not read | **live** |
+| A record belonging to another learner is refused | A2, A3 | `replayLearnerHistory` rejects cross-learner history | **live** |
 | Accepting an offer that names no destination moves nobody | A2 | `opportunityAcceptanceEffect`, `src/contracts/core-contracts.ts` | **live** |
 | A learner who accepts the offer to stop is stopped | A2 | `validateAndPlanStateTransition` — proven: removing the branch fails the agency tests | **live** |
 | Stopping is not recorded as accepting a learning path | A6 | same — proven by its own mutation check | **live** |
