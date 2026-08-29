@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Headless Math Lumina Learning Engine domain, decisioning, event-loop, knowledge-pedagogy, and delivery-contract kernels — Phase 2 Slices 1–5.",
+  "description": "Headless Math Lumina Learning Engine domain, decisioning, event-loop, knowledge-pedagogy, and delivery-contract kernels \u2014 Phase 2 Slices 1\u20135.",
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "tsx --test test/**/*.test.ts",
@@ -11,11 +11,15 @@
     "demo:slice2": "tsx demo/slice2-scenario.ts",
     "demo:slice3": "tsx demo/slice3-event-loop.ts",
     "demo:slice4": "tsx demo/slice4-knowledge-pedagogy.ts",
-    "demo:slice5": "tsx demo/slice5-learning-experience-delivery.ts"
+    "demo:slice5": "tsx demo/slice5-learning-experience-delivery.ts",
+    "test:live": "tsx --test live/**/*.test.ts"
   },
   "devDependencies": {
     "@types/node": "^22.15.3",
     "tsx": "^4.19.3",
     "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.122.0"
   }
 }

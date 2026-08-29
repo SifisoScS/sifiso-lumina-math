@@ -21,3 +21,5 @@ export * from "./decisioning/learner-record-evolution.js";
 export * from "./governance/authorization.js";
 export * from "./governance/proposal-policy.js";
 export * from "./decisioning/reasoning-scope.js";
+export * from "./providers/reasoning-prompt.js";
+export * from "./providers/anthropic-reasoning-port.js";
