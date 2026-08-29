@@ -195,3 +195,78 @@ test("descriptions name the concept in words the learner chose it by", () => {
   assert.ok(described.length > 0);
   assert.equal(described.includes("concept."), false);
 });
+
+// ---------------------------------------------------------------------------
+// What the field test found
+//
+// A person opened a session, picked "Domain and Range", was told there was
+// nothing on offer, and later chose "Stop for now" three times without ever
+// being stopped. Both are here now.
+// ---------------------------------------------------------------------------
+
+test("every concept a learner can pick opens with something on offer", () => {
+  // The terminal used to open every session at the intuition layer, which no
+  // learner asked for. Domain and Range has no material at that layer, so
+  // picking it led straight to an empty screen -- a depth chosen on someone's
+  // behalf, silently excluding the only thing there was to show them.
+  for (const concept of functionsSeedKnowledge.concepts) {
+    const session = startSession(concept.id);
+    assert.ok(
+      session.offers.length > 0,
+      `${concept.title} opens with nothing on offer, which is a dead end`,
+    );
+  }
+});
+
+test("choosing the offer to stop actually stops the learner", () => {
+  const opened = startSession("concept.function");
+  const index = opened.offers.findIndex((offer) => offer.opportunity.kind === "pause");
+  assert.ok(index >= 0, "the learner is never shown a way to stop");
+
+  const { session, outcome } = applyChoice(opened, "select-offer", index);
+
+  assert.equal(outcome.kind, "paused", "the learner asked to stop and was told they had moved");
+  assert.equal(session.record.state.engagementFocus, "paused");
+});
+
+test("choosing to decide for yourself moves the learner nowhere", () => {
+  const opened = startSession("concept.function");
+  const index = opened.offers.findIndex((offer) => offer.opportunity.kind === "allow-learner-choice");
+  assert.ok(index >= 0);
+  const before = opened.record.state;
+
+  const { session, outcome } = applyChoice(opened, "select-offer", index);
+
+  assert.equal(outcome.kind, "left-to-you");
+  assert.equal(session.record.state.activeConceptId, before.activeConceptId);
+  assert.equal(session.record.state.engagementFocus, before.engagementFocus);
+});
+
+test("the terminal never claims movement that did not happen", () => {
+  // "Right -- Domain and Range." was printed after a choice that changed
+  // nothing at all. Whatever the engine records internally, what a learner is
+  // told has to match what became true.
+  let session = startSession("concept.function");
+  const index = session.offers.findIndex((offer) => offer.opportunity.kind === "continue");
+  assert.ok(index >= 0);
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const before = session.record.state;
+    const result = applyChoice(session, "select-offer", index);
+    session = result.session;
+    const after = session.record.state;
+
+    const moved =
+      after.activeConceptId !== before.activeConceptId ||
+      after.engagementFocus !== before.engagementFocus ||
+      after.activePedagogicalLayer !== before.activePedagogicalLayer;
+
+    if (result.outcome.kind === "moved") {
+      assert.ok(moved, `attempt ${attempt}: reported movement, but nothing changed`);
+    }
+    if (!moved && result.outcome.kind !== "no-such-offer") {
+      assert.notEqual(result.outcome.kind, "moved", `attempt ${attempt}: nothing changed`);
+    }
+  }
+});
+

@@ -298,6 +298,49 @@ export type LearningOpportunityKind =
   | "pause"
   | "allow-learner-choice";
 
+/**
+ * What accepting an opportunity means for the learner's state.
+ *
+ * Most of these kinds name somewhere to go. Two do not. `pause` is a request to
+ * stop and `allow-learner-choice` is a request to be left to decide; neither is
+ * a destination. Both used to be treated as movement toward the offer, so a
+ * learner who chose "stop for now" was committed into active focus -- the
+ * system answering an explicit request with its opposite. Found by a person
+ * using the terminal, not by a test.
+ *
+ * The distinction was always real; it just was not written down anywhere the
+ * compiler could see. It is here now, so a new opportunity kind is a compile
+ * error until someone says what accepting it does.
+ */
+export type OpportunityAcceptanceEffect =
+  | "advance-toward-opportunity"
+  | "suspend-engagement"
+  | "no-state-effect";
+
+export function opportunityAcceptanceEffect(kind: LearningOpportunityKind): OpportunityAcceptanceEffect {
+  switch (kind) {
+    case "continue":
+    case "practise":
+    case "reflect":
+    case "revisit":
+    case "explore-representation":
+    case "revisit-prerequisite":
+    case "explore-concept-bridge":
+    case "move-toward-layer":
+      return "advance-toward-opportunity";
+    case "pause":
+      return "suspend-engagement";
+    case "allow-learner-choice":
+      return "no-state-effect";
+    default: {
+      const unclassified: never = kind;
+      throw new DomainValidationError(
+        `Learning opportunity kind is not classified for acceptance: ${String(unclassified)}`,
+      );
+    }
+  }
+}
+
 export interface CandidateLearningOpportunity {
   readonly id: StableId;
   readonly kind: LearningOpportunityKind;

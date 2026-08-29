@@ -82,4 +82,16 @@ Screening it well is harder than the existing non-evaluative check, which matche
 
 ---
 
+## O8 — Commitments that change nothing
+
+A state commitment is recorded whenever a delta names a dimension, whether or not the value differs from the one already held. A learner who selects the same offer three times produces three commitments, each recording an `active-concept` change to the concept they were already on.
+
+**Why open:** `stateDeltaDimensions` reports what a delta mentions, not what it altered, and a commitment requires at least one named dimension. Making dimensions reflect actual change would turn a repeat selection into a non-commitment — arguably the honest answer — but it alters replay, the event history, and what every existing commitment means. That is a decision about what the record *is*, not a defect to quietly patch.
+
+**Current behaviour:** the commitment is recorded. Nothing false reaches the learner — the terminal says "you are already there" rather than reporting movement — but the history still contains a change that did not happen.
+
+**Found by:** the first real session, 2026-08-29. Raised by the engineer, not decided by them.
+
+---
+
 *O1–O6 carry forward the `openPolicyExtensionPoints` already declared in `src/domain/policy-governance.ts`. That code-level register and this document should be kept consistent; where they disagree, this document is the one to fix.*

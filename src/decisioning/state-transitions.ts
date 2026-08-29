@@ -3,6 +3,7 @@ import {
   InteractionCommand,
   LearningDecision,
   LearningOffer,
+  opportunityAcceptanceEffect,
 } from "../contracts/core-contracts.js";
 import {
   applyLearnerStateDelta,
@@ -336,14 +337,34 @@ export function validateAndPlanStateTransition(input: StateTransitionInput): Sta
   }
 
   const opportunity = offer.opportunity;
+  const acceptanceEffect = opportunityAcceptanceEffect(opportunity.kind);
+
+  // Foundation article A2. Accepting an offer moves the learner toward it only
+  // when the offer names somewhere to go. "Decide for yourself what to do next"
+  // names nothing, so accepting it changes no state -- as with the non-advancing
+  // choice kinds above, the choice itself is still recorded as an
+  // InteractionCommand. `opportunityAcceptanceEffect` is exhaustive at compile
+  // time, so a new opportunity kind cannot reach here unclassified.
+  if (acceptanceEffect === "no-state-effect") {
+    return Object.freeze({
+      kind: "not-committed",
+      reason: "Choosing to decide for oneself does not move the learner toward anything.",
+      nextState: input.currentState,
+    });
+  }
+
   const conceptId = opportunity.relatedConceptId ?? opportunity.conceptId;
-  const delta = learnerStateDelta({
-    engagementFocus: "active-focus",
-    activeConcept: { kind: "set", value: conceptId },
-    ...(opportunity.pedagogicalLayer === undefined
-      ? {}
-      : { activePedagogicalLayer: { kind: "set", value: opportunity.pedagogicalLayer } }),
-  });
+  // A learner who accepts a pause is asking to stop, and is stopped -- the same
+  // state effect as the `pause` choice kind, reached by a different route.
+  const delta = acceptanceEffect === "suspend-engagement"
+    ? learnerStateDelta({ engagementFocus: "paused" })
+    : learnerStateDelta({
+        engagementFocus: "active-focus",
+        activeConcept: { kind: "set", value: conceptId },
+        ...(opportunity.pedagogicalLayer === undefined
+          ? {}
+          : { activePedagogicalLayer: { kind: "set", value: opportunity.pedagogicalLayer } }),
+      });
   const commitment = commitmentFor({
     command: input.command,
     decision: input.decision,
@@ -352,6 +373,30 @@ export function validateAndPlanStateTransition(input: StateTransitionInput): Sta
     committedAt: input.committedAt,
     contextVersion,
   });
+  const stateEvent = causalEvent({
+    idSuffix: "state-committed",
+    kind: "state-committed",
+    command: input.command,
+    decision: input.decision,
+    commitment,
+    occurredAt: input.committedAt,
+    contextVersion,
+    conceptId,
+    evidenceId: choice.id,
+  });
+
+  // Accepting a pause is not accepting a learning path. Recording one would put
+  // a claim in the causal history that the learner never made, which A6 exists
+  // to prevent: history is what happened, not a tidier version of it.
+  if (acceptanceEffect === "suspend-engagement") {
+    return Object.freeze({
+      kind: "committed",
+      commitment,
+      events: readonlyList([stateEvent]),
+      nextState: applyLearnerStateDelta(input.currentState, delta),
+    });
+  }
+
   // Only `select-offer` reaches here: `pause` and the three non-advancing
   // choice kinds have already returned. The `learning-path-declined` event kind
   // is retained in the domain so previously recorded histories remain replayable.
@@ -370,20 +415,7 @@ export function validateAndPlanStateTransition(input: StateTransitionInput): Sta
   return Object.freeze({
     kind: "committed",
     commitment,
-    events: readonlyList([
-      pathEvent,
-      causalEvent({
-        idSuffix: "state-committed",
-        kind: "state-committed",
-        command: input.command,
-        decision: input.decision,
-        commitment,
-        occurredAt: input.committedAt,
-        contextVersion,
-        conceptId,
-        evidenceId: choice.id,
-      }),
-    ]),
+    events: readonlyList([pathEvent, stateEvent]),
     nextState: applyLearnerStateDelta(input.currentState, delta),
   });
 }

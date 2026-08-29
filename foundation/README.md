@@ -83,10 +83,17 @@ The point of this foundation is that its load-bearing rules are **types and test
 | Real model output passes the seam | A4, A5 | `live/anthropic-conformance.test.ts` — 5 tests, run against Claude Opus 5 | **live** |
 | The two provenance classifiers cannot drift apart | A4 | `test/governance-authorization.test.ts` | **live** |
 | A learner drives the engine directly, with no model in the path | A5 | `cli/learn.ts` — deterministic execution only; no provider, no key, no network | **live** |
-| Declining, deferring and pausing are honoured in front of a person | A2 | `cli/session.ts`; `test/cli-session.test.ts` — 11 tests over the session, without a terminal | **live** |
+| Declining, deferring and pausing are honoured in front of a person | A2 | `cli/session.ts`; `test/cli-session.test.ts` — 15 tests over the session, without a terminal | **live** |
 | The same opportunity is never offered twice | A2 | `generateCandidateLearningOpportunities` — proven: removing the guard fails both the engine and session tests | **live** |
 | The engine's reading of a reflection is never shown as the learner's own words | A2, A6 | `test/cli-session.test.ts` asserts evidence and interpretation stay distinct | **live** |
 | Nothing a learner types is stored or transmitted | A2, O2 | `cli/session.ts` holds the record in memory only — no file write, no network call | **live** |
+| Accepting an offer that names no destination moves nobody | A2 | `opportunityAcceptanceEffect`, `src/contracts/core-contracts.ts` | **live** |
+| A learner who accepts the offer to stop is stopped | A2 | `validateAndPlanStateTransition` — proven: removing the branch fails the agency tests | **live** |
+| Stopping is not recorded as accepting a learning path | A6 | same — proven by its own mutation check | **live** |
+| A new opportunity kind cannot be added unclassified | A2 | `never` assertion in `opportunityAcceptanceEffect`, plus a compile-time coverage check in `test/learner-agency.test.ts` | **live** |
+| No pedagogical depth is chosen on the learner's behalf | A2 | `startSession` pins no layer; every concept opens with something on offer | **live** |
+| A learner with nothing on offer is told their exits | A7 | `cli/learn.ts` | **live** |
+| The terminal never reports movement that did not happen | A6 | the `already-there` outcome; `test/cli-session.test.ts` | **live** |
 
 Every row is built. Where a claim is not enforceable — a model's calibration cannot be checked from outside it — the article says so rather than implying a guarantee it cannot give.
 

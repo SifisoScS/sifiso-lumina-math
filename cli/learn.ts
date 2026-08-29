@@ -46,8 +46,16 @@ function showState(session: Session): void {
 }
 
 function showOffers(session: Session): void {
+  // An empty list used to be the whole message, which read as a dead end. It is
+  // not one: pausing, writing, and choosing a different concept never depended
+  // on the engine having something to offer, and a learner should not have to
+  // guess that. A7 -- a hold has to name its exit.
   if (session.offers.length === 0) {
-    stdout.write("\n  Nothing on offer just now.\n\n");
+    stdout.write("\n  Nothing on offer here just now.\n");
+    stdout.write("  Not everything is written yet, and this concept has no material\n");
+    stdout.write("  that fits where you are.\n\n");
+    stdout.write("  You can still: w to write down what you are thinking, s to see\n");
+    stdout.write("  where you are, p to pause, q to stop.\n\n");
     return;
   }
   stdout.write("\n  What you could do next\n");
@@ -133,6 +141,12 @@ async function main(): Promise<void> {
         continue;
       case "paused":
         stdout.write("  Paused. Come back whenever.\n");
+        break;
+      case "left-to-you":
+        stdout.write("  Left to you. Nothing was chosen on your behalf.\n");
+        break;
+      case "already-there":
+        stdout.write("  You are already there - nothing moved.\n");
         break;
       case "held":
         stdout.write(

@@ -14,6 +14,7 @@ import {
   learnerRecord,
   learnerReflection,
   LearningOffer,
+  opportunityAcceptanceEffect,
   submitLearnerChoiceCommand,
   submitReflectionCommand,
   trustedActorContext,
@@ -55,8 +56,10 @@ export interface Session {
 /** What the caller needs to say back to the learner, decided without any I/O. */
 export type Outcome =
   | { readonly kind: "moved"; readonly conceptId: string | undefined }
+  | { readonly kind: "already-there" }
   | { readonly kind: "held"; readonly choice: LearnerChoiceKind; readonly stateUnchanged: boolean }
   | { readonly kind: "paused" }
+  | { readonly kind: "left-to-you" }
   | { readonly kind: "written-down" }
   | { readonly kind: "no-such-offer" };
 
@@ -96,7 +99,15 @@ function advance(
   };
 }
 
-/** Opens a session on a concept. Nothing exists before this. */
+/**
+ * Opens a session on a concept. Nothing exists before this.
+ *
+ * No pedagogical layer is pinned. An earlier version opened every session at
+ * `intuition`, which the learner had never asked for; for a concept whose only
+ * experience sits at another layer that filtered everything away and the
+ * learner was shown "nothing on offer" on the first screen. Choosing a depth on
+ * someone's behalf and then hiding what it excluded is not a small thing.
+ */
 export function startSession(conceptId: string): Session {
   const openingState = currentLearnerState({
     learnerId: LEARNER_ID,
@@ -122,7 +133,6 @@ export function startSession(conceptId: string): Session {
       learnerId: LEARNER_ID,
       issuedAt: now(),
       conceptId,
-      pedagogicalLayer: "intuition",
     }),
   ).session;
 }
@@ -160,26 +170,39 @@ export function applyChoice(
     }),
   );
 
-  if (choiceKind === "pause") {
+  const after = next.session.record.state;
+  const unchanged =
+    after.activeConceptId === before.activeConceptId &&
+    after.engagementFocus === before.engagementFocus &&
+    after.activePedagogicalLayer === before.activePedagogicalLayer;
+
+  if (choiceKind === "pause" || after.engagementFocus === "paused") {
     return { session: next.session, outcome: { kind: "paused" } };
+  }
+
+  // Accepting "decide for yourself" is a real choice and is recorded as one,
+  // but it is not a destination and moves nobody. The engine's own classifier
+  // decides that, so this surface cannot drift from the rule the engine applies.
+  if (offer !== undefined && opportunityAcceptanceEffect(offer.opportunity.kind) === "no-state-effect") {
+    return { session: next.session, outcome: { kind: "left-to-you" } };
   }
 
   if (next.execution.transition.kind === "not-committed") {
     return {
       session: next.session,
-      outcome: {
-        kind: "held",
-        choice: choiceKind,
-        stateUnchanged:
-          next.session.record.state.activeConceptId === before.activeConceptId &&
-          next.session.record.state.engagementFocus === before.engagementFocus,
-      },
+      outcome: { kind: "held", choice: choiceKind, stateUnchanged: unchanged },
     };
+  }
+
+  // A commitment can be recorded whose every value already held. Saying "right,
+  // off we go" then tells the learner something happened when nothing did.
+  if (unchanged) {
+    return { session: next.session, outcome: { kind: "already-there" } };
   }
 
   return {
     session: next.session,
-    outcome: { kind: "moved", conceptId: next.session.record.state.activeConceptId },
+    outcome: { kind: "moved", conceptId: after.activeConceptId },
   };
 }
 

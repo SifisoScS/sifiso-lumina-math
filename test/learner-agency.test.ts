@@ -9,6 +9,8 @@ import {
   functionsSeedKnowledge,
   LearnerChoiceKind,
   learnerChoice,
+  LearningOpportunityKind,
+  opportunityAcceptanceEffect,
   learnerRecord,
   offerAdvancement,
   submitLearnerChoiceCommand,
@@ -45,7 +47,11 @@ function recordWithState(state: ReturnType<typeof currentLearnerState>) {
 }
 
 /** Establishes an active offer, then responds to it with the given choice kind. */
-function respondToOffer(choiceKind: LearnerChoiceKind, idPart: string) {
+function respondToOffer(
+  choiceKind: LearnerChoiceKind,
+  idPart: string,
+  opportunityKind: LearningOpportunityKind = "explore-representation",
+) {
   const first = executeDeterministicLearningInteraction({
     command: exploreConceptCommand({
       id: `command.agency.${idPart}.initial`,
@@ -63,7 +69,7 @@ function respondToOffer(choiceKind: LearnerChoiceKind, idPart: string) {
     evaluatedAt: timestamp,
   });
 
-  const offer = first.decision.offers.find((candidate) => candidate.opportunity.kind === "explore-representation");
+  const offer = first.decision.offers.find((candidate) => candidate.opportunity.kind === opportunityKind);
   assert.ok(offer, "setup requires a currently active offer");
 
   const responded = executeDeterministicLearningInteraction({
@@ -189,4 +195,80 @@ test("no non-advancing choice produces a state commitment under any circumstance
       `${kind} moved the learner toward the offered concept`,
     );
   }
+});
+
+// ---------------------------------------------------------------------------
+// Accepting an offer that is not a destination
+//
+// Found by a person using the terminal. Two of the offered kinds do not name
+// anywhere to go, and both were reaching the movement delta: a learner who
+// chose "Stop for now" was committed into active focus. The system answered an
+// explicit request with its opposite, which is the harm this whole project is
+// organised against, and 126 tests did not notice.
+// ---------------------------------------------------------------------------
+
+const allOpportunityKinds = [
+  "continue",
+  "practise",
+  "reflect",
+  "revisit",
+  "explore-representation",
+  "revisit-prerequisite",
+  "explore-concept-bridge",
+  "move-toward-layer",
+  "pause",
+  "allow-learner-choice",
+] as const;
+
+/** Same compile-time coverage check as for choice kinds, one union along. */
+type UncoveredOpportunity = Exclude<LearningOpportunityKind, (typeof allOpportunityKinds)[number]>;
+const allOpportunityKindsCovered: UncoveredOpportunity extends never ? true : never = true;
+
+test("every learning opportunity kind is classified for acceptance", () => {
+  assert.equal(allOpportunityKindsCovered, true);
+  for (const kind of allOpportunityKinds) {
+    const effect = opportunityAcceptanceEffect(kind);
+    assert.ok(
+      effect === "advance-toward-opportunity" ||
+        effect === "suspend-engagement" ||
+        effect === "no-state-effect",
+      `${kind} must be classified`,
+    );
+  }
+});
+
+test("only the two autonomy controls are exempt from advancing the learner", () => {
+  assert.equal(opportunityAcceptanceEffect("pause"), "suspend-engagement");
+  assert.equal(opportunityAcceptanceEffect("allow-learner-choice"), "no-state-effect");
+  for (const kind of allOpportunityKinds.filter((k) => k !== "pause" && k !== "allow-learner-choice")) {
+    assert.equal(opportunityAcceptanceEffect(kind), "advance-toward-opportunity", `${kind} names a destination`);
+  }
+});
+
+test("accepting the offer to stop stops the learner", () => {
+  const { responded } = respondToOffer("select-offer", "accept-pause", "pause");
+
+  assert.equal(responded.transition.kind, "committed");
+  assert.equal(
+    responded.transition.nextState.engagementFocus,
+    "paused",
+    "the learner asked to stop and was not stopped",
+  );
+});
+
+test("accepting the offer to stop is not recorded as accepting a learning path", () => {
+  // A6. The history is what happened. A learner who stopped did not take up a
+  // path, and a record saying otherwise is a claim they never made.
+  const { responded } = respondToOffer("select-offer", "pause-event", "pause");
+
+  assert.equal(responded.events.some((event) => event.kind === "learning-path-accepted"), false);
+  assert.equal(responded.events.some((event) => event.kind === "state-committed"), true);
+});
+
+test("accepting the offer to decide for yourself commits nothing", () => {
+  const { priorState, responded } = respondToOffer("select-offer", "self-choice", "allow-learner-choice");
+
+  assert.equal(responded.transition.kind, "not-committed");
+  assert.equal(responded.transition.nextState.activeConceptId, priorState.activeConceptId);
+  assert.equal(responded.transition.nextState.engagementFocus, priorState.engagementFocus);
 });
