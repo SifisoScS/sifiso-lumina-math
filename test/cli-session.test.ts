@@ -3,7 +3,13 @@ import test from "node:test";
 
 import { evaluateStateMutationPolicy, functionsSeedKnowledge } from "../src/index.js";
 import { describeOffers, describeOpportunity } from "../cli/describe.js";
-import { applyChoice, applyReflection, startSession } from "../cli/session.js";
+import {
+  applyChoice,
+  applyReflection,
+  choicesMade,
+  reflectionsWritten,
+  startSession,
+} from "../cli/session.js";
 
 /**
  * The session a learner actually drives. Phase 6.
@@ -270,3 +276,54 @@ test("the terminal never claims movement that did not happen", () => {
   }
 });
 
+test("a learner who has written nothing is not told they have written something", () => {
+  // The second field session showed "Written down: 1" to someone who had only
+  // picked an option from a menu. A choice is evidence and is stored alongside
+  // reflections, so counting the record wholesale counted their selection as
+  // their words. A6 -- what a learner is told about their own record has to be
+  // true, and this is the record of the person reading it.
+  let session = startSession("concept.function");
+  assert.equal(reflectionsWritten(session), 0);
+
+  session = applyChoice(session, "select-offer", 0).session;
+  assert.equal(reflectionsWritten(session), 0, "a choice was counted as something written");
+  assert.ok(choicesMade(session) > 0, "the choice itself is still recorded");
+
+  session = applyReflection(session, "A function takes one thing to one thing.", "concept.function").session;
+  assert.equal(reflectionsWritten(session), 1);
+});
+
+test("the two counts never collapse into each other", () => {
+  let session = startSession("concept.function");
+  session = applyChoice(session, "select-offer", 0).session;
+  session = applyReflection(session, "first", "concept.function").session;
+  session = applyChoice(session, "decline-offer", 0).session;
+  session = applyReflection(session, "second", "concept.function").session;
+
+  assert.equal(reflectionsWritten(session), 2);
+  assert.equal(
+    reflectionsWritten(session) + choicesMade(session),
+    session.record.evidence.length,
+    "some evidence is neither a reflection nor a choice and is going unreported",
+  );
+
+  // Only the accepted choice is here. The decline left no trace in the record
+  // at all -- see O9. Asserted so the number is a stated fact rather than an
+  // assumption, and so closing O9 breaks this test rather than passing quietly.
+  assert.equal(choicesMade(session), 1);
+});
+
+test("a learner who pauses stays paused until they act", () => {
+  const opened = startSession("concept.function");
+  const stop = opened.offers.findIndex((offer) => offer.opportunity.kind === "pause");
+  assert.ok(stop >= 0);
+
+  const paused = applyChoice(opened, "select-offer", stop);
+  assert.equal(paused.outcome.kind, "paused");
+  assert.equal(paused.session.record.state.engagementFocus, "paused");
+
+  // Picking something up again is the learner's move, and theirs alone. The
+  // engine must not return them to active focus on its own.
+  const resumed = applyChoice(paused.session, "select-offer", 0);
+  assert.equal(resumed.session.record.state.engagementFocus, "active-focus");
+});

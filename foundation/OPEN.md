@@ -94,4 +94,20 @@ A state commitment is recorded whenever a delta names a dimension, whether or no
 
 ---
 
+## O9 — A decline leaves no trace
+
+Accepting an offer records evidence, two events, and a commitment. Declining the same offer records nothing at all — the learner's evidence, events, and commitments are all unchanged. Their "no" is invisible.
+
+**Cause:** `evolveLearnerRecord` returns the record untouched whenever the planned transition is not `committed`, and the learner's own evidence is appended inside that same branch. So whether a learner's action is recorded depends on whether the system agreed to move, which inverts who the evidence belongs to. The evidence is the learner's; the commitment is the system's.
+
+**Why this is not a small thing:** the defect this project was founded on was declines not being honoured. Declines *are* honoured now, and there are tests for it — but a decline cannot be shown after the fact to have been honoured, because nothing records that it happened. That is the audit gap which let the original defect survive the entire lifetime of the preceding corpus without anyone noticing.
+
+**Why open rather than fixed:** it changes what the record contains, and `disposition` becomes `evolved` for a command that commits nothing. That is a decision about what the record *is*, which belongs to the founder — the same reason [O8](#o8--commitments-that-change-nothing) is open.
+
+**Measured cost of closing it:** appending the learner's evidence on a non-committed transition breaks exactly one test — the one written to pin the current behaviour — and nothing else. Replay, the agency suite, and the governance suite are unaffected. Whether the matching `learning-path-declined` event should also be recorded is a second question; the event kind already exists in the domain.
+
+**Found by:** the second real session, 2026-08-29. Raised by the engineer, not decided by them.
+
+---
+
 *O1–O6 carry forward the `openPolicyExtensionPoints` already declared in `src/domain/policy-governance.ts`. That code-level register and this document should be kept consistent; where they disagree, this document is the one to fix.*

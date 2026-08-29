@@ -3,7 +3,14 @@ import { stdin, stdout } from "node:process";
 
 import { functionsSeedKnowledge, LearnerChoiceKind } from "../src/index.js";
 import { conceptSummary, describeOffers } from "./describe.js";
-import { applyChoice, applyReflection, Session, startSession } from "./session.js";
+import {
+  applyChoice,
+  applyReflection,
+  choicesMade,
+  reflectionsWritten,
+  Session,
+  startSession,
+} from "./session.js";
 
 /**
  * A terminal a person can learn in. Phase 6.
@@ -42,7 +49,8 @@ function showState(session: Session): void {
   if (state.activePedagogicalLayer !== undefined) {
     stdout.write(`    Depth:    ${state.activePedagogicalLayer}\n`);
   }
-  stdout.write(`    Written down: ${session.record.evidence.length}\n\n`);
+  stdout.write(`    Written down: ${reflectionsWritten(session)}\n`);
+  stdout.write(`    Choices made: ${choicesMade(session)}\n\n`);
 }
 
 function showOffers(session: Session): void {
@@ -164,6 +172,15 @@ async function main(): Promise<void> {
       }
       default:
         break;
+    }
+
+    // A learner who has just asked to stop should not be handed the menu again
+    // in the same breath. Nothing further is suggested until they ask for it.
+    if (result.outcome.kind === "paused") {
+      stdout.write("  Nothing more will be suggested until you ask.\n");
+      stdout.write("  s to see where you are, w to write, a number to pick this up\n");
+      stdout.write("  again, q to close.\n");
+      continue;
     }
 
     showOffers(session);

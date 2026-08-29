@@ -138,6 +138,23 @@ export function startSession(conceptId: string): Session {
 }
 
 /**
+ * What the learner has written, as distinct from what they have chosen.
+ *
+ * A learner choice is evidence and is stored alongside reflections, so counting
+ * the record wholesale reported "Written down: 1" to someone who had written
+ * nothing and had only picked an option from a menu. Telling a person something
+ * untrue about their own record is not a rounding error.
+ */
+export function reflectionsWritten(session: Session): number {
+  return session.record.evidence.filter((item) => item.kind === "reflection").length;
+}
+
+/** Choices the learner has made. Recorded as evidence, but not as their words. */
+export function choicesMade(session: Session): number {
+  return session.record.evidence.filter((item) => item.kind === "learner-choice").length;
+}
+
+/**
  * Applies a learner's choice about an offer.
  *
  * `offerIndex` is zero-based and ignored for `pause`, which is not about an
