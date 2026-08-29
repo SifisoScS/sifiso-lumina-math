@@ -1,6 +1,6 @@
 # A7 — Fail-Closed and Safety
 
-*Article 7 of the Math Lumina foundation. Version 1.0.*
+*Article 7 of the Math Lumina foundation. Version 1.1.*
 
 ## The rule
 
@@ -67,8 +67,14 @@ When something fails closed, that fact is recorded and surfaced — to the maint
 | Declared evidence conflicts prevent consequential use | `declaredEvidenceConflict`, `src/decisioning/evidence-evaluation.ts` |
 | An incompatible delivery context returns a non-committing decline rather than a downgrade | `evaluateContextDeliveryCompatibility`, `src/decisioning/delivery-compatibility.ts` |
 | Prohibited evaluative language is rejected before reaching a learner | `evaluateNonEvaluativeText`, `src/domain/policy-governance.ts` |
+| Judgement cannot be smuggled past that guard by presentation | same — text is folded before matching: NFKD, combining marks and invisible characters dropped, homoglyphs folded, separators discarded |
+| Learner-facing text beyond the policy's bound is refused, not truncated | `maxSummaryCharacters`, `src/governance/proposal-policy.ts` |
 | Unassessed practice cannot independently produce an understanding claim | `test/decisioning.test.ts` |
 | Open matters are represented explicitly, not hard-coded | `openPolicyExtensionPoints`, `src/domain/policy-governance.ts` |
+
+The folding guard is deliberately stricter than a literal match and will refuse some innocent text. Over-refusal is the fail-closed direction and is the right way to be wrong here; it is a guard against evasion, not a safety classifier.
+
+*Amendment record. v1.1 (2026-08-29): recording update under A8. Normative text unchanged; the enforcement table records that the phrase guard now resists presentation-based evasion, after hostile testing found a Cyrillic homoglyph, a zero-width space, and hyphens between letters each defeated it.*
 
 ---
 

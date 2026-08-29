@@ -1,12 +1,7 @@
-import { PolicyDefinition, kernelPolicyEvaluation } from "../domain/policy-governance.js";
+import { kernelPolicyEvaluation, policyDefinition } from "../domain/policy-governance.js";
+import { ProposalEnvelope, resolveApprovedEnvelope } from "./proposal-policy.js";
 import { PolicyEvaluation } from "../contracts/core-contracts.js";
-import {
-  ReasoningProposal,
-  ReasoningTask,
-  ReasoningTaskKind,
-  validateReasoningProposal,
-} from "../contracts/reasoning-port.js";
-import { ProvenanceReferenceKind } from "../domain/provenance.js";
+import { ReasoningProposal, ReasoningTask, validateReasoningProposal } from "../contracts/reasoning-port.js";
 import { IsoTimestamp, PolicyVersionRef, readonlyList, StableId } from "../domain/primitives.js";
 
 /**
@@ -55,6 +50,14 @@ export type GovernanceEvaluation =
       readonly policyEvaluation: PolicyEvaluation;
     };
 
+/** Used only to report a refusal when no approved policy could be resolved. */
+const unapprovedPolicyPlaceholder = policyDefinition({
+  id: "policy.unapproved.000",
+  scope: "ai-proposal-acceptance",
+  version: "policy.unapproved.v0",
+  statement: "No approved policy envelope was resolved. Admission is refused.",
+});
+
 const mintedAuthorizations = new WeakSet<object>();
 
 /**
@@ -76,16 +79,35 @@ export function isMintedAuthorization(value: AuthorizedAction): boolean {
 export function evaluateGovernance(input: {
   readonly task: ReasoningTask;
   readonly proposal: ReasoningProposal;
-  readonly policy: PolicyDefinition;
-  readonly admissibleKinds: readonly ReasoningTaskKind[];
-  readonly admissibleProvenanceKinds: readonly ProvenanceReferenceKind[];
+  /** Identifier of an approved policy. What it permits is resolved, not supplied. */
+  readonly policyId: string;
   readonly authorizedAt: IsoTimestamp;
 }): GovernanceEvaluation {
+  // The envelope is resolved from the approved set rather than accepted from
+  // the caller. Hostile testing found that passing the admissible-kind list as
+  // a parameter made the policy advisory - a caller could widen it and admit a
+  // claim about a learner. A policy that does not bind is not a policy.
+  const envelope = resolveApprovedEnvelope(input.policyId);
+  if (envelope === undefined) {
+    return Object.freeze({
+      kind: "refused",
+      reasons: readonlyList([
+        `No approved policy envelope exists for ${input.policyId}; admission requires an approved policy.`,
+      ]),
+      policyEvaluation: kernelPolicyEvaluation({
+        policy: unapprovedPolicyPlaceholder,
+        outcome: "prohibited",
+        rationale: `Policy ${input.policyId} is not in the approved set.`,
+      }),
+    });
+  }
+
+  const policy = envelope.policy;
   const reasons: string[] = [];
 
-  if (input.policy.scope !== "ai-proposal-acceptance") {
+  if (input.proposal.summary.length > envelope.maxSummaryCharacters) {
     reasons.push(
-      `Admitting a reasoning proposal requires a policy scoped to ai-proposal-acceptance; the supplied policy is scoped to ${input.policy.scope}.`,
+      `Reasoning proposal summary is ${input.proposal.summary.length} characters; the policy permits at most ${envelope.maxSummaryCharacters}.`,
     );
   }
 
@@ -94,7 +116,7 @@ export function evaluateGovernance(input: {
     reasons.push(...validation.reasons);
   }
 
-  if (!input.admissibleKinds.includes(input.proposal.kind)) {
+  if (!envelope.admissibleKinds.includes(input.proposal.kind)) {
     reasons.push(
       `Reasoning task kind ${input.proposal.kind} is not admissible under the supplied policy.`,
     );
@@ -112,7 +134,7 @@ export function evaluateGovernance(input: {
   const inadmissibleKinds = [
     ...new Set(
       input.proposal.provenance.references
-        .filter((reference) => !input.admissibleProvenanceKinds.includes(reference.kind))
+        .filter((reference) => !envelope.admissibleProvenanceKinds.includes(reference.kind))
         .map((reference) => reference.kind),
     ),
   ];
@@ -138,7 +160,7 @@ export function evaluateGovernance(input: {
       kind: "refused",
       reasons: readonlyList(reasons),
       policyEvaluation: kernelPolicyEvaluation({
-        policy: input.policy,
+        policy,
         outcome: "prohibited",
         rationale: reasons.join(" "),
       }),
@@ -152,8 +174,8 @@ export function evaluateGovernance(input: {
     kind: "admit-proposal-to-decision",
     proposalId: input.proposal.id,
     taskId: input.task.id,
-    policyId: input.policy.id,
-    policyVersion: input.policy.version,
+    policyId: policy.id,
+    policyVersion: policy.version,
     admittedEvidenceIds: input.proposal.evidenceIds,
     authorizedAt: input.authorizedAt,
   }) as unknown as AuthorizedAction<"admit-proposal-to-decision">;
@@ -164,9 +186,9 @@ export function evaluateGovernance(input: {
     kind: "authorized",
     action,
     policyEvaluation: kernelPolicyEvaluation({
-      policy: input.policy,
+      policy,
       outcome: "permitted",
-      rationale: `Proposal ${input.proposal.id} admitted to the decision under ${input.policy.id}. Admission is not a state change and creates no learner commitment.`,
+      rationale: `Proposal ${input.proposal.id} admitted to the decision under ${policy.id}. Admission is not a state change and creates no learner commitment.`,
     }),
   });
 }

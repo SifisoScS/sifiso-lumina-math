@@ -2,86 +2,186 @@ import { PolicyEvaluation } from "../contracts/core-contracts.js";
 import { ReasoningTaskKind } from "../contracts/reasoning-port.js";
 import { ProvenanceReferenceKind } from "../domain/provenance.js";
 import { StateCommitment } from "../domain/learner-record.js";
-import { kernelPolicyEvaluation, policyDefinition } from "../domain/policy-governance.js";
+import { DomainValidationError } from "../domain/primitives.js";
+import { kernelPolicyEvaluation, PolicyDefinition, policyDefinition } from "../domain/policy-governance.js";
 
 /**
  * Concrete policies for the two `PolicyScope` members that were declared with
- * nothing behind them. A named scope with no policy is an open question wearing
- * the costume of a decision; these close two of them.
+ * nothing behind them, and the envelope that binds what each policy permits.
  */
 
+// ---------------------------------------------------------------------------
+// Classification of reasoning task kinds
+// ---------------------------------------------------------------------------
+
+export type ProposalKindClass =
+  /** Produces material a learner reads. Makes no claim about them, changes no state. */
+  | "learner-facing-material"
+  /** Interprets or judges the learner. Assessment authority is open (OPEN.md O4). */
+  | "claim-about-learner"
+  /** Shapes what a learner is offered next, which bears on autonomy (A2) and O5. */
+  | "shapes-what-is-offered"
+  /** Produces material whose outcome would be treated as evidence; sufficiency unsettled. */
+  | "produces-evidence";
+
+export interface ProposalKindClassification {
+  readonly kindClass: ProposalKindClass;
+  readonly reason: string;
+}
+
 /**
- * Reasoning task kinds a proposal may currently be admitted for.
- *
- * Deliberately narrow. Each admitted kind produces material a learner reads —
- * it makes no claim *about* the learner and has no state effect. The excluded
- * kinds are excluded for stated reasons, not by oversight:
- *
- *   reflection-analysis      interprets learner-owned evidence; interpretation
- *                            of a person is not admitted while OPEN.md O4 stands
- *   misconception-hypothesis a claim about a learner's understanding; assessment
- *                            authority is open (O4)
- *   practice-generation      produces material whose outcome would be treated as
- *                            evidence; evidence sufficiency is not settled
- *   adaptive-path-suggestion shapes what a learner is offered next, which bears
- *                            on autonomy (A2) and on prerequisites (O5)
- *
- * Widening this list is an amendment under A8, not a configuration change.
+ * Every ReasoningTaskKind must be classified. The `never` assertion makes the
+ * switch exhaustive, so a new task kind cannot be added without an explicit
+ * decision about whether machine material of that kind may reach a learner.
+ * The unclassified default is deliberately the restrictive one.
  */
-export const admissibleProposalKinds: readonly ReasoningTaskKind[] = Object.freeze([
+export function classifyProposalKind(kind: ReasoningTaskKind): ProposalKindClassification {
+  switch (kind) {
+    case "explanation-generation":
+      return Object.freeze({
+        kindClass: "learner-facing-material",
+        reason: "Restates a mathematical idea. Says nothing about the learner.",
+      });
+    case "representation-generation":
+      return Object.freeze({
+        kindClass: "learner-facing-material",
+        reason: "Offers another form of the same content. Says nothing about the learner.",
+      });
+    case "dialogue-assistance":
+      return Object.freeze({
+        kindClass: "learner-facing-material",
+        reason: "Responds to what a learner asked. Carries no conclusion about them.",
+      });
+    case "reflection-analysis":
+      return Object.freeze({
+        kindClass: "claim-about-learner",
+        reason: "Interprets learner-owned evidence. Interpretation of a person is not admitted while O4 stands.",
+      });
+    case "misconception-hypothesis":
+      return Object.freeze({
+        kindClass: "claim-about-learner",
+        reason: "A claim about a learner's understanding. Assessment authority is open (O4).",
+      });
+    case "practice-generation":
+      return Object.freeze({
+        kindClass: "produces-evidence",
+        reason: "Produces material whose outcome would be treated as evidence; sufficiency is unsettled.",
+      });
+    case "adaptive-path-suggestion":
+      return Object.freeze({
+        kindClass: "shapes-what-is-offered",
+        reason: "Shapes what a learner is offered next, bearing on autonomy (A2) and prerequisites (O5).",
+      });
+    default: {
+      const unclassified: never = kind;
+      throw new DomainValidationError(`Reasoning task kind is not classified: ${String(unclassified)}`);
+    }
+  }
+}
+
+const ALL_TASK_KINDS: readonly ReasoningTaskKind[] = Object.freeze([
+  "reflection-analysis",
   "explanation-generation",
   "representation-generation",
+  "misconception-hypothesis",
+  "practice-generation",
+  "adaptive-path-suggestion",
   "dialogue-assistance",
 ]);
 
 /**
- * Provenance reference kinds a proposal may claim as its own basis.
- *
- * A4's non-collapse rule runs in one direction: evidence, then interpretation,
- * then proposal, then policy evaluation, then authorised action. A proposal
- * citing a *later* stage as its basis inverts that, and reads as prior approval
- * it does not have. Hostile testing found this to be a live channel — a
- * proposal citing `policy` looks grounded and is claiming the very thing the
- * policy is about to decide.
- *
- * Excluded, and why:
- *
- *   policy, learning-decision,   later or lateral stages; citing them collapses
- *   reasoning-proposal           the ladder A4 keeps apart
- *   interaction-command,         actor and authority context; citing them
- *   trusted-actor-context        implies standing a proposal does not have
- *   assessment-boundary,         assessment authority is open (OPEN.md O4) and
- *   assessment-evidence          A5 bars AI assessment outright
+ * Derived, never hand-listed. Only `learner-facing-material` is admissible, so
+ * the list cannot drift from the classifications that justify it.
  */
-export const admissibleProvenanceKinds: readonly ProvenanceReferenceKind[] = Object.freeze([
+export const admissibleProposalKinds: readonly ReasoningTaskKind[] = Object.freeze(
+  ALL_TASK_KINDS.filter((kind) => classifyProposalKind(kind).kindClass === "learner-facing-material"),
+);
+
+// ---------------------------------------------------------------------------
+// Classification of provenance reference kinds
+// ---------------------------------------------------------------------------
+
+export type ProvenanceClass =
+  /** Legitimately prior to a proposal; may be claimed as its basis. */
+  | "upstream-basis"
+  /** At or after policy evaluation; citing it reads as approval not yet given. */
+  | "downstream-stage"
+  /** Actor or authority context; citing it implies standing a proposal lacks. */
+  | "authority-context"
+  /** Assessment; O4 is open and A5 bars AI assessment outright. */
+  | "assessment";
+
+/**
+ * Exhaustive by the same discipline. A new provenance reference kind cannot be
+ * added without deciding whether a proposal may claim it as its own basis.
+ */
+export function classifyProvenanceReference(kind: ProvenanceReferenceKind): ProvenanceClass {
+  switch (kind) {
+    case "learner-evidence":
+    case "knowledge":
+    case "knowledge-version":
+    case "pedagogical-rule":
+    case "historical-event":
+    case "derived-interpretation":
+    case "learning-experience":
+    case "learning-experience-version":
+    case "delivery-capability":
+    case "delivery-compatibility":
+      return "upstream-basis";
+    case "policy":
+    case "learning-decision":
+    case "reasoning-proposal":
+      return "downstream-stage";
+    case "interaction-command":
+    case "trusted-actor-context":
+      return "authority-context";
+    case "assessment-boundary":
+    case "assessment-evidence":
+      return "assessment";
+    default: {
+      const unclassified: never = kind;
+      throw new DomainValidationError(`Provenance reference kind is not classified: ${String(unclassified)}`);
+    }
+  }
+}
+
+const ALL_PROVENANCE_KINDS: readonly ProvenanceReferenceKind[] = Object.freeze([
+  "interaction-command",
+  "trusted-actor-context",
   "learner-evidence",
-  "knowledge",
-  "knowledge-version",
-  "pedagogical-rule",
   "historical-event",
+  "knowledge",
+  "pedagogical-rule",
+  "policy",
+  "reasoning-proposal",
+  "learning-decision",
+  "delivery-capability",
+  "assessment-boundary",
+  "assessment-evidence",
   "derived-interpretation",
+  "knowledge-version",
   "learning-experience",
   "learning-experience-version",
-  "delivery-capability",
   "delivery-compatibility",
 ]);
 
-/**
- * Fills `PolicyScope: "ai-proposal-acceptance"`. Authorizes admission of
- * machine-originated material into a learner-facing decision, and nothing else.
- */
+/** Derived from the classification, for the same reason as above. */
+export const admissibleProvenanceKinds: readonly ProvenanceReferenceKind[] = Object.freeze(
+  ALL_PROVENANCE_KINDS.filter((kind) => classifyProvenanceReference(kind) === "upstream-basis"),
+);
+
+// ---------------------------------------------------------------------------
+// Policies
+// ---------------------------------------------------------------------------
+
 export const aiProposalAcceptancePolicy = policyDefinition({
   id: "policy.ai-proposal-acceptance.001",
   scope: "ai-proposal-acceptance",
   version: "policy.ai-proposal-acceptance.v1",
   statement:
-    "A reasoning proposal may be admitted into a learner-facing decision only when it matches its task, cites evidence within the task's permitted scope, carries no evaluative language about the learner, claims as its basis only stages upstream of itself, and is of an admissible task kind. Admission permits the proposal's content to be offered. It authorizes no learner conclusion, no assessment, and no state change; a learner's explicit choice remains the only thing that may move them.",
+    "A reasoning proposal may be admitted into a learner-facing decision only when it matches its task, cites evidence within the task's permitted scope, carries no evaluative language about the learner, claims as its basis only stages upstream of itself, stays within the permitted length, and is of an admissible task kind. Admission permits the proposal's content to be offered. It authorizes no learner conclusion, no assessment, and no state change; a learner's explicit choice remains the only thing that may move them.",
 });
 
-/**
- * Fills `PolicyScope: "state-mutation"`. States, as an evaluable policy, the
- * boundary that `StateCommitmentAuthorization` already enforces structurally.
- */
 export const stateMutationPolicy = policyDefinition({
   id: "policy.state-mutation.001",
   scope: "state-mutation",
@@ -89,6 +189,63 @@ export const stateMutationPolicy = policyDefinition({
   statement:
     "A learner-state commitment may be authorized only by an accepted interaction command, accepted learner evidence, or an explicit learner choice. No proposal, computation, model output, policy, delivery, or elapsed time may originate a commitment.",
 });
+
+// ---------------------------------------------------------------------------
+// The policy envelope
+// ---------------------------------------------------------------------------
+
+/**
+ * What a policy actually permits, bound to the policy rather than supplied by
+ * whoever is calling.
+ *
+ * Hostile testing found that passing the admissible-kind list as a parameter
+ * made the policy advisory: a caller could simply widen it and admit a
+ * misconception hypothesis. A6 requires a consequential action to trace to a
+ * named policy; if the caller supplies the limits, the policy names nothing.
+ */
+export interface ProposalEnvelope {
+  readonly policy: PolicyDefinition;
+  readonly admissibleKinds: readonly ReasoningTaskKind[];
+  readonly admissibleProvenanceKinds: readonly ProvenanceReferenceKind[];
+  /** Bound on learner-facing text. A provider returning megabytes is refused, not truncated. */
+  readonly maxSummaryCharacters: number;
+}
+
+function approvedEnvelope(envelope: ProposalEnvelope): ProposalEnvelope {
+  if (envelope.policy.scope !== "ai-proposal-acceptance") {
+    throw new DomainValidationError(
+      "A proposal envelope must wrap a policy scoped to ai-proposal-acceptance.",
+    );
+  }
+  return Object.freeze(envelope);
+}
+
+const approvedEnvelopes: ReadonlyMap<string, ProposalEnvelope> = new Map([
+  [
+    aiProposalAcceptancePolicy.id,
+    approvedEnvelope({
+      policy: aiProposalAcceptancePolicy,
+      admissibleKinds: admissibleProposalKinds,
+      admissibleProvenanceKinds,
+      maxSummaryCharacters: 2000,
+    }),
+  ],
+]);
+
+/**
+ * Resolves what a policy permits. A policy identifier that is not in the
+ * approved set resolves to nothing, and governance refuses — an unapproved
+ * policy cannot be conjured by constructing an object with the right shape.
+ */
+export function resolveApprovedEnvelope(policyId: string): ProposalEnvelope | undefined {
+  return approvedEnvelopes.get(policyId);
+}
+
+export const approvedPolicyIds: readonly string[] = Object.freeze([...approvedEnvelopes.keys()]);
+
+// ---------------------------------------------------------------------------
+// State mutation
+// ---------------------------------------------------------------------------
 
 /**
  * Evaluates a commitment against the state-mutation policy. This duplicates, as

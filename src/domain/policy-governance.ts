@@ -49,13 +49,54 @@ export interface NonEvaluativeTextCheck {
   readonly prohibitedPhrasesFound: readonly string[];
 }
 
+/** Cyrillic and Greek letters that render identically to Latin ones. */
+const HOMOGLYPHS: ReadonlyMap<string, string> = new Map([
+  ["а", "a"], ["е", "e"], ["ё", "e"], ["о", "o"], ["р", "p"],
+  ["с", "c"], ["у", "y"], ["х", "x"], ["һ", "h"], ["і", "i"],
+  ["ј", "j"], ["ӏ", "l"], ["ѕ", "s"], ["ο", "o"], ["α", "a"],
+  ["ε", "e"], ["ρ", "p"], ["υ", "u"], ["ν", "v"], ["κ", "k"],
+]);
+
 /**
- * This check is a deterministic guard, not a substitute for broader safety
- * policy. It enforces the explicitly prohibited phrases in the approved source.
+ * Reduces text to a form in which the prohibited phrases cannot be hidden by
+ * presentation. Hostile testing found the naive check trivially evadable: a
+ * Cyrillic o, a zero-width space, or hyphens between letters all defeated it,
+ * so the guard was decorative against anything that was actually trying.
+ *
+ * Decomposes to NFKD and drops combining marks, removes zero-width and
+ * bidirectional controls, folds known homoglyphs to Latin, then discards every
+ * non-alphanumeric character so separators carry no meaning.
+ *
+ * This is stricter than before and will refuse some innocent text — "correct"
+ * inside "correction" already matched, and collapsing separators widens that.
+ * Over-refusal is the fail-closed direction under A7 and is the right way to be
+ * wrong here. It is a guard against evasion, not a general safety classifier.
+ */
+function foldForPhraseMatching(text: string): string {
+  const COMBINING_MARKS = /[̀-ͯ]/gu;
+  const INVISIBLE = /[​-‏‪-‮⁠-⁤﻿]/gu;
+
+  const decomposed = text
+    .normalize("NFKD")
+    .replace(COMBINING_MARKS, "")
+    .replace(INVISIBLE, "")
+    .toLowerCase();
+
+  const folded: string[] = [];
+  for (const character of decomposed) {
+    folded.push(HOMOGLYPHS.get(character) ?? character);
+  }
+  return folded.join("").replace(/[^a-z0-9]+/gu, "");
+}
+
+/**
+ * A deterministic guard, not a substitute for broader safety policy. It
+ * enforces the explicitly prohibited phrases, matched against folded text so
+ * that presentation cannot be used to smuggle them past.
  */
 export function evaluateNonEvaluativeText(text: string): NonEvaluativeTextCheck {
-  const normalized = requiredText(text, "Text for non-evaluative policy check").toLowerCase();
-  const found = prohibitedPhrases.filter((phrase) => normalized.includes(phrase));
+  const folded = foldForPhraseMatching(requiredText(text, "Text for non-evaluative policy check"));
+  const found = prohibitedPhrases.filter((phrase) => folded.includes(foldForPhraseMatching(phrase)));
   return Object.freeze({
     outcome: found.length === 0 ? "permitted" : "prohibited",
     prohibitedPhrasesFound: Object.freeze([...found]),

@@ -45,7 +45,15 @@ export type AttackKind =
   /** Claims high confidence, hoping confidence buys privilege. */
   | "false-confidence"
   /** A kind excluded from admission while assessment remains open. */
-  | "inadmissible-kind";
+  | "inadmissible-kind"
+  /** Megabytes of learner-facing text. */
+  | "oversized-summary"
+  /** Judges the learner using a Cyrillic homoglyph to dodge the phrase guard. */
+  | "homoglyph-evaluative"
+  /** Same, using a zero-width space inside the prohibited word. */
+  | "zero-width-evaluative"
+  /** Same, using separators between letters. */
+  | "separator-evaluative";
 
 const OUT_OF_SCOPE_EVIDENCE = "evidence.another-learner.reflection.777";
 
@@ -140,6 +148,23 @@ export function hostileProposal(task: ReasoningTask, attack: AttackKind): Reason
 
     case "inadmissible-kind":
       return reasoningProposal({ ...base, kind: "adaptive-path-suggestion" });
+
+    case "oversized-summary":
+      return reasoningProposal({ ...base, summary: "A function pairs each input with one output. ".repeat(5000) });
+
+    // The next three carry the same judgement as "evaluative-language", hidden
+    // three different ways. Each defeated the phrase guard before it folded
+    // text for matching.
+    case "homoglyph-evaluative":
+      // Cyrillic "о" (U+043E) inside "incorrect".
+      return reasoningProposal({ ...base, summary: "Your earlier answer was incоrrect." });
+
+    case "zero-width-evaluative":
+      // Zero-width space (U+200B) inside "incorrect".
+      return reasoningProposal({ ...base, summary: "Your earlier answer was inco​rrect." });
+
+    case "separator-evaluative":
+      return reasoningProposal({ ...base, summary: "Your earlier answer was i-n-c-o-r-r-e-c-t." });
 
     default: {
       const unhandled: never = attack;

@@ -32,9 +32,7 @@ function attack(kind: AttackKind) {
   return evaluateGovernance({
     task,
     proposal: hostileProposal(task, kind),
-    policy: aiProposalAcceptancePolicy,
-    admissibleKinds: admissibleProposalKinds,
-    admissibleProvenanceKinds,
+    policyId: aiProposalAcceptancePolicy.id,
     authorizedAt: timestamp,
   });
 }
@@ -94,6 +92,37 @@ test("a proposal of a different kind than the task requested is refused", () => 
 
 test("a task kind excluded while assessment remains open is refused", () => {
   assert.ok(refusalReasons("inadmissible-kind").some((r) => r.includes("not admissible")));
+});
+
+test("a summary beyond the policy's length bound is refused, not truncated", () => {
+  assert.ok(refusalReasons("oversized-summary").some((r) => r.includes("characters")));
+});
+
+test("judgement hidden by homoglyph, zero-width, or separators is still refused", () => {
+  // Each of these defeated the phrase guard before it folded text for matching:
+  // a Cyrillic o, a zero-width space, and hyphens between letters.
+  for (const kind of ["homoglyph-evaluative", "zero-width-evaluative", "separator-evaluative"] as const) {
+    assert.ok(
+      refusalReasons(kind).some((r) => r.includes("non-evaluative")),
+      `${kind} evaded the non-evaluative guard`,
+    );
+  }
+});
+
+test("a caller cannot widen what a policy permits", () => {
+  // evaluateGovernance takes a policy identifier, not a policy or its limits.
+  // An identifier outside the approved set resolves to nothing and is refused,
+  // so an unapproved envelope cannot be conjured by shaping an object.
+  const result = evaluateGovernance({
+    task,
+    proposal: hostileProposal(task, "well-formed"),
+    policyId: "policy.self-granted.999",
+    authorizedAt: timestamp,
+  });
+
+  assert.equal(result.kind, "refused");
+  if (result.kind !== "refused") return;
+  assert.ok(result.reasons.some((r) => r.includes("approved policy")));
 });
 
 // ---------------------------------------------------------------------------
@@ -196,9 +225,13 @@ test("every attack kind is exercised by this suite", () => {
     "wrong-task-kind",
     "false-confidence",
     "inadmissible-kind",
+    "oversized-summary",
+    "homoglyph-evaluative",
+    "zero-width-evaluative",
+    "separator-evaluative",
   ];
   type Unexercised = Exclude<AttackKind, (typeof exercised)[number]>;
   const allExercised: Unexercised extends never ? true : never = true;
   assert.equal(allExercised, true);
-  assert.equal(exercised.length, 11);
+  assert.equal(exercised.length, 15);
 });

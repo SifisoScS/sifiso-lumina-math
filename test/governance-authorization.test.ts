@@ -4,13 +4,16 @@ import test from "node:test";
 import {
   admissibleProposalKinds,
   admissibleProvenanceKinds,
+  approvedPolicyIds,
+  classifyProposalKind,
+  classifyProvenanceReference,
+  resolveApprovedEnvelope,
   aiProposalAcceptancePolicy,
   AuthorizedAction,
   evaluateGovernance,
   evaluateStateMutationPolicy,
   isMintedAuthorization,
   learnerStateDelta,
-  policyDefinition,
   reasoningProposal,
   reasoningTask,
   stateCommitment,
@@ -56,9 +59,7 @@ function authorize(proposal: ReturnType<typeof reasoningProposal>) {
   return evaluateGovernance({
     task,
     proposal,
-    policy: aiProposalAcceptancePolicy,
-    admissibleKinds: admissibleProposalKinds,
-    admissibleProvenanceKinds,
+    policyId: aiProposalAcceptancePolicy.id,
     authorizedAt: timestamp,
   });
 }
@@ -134,27 +135,44 @@ test("an authorized action cannot be constructed outside the governance module",
 // Refusal is the default
 // ---------------------------------------------------------------------------
 
-test("a policy scoped to something other than ai-proposal-acceptance cannot authorize admission", () => {
-  const wrongScope = policyDefinition({
-    id: "policy.wrong-scope.001",
-    scope: "learner-autonomy",
-    version: "policy.wrong-scope.v1",
-    statement: "A policy about a different subject entirely.",
-  });
-
+test("an unapproved policy identifier cannot authorize admission", () => {
+  // The caller supplies an identifier; what it permits is resolved from the
+  // approved set. A policy object with the right shape is not enough, because
+  // the caller never gets to supply one.
   const result = evaluateGovernance({
     task,
     proposal: proposalWith({}),
-    policy: wrongScope,
-    admissibleKinds: admissibleProposalKinds,
-    admissibleProvenanceKinds,
+    policyId: "policy.not-approved.001",
     authorizedAt: timestamp,
   });
 
   assert.equal(result.kind, "refused");
   if (result.kind !== "refused") return;
-  assert.ok(result.reasons.some((reason) => reason.includes("ai-proposal-acceptance")));
+  assert.ok(result.reasons.some((reason) => reason.includes("approved policy")));
   assert.equal(result.policyEvaluation.outcome, "prohibited");
+});
+
+test("the approved policy set is exactly what governance will act on", () => {
+  assert.deepEqual([...approvedPolicyIds], [aiProposalAcceptancePolicy.id]);
+  assert.ok(resolveApprovedEnvelope(aiProposalAcceptancePolicy.id));
+  assert.equal(resolveApprovedEnvelope("policy.not-approved.001"), undefined);
+});
+
+test("admissible kind and provenance lists are derived from their classifications", () => {
+  // Hand-maintained lists drift from the reasons that justify them. These are
+  // filtered from the classifiers, so they cannot.
+  for (const kind of admissibleProposalKinds) {
+    assert.equal(classifyProposalKind(kind).kindClass, "learner-facing-material");
+  }
+  assert.equal(admissibleProposalKinds.includes("misconception-hypothesis"), false);
+  assert.equal(classifyProposalKind("misconception-hypothesis").kindClass, "claim-about-learner");
+
+  for (const kind of admissibleProvenanceKinds) {
+    assert.equal(classifyProvenanceReference(kind), "upstream-basis");
+  }
+  assert.equal(classifyProvenanceReference("policy"), "downstream-stage");
+  assert.equal(classifyProvenanceReference("assessment-evidence"), "assessment");
+  assert.equal(classifyProvenanceReference("trusted-actor-context"), "authority-context");
 });
 
 test("a proposal citing evidence outside the task's permitted scope is refused", () => {
@@ -201,9 +219,7 @@ test("an inadmissible task kind is refused even when the proposal is otherwise w
       evidenceIds: ["evidence.reflection.001"],
       provenance: testProvenance,
     }),
-    policy: aiProposalAcceptancePolicy,
-    admissibleKinds: admissibleProposalKinds,
-    admissibleProvenanceKinds,
+    policyId: aiProposalAcceptancePolicy.id,
     authorizedAt: timestamp,
   });
 

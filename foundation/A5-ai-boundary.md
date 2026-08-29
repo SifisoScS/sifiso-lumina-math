@@ -1,6 +1,6 @@
 # A5 — AI Boundary
 
-*Article 5 of the Math Lumina foundation. Version 1.2.*
+*Article 5 of the Math Lumina foundation. Version 1.3.*
 
 ## The principle
 
@@ -73,19 +73,19 @@ Two limits worth stating plainly rather than papering over. A model's *calibrati
 |---|---|
 | A proposal carries uncertainty, evidence scope, and provenance | `ReasoningProposal`, `src/contracts/reasoning-port.ts` |
 | A proposal is validated for scope, task match, and non-evaluative language | `validateReasoningProposal`, same file |
-| No evaluative language reaches a learner | `evaluateNonEvaluativeText`, `src/domain/policy-governance.ts` |
 | The engine cannot involve reasoning unless a proposal was actually used | `reasoningInvolved`, `src/decisioning/engine.ts` |
 | AI cannot construct permission | `AuthorizedAction`, `src/governance/authorization.ts` |
-| Admission requires a policy scoped to `ai-proposal-acceptance` | `evaluateGovernance`, same file |
 | Only explanation, representation and dialogue kinds are admissible | `admissibleProposalKinds`, `src/governance/proposal-policy.ts` |
-| Assessment-bearing kinds are excluded while O4 stands | same — refusal is the default |
-| A hostile model cannot cross the seam | `test/hostile-boundary.test.ts` — 16 tests, 11 attack kinds |
+| A hostile model cannot cross the seam | `test/hostile-boundary.test.ts` — 19 tests, 15 attack kinds |
 | A model may not cite a downstream stage as its basis | `admissibleProvenanceKinds`, `src/governance/proposal-policy.ts` |
 | Claimed confidence buys no privilege | `test/hostile-boundary.test.ts` — a confident and an uncertain proposal are treated identically |
+| A caller cannot widen what a policy permits | `resolveApprovedEnvelope`, `src/governance/proposal-policy.ts` |
+
+The full enforcement map is in [README](README.md); the rows above are the load-bearing ones.
 
 Both AI ports — `ReasoningPort` and `AssessmentBoundary` — are currently unwired. Nothing in this article authorises wiring them; that is Phase 5, gated on Phase 4.
 
-*Amendment record. v1.1 (2026-08-29): recording update under A8; enforcement table reports the governance stage as built, following Phase 3. v1.2 (2026-08-29): recording update; hostile-boundary suite built, provenance gaps closed, two limits stated explicitly, following Phase 4. Normative text unchanged throughout.*
+*Amendment record. v1.1 (2026-08-29): governance stage reported as built. v1.2 (2026-08-29): hostile suite built, provenance gaps closed, two limits stated. v1.3 (2026-08-29): policy limits bound to the policy; task kinds now classified exhaustively. All recording updates under A8; normative text unchanged throughout.*
 
 ---
 
