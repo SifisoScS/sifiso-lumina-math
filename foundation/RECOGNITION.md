@@ -10,9 +10,17 @@ Each entry states: **who** (a real, identifiable person) · **role** · **scope 
 
 ## Entries
 
-*None yet.*
+### R1 — Sifiso Cyprian Shezi
 
-The first entry names the Founder and is made as part of the founding act in `ADOPTION.md`. Until then, no one holds authority under these articles.
+- **Role:** Founder
+- **Scope:** The Math Lumina learning system in this repository. May amend articles A1–A8 under [A8](A8-amendment.md), and may recognise others under [A3](A3-authority.md).
+- **Limits:** Bound by the articles as adopted. Amendment only through A8's mechanism. No authority over persons; these articles bind a system.
+- **From:** 2026-08-29
+- **Until:** unbounded
+- **Recognised by:** founding act — see [ADOPTION.md](ADOPTION.md)
+- **Notes:** Sole role-holder; also acts as Maintainer. Self-review applies per A3 and is declared in each change. Standing is asserted by the founding act, not derived — stated plainly in ADOPTION.md rather than disguised.
+
+*This entry records the founding act. It confers nothing on its own; ADOPTION.md is the act, this register is the record of it.*
 
 ---
 

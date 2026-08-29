@@ -10,11 +10,12 @@ Eight articles governing the Math Lumina learning engine.
 
 | | |
 |---|---|
-| **Articles** | A1–A8, version 1.0, drafted |
-| **Adopted** | **No — pending `ADOPTION.md`** |
-| **In force** | Not yet |
+| **Articles** | A1–A8, version 1.0 |
+| **Adopted** | Yes — [ADOPTION.md](ADOPTION.md), 2026-08-29 |
+| **In force** | **Yes** |
+| **Founder** | Sifiso Cyprian Shezi — [RECOGNITION.md](RECOGNITION.md) R1 |
 
-Until `ADOPTION.md` exists, these articles are a draft. Nothing here is in force and no one holds authority under them.
+These articles are in force. Authority under them rests on the founding act in `ADOPTION.md`, which asserts standing rather than deriving it.
 
 ---
 
@@ -62,20 +63,15 @@ Rows marked *Phase N* are claims the articles make that the code does not yet ke
 
 ---
 
-## What `ADOPTION.md` needs to say
+## Where the authority comes from
 
-**This file must be written and committed by the Founder, not drafted by an AI.** If an AI writes the founding act, the new order begins with precisely the defect that froze the old one — authority derived from an analysis rather than asserted by a person. A3 and A4 would be violated by the first file in the directory.
+[ADOPTION.md](ADOPTION.md) — written and signed by the Founder, not drafted by an AI.
 
-It should state, in the Founder's own words:
+That separation was deliberate and is worth recording, because the reasoning is load-bearing. No document can establish its own founding authority; any criterion of legitimacy would itself need legitimating, and that regress does not terminate inside any text. It ends in an act. Had a model written that act, this order would have begun with precisely the defect that froze the previous one — authority derived from an analysis rather than asserted by a person — and A3 and A4 would have been violated by the first file in the directory.
 
-1. **Who** is adopting these articles, by name.
-2. **That standing is asserted, not derived** — not from the D1–D55 corpus, not from owning this repository, not from having built the engine, not from any analysis or AI output. No document can establish its own founding authority; the regress ends in an act.
-3. **What is adopted** — A1–A8 at version 1.0, by commit hash.
-4. **The date.**
-5. **Provenance, honestly** — that the articles were drafted with AI assistance and adopted by a human, and that the drafting conferred nothing.
-6. **That legitimacy is expected to accrue afterwards**, from the order being honoured when inconvenient — not to have been established by this file.
+The articles were drafted with AI assistance. The drafting conferred nothing. The adoption is a human act and says so in its own terms.
 
-The first entry in `RECOGNITION.md` accompanies it.
+Legitimacy is not claimed by that file. It is expected to accrue afterwards, from the order being honoured when it is inconvenient.
 
 ---
 
