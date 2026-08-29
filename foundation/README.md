@@ -101,6 +101,10 @@ The point of this foundation is that its load-bearing rules are **types and test
 | A learner who asks to be shown something is shown it | A1 | `materialFor`, `cli/describe.ts` — showing is not a state change and is no longer gated on one | **live** |
 | Nothing a learner reads as material is invented | A1, A5 | every line is asserted to be a string the catalogue contains | **live** |
 | Retired material never reaches a learner | A1 | `materialFor` — proven by its own mutation check | **live** |
+| Every published experience can actually be offered | A1 | `test/mathematical-knowledge.test.ts` — proven: the corpus had one practice experience and it was unreachable | **live** |
+| Every written asset is shown to someone | A1 | same — nine assets were written and never displayed | **live** |
+| Every concept can be practised, not only read | A1 | same | **live** |
+| Every concept carries material at more than one layer | A1 | same | **live** |
 
 Every row is built. Where a claim is not enforceable — a model's calibration cannot be checked from outside it — the article says so rather than implying a guarantee it cannot give.
 

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  canonicalPedagogicalGuidance,
   conceptRelationship,
   DomainValidationError,
   functionsSeedKnowledge,
@@ -13,9 +14,9 @@ test("minimal Functions seed knowledge resolves as a consistent versioned catalo
   assert.equal(functionsSeedKnowledge.domains.length, 1);
   assert.equal(functionsSeedKnowledge.topics.length, 1);
   assert.equal(functionsSeedKnowledge.concepts.length, 3);
-  assert.equal(functionsSeedKnowledge.relationships.length, 3);
-  assert.equal(functionsSeedKnowledge.assets.length, 13);
-  assert.equal(functionsSeedKnowledge.experiences.length, 7);
+  assert.equal(functionsSeedKnowledge.relationships.length, 4);
+  assert.equal(functionsSeedKnowledge.assets.length, 33);
+  assert.equal(functionsSeedKnowledge.experiences.length, 17);
   assert.equal(functionsSeedKnowledge.experiences.some((experience) => experience.intent === "practice"), true);
   assert.equal(functionsSeedKnowledge.relationships[0]?.semanticKind, "prerequisite-of");
   assert.equal(functionsSeedKnowledge.relationships[1]?.semanticKind, "related-to");
@@ -65,4 +66,62 @@ test("learning experiences use generic delivery requirements rather than present
   });
   assert.deepEqual(experience.deliveryRequirements, ["spoken-output"]);
   assert.ok(!Object.keys(experience).some((key) => /route|page|component|jsx|html/i.test(key)));
+});
+
+// ---------------------------------------------------------------------------
+// Content that cannot be reached is content that does not exist
+// ---------------------------------------------------------------------------
+
+test("every published experience can actually be offered to a learner", () => {
+  // `experience.function.practice-input-output` declared intent "practice" at
+  // the "intuition" layer. Practice is suitable at "mechanics" and
+  // "exam-patterns" and never at "intuition", so the only practice experience
+  // in the corpus was filtered out of every decision. No learner was ever
+  // offered a single question to try, in any concept, and nothing said so --
+  // the catalogue validated, the experience existed, and it was simply
+  // unreachable. A corpus can be wrong in ways a type cannot catch.
+  for (const experience of functionsSeedKnowledge.experiences) {
+    const reachable = canonicalPedagogicalGuidance.some((guidance) =>
+      experience.pedagogicalLayers.includes(guidance.layer) &&
+      guidance.suitableExperienceIntents.includes(experience.intent),
+    );
+    assert.ok(
+      reachable,
+      `${experience.id} declares intent "${experience.intent}" at ${experience.pedagogicalLayers.join("/")}, ` +
+        "where that intent is not suitable, so it can never be offered",
+    );
+  }
+});
+
+test("every concept carries material at more than one pedagogical layer", () => {
+  // Two of the three concepts had a single asset each. A learner picking one
+  // saw one sentence and ran out.
+  for (const concept of functionsSeedKnowledge.concepts) {
+    const layers = new Set(
+      functionsSeedKnowledge.assets
+        .filter((asset) => asset.conceptIds.includes(concept.id))
+        .flatMap((asset) => asset.supportedLayers),
+    );
+    assert.ok(
+      layers.size > 1,
+      `${concept.title} has material at only ${[...layers].join(", ") || "no layer"}`,
+    );
+  }
+});
+
+test("every concept can be practised, not only read", () => {
+  for (const concept of functionsSeedKnowledge.concepts) {
+    const practisable = functionsSeedKnowledge.experiences.some((experience) =>
+      experience.targetConceptIds.includes(concept.id) &&
+      experience.expectedEvidenceTypes.includes("practice-attempt"),
+    );
+    assert.ok(practisable, `${concept.title} offers a learner nothing to attempt`);
+  }
+});
+
+test("every knowledge asset is used by at least one experience", () => {
+  const used = new Set(functionsSeedKnowledge.experiences.flatMap((e) => e.knowledgeAssetIds));
+  for (const asset of functionsSeedKnowledge.assets) {
+    assert.ok(used.has(asset.id), `${asset.id} is written but no experience shows it to anyone`);
+  }
 });

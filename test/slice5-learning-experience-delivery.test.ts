@@ -105,7 +105,12 @@ test("an incompatible delivery context cannot silently downgrade an experience a
     commandId: "command.slice5.incompatible",
   });
   assert.equal(result.diagnostics.deliveryCompatibility?.noCompatibleExperience, true);
-  assert.equal(result.diagnostics.deliveryCompatibility?.incompatible[0]?.experience.id, "experience.function.mechanics-notation");
+  assert.equal(
+    result.diagnostics.deliveryCompatibility?.incompatible.some(
+      (candidate) => candidate.experience.id === "experience.function.mechanics-notation",
+    ),
+    true,
+  );
   assert.equal(result.decision.type, "material");
   assert.equal(result.decision.status, "declined");
   assert.deepEqual(result.decision.offers, []);
