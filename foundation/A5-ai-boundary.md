@@ -1,6 +1,6 @@
 # A5 — AI Boundary
 
-*Article 5 of the Math Lumina foundation. Version 1.0.*
+*Article 5 of the Math Lumina foundation. Version 1.1.*
 
 ## The principle
 
@@ -73,10 +73,15 @@ The question is never "is the model good enough." It is **"can the architecture 
 | A proposal is validated for scope, task match, and non-evaluative language | `validateReasoningProposal`, same file |
 | No evaluative language reaches a learner | `evaluateNonEvaluativeText`, `src/domain/policy-governance.ts` |
 | The engine cannot involve reasoning unless a proposal was actually used | `reasoningInvolved`, `src/decisioning/engine.ts` |
-| AI cannot construct permission | `AuthorizedAction`, `src/governance/authorization.ts` *(Phase 3)* |
+| AI cannot construct permission | `AuthorizedAction`, `src/governance/authorization.ts` |
+| Admission requires a policy scoped to `ai-proposal-acceptance` | `evaluateGovernance`, same file |
+| Only explanation, representation and dialogue kinds are admissible | `admissibleProposalKinds`, `src/governance/proposal-policy.ts` |
+| Assessment-bearing kinds are excluded while O4 stands | same — refusal is the default |
 | A hostile model cannot cross the seam | `test/hostile-boundary.test.ts` *(Phase 4)* |
 
 Both AI ports — `ReasoningPort` and `AssessmentBoundary` — are currently unwired. Nothing in this article authorises wiring them; that is Phase 5, gated on Phase 4.
+
+*Amendment record. v1.1 (2026-08-29): recording update under A8. The normative text is unchanged; the enforcement table now reports the governance stage as built rather than planned, following Phase 3.*
 
 ---
 

@@ -1,6 +1,6 @@
 # A4 — The Authority Seam
 
-*Article 4 of the Math Lumina foundation. Version 1.0.*
+*Article 4 of the Math Lumina foundation. Version 1.1.*
 
 ## The principle
 
@@ -68,11 +68,15 @@ If a change to learner state cannot name its authorisation, it does not happen.
 | No AI-originated variant of commitment authorisation exists | `StateCommitmentAuthorization`, `src/domain/learner-record.ts` |
 | Authorisation checked at the domain kernel | `assertCommitmentHasLearnerAuthorization`, `src/domain/policy-governance.ts` |
 | A proposal carries no decision and no state | `ReasoningProposal`, `src/contracts/reasoning-port.ts` |
-| Permission is a token mintable only inside the governance module | `AuthorizedAction`, `src/governance/authorization.ts` *(planned — Phase 3)* |
-| Constructing that token outside governance is a compile error | negative typecheck *(planned — Phase 3)* |
+| Permission is a token mintable only inside the governance module | `AuthorizedAction` and `evaluateGovernance`, `src/governance/authorization.ts` |
+| Constructing that token outside governance is a compile error | brand symbol is unexported — verified: removing it fails typecheck with TS2578 |
+| A fabricated token fails at runtime even if cast into the type | `isMintedAuthorization`, module-private WeakSet |
+| Admitting machine material is not a state change | `AuthorizedAction` carries no delta, commitment, or authorization field |
 | A hostile proposer cannot cross the seam | `test/hostile-boundary.test.ts` *(planned — Phase 4)* |
 
-The seam is meant to be a compile error, not a paragraph. Where it is currently only a paragraph, that is a gap to close, not a standard to accept.
+The seam is a compile error, not a paragraph. One row remains a paragraph — the hostile-proposer test — and that is a gap to close, not a standard to accept.
+
+*Amendment record. v1.1 (2026-08-29): recording update under A8. The normative text is unchanged; the enforcement table now reports the seam as built rather than planned, following Phase 3.*
 
 ---
 

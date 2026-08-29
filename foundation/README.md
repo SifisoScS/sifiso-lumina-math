@@ -10,7 +10,7 @@ Eight articles governing the Math Lumina learning engine.
 
 | | |
 |---|---|
-| **Articles** | A1–A8, version 1.0 |
+| **Articles** | A1–A8 · A4 and A5 at v1.1, the rest at v1.0 |
 | **Adopted** | Yes — [ADOPTION.md](ADOPTION.md), 2026-08-29 |
 | **In force** | **Yes** |
 | **Founder** | Sifiso Cyprian Shezi — [RECOGNITION.md](RECOGNITION.md) R1 |
@@ -55,8 +55,13 @@ The point of this foundation is that its load-bearing rules are **types and test
 | Provenance is observable, not narrative | A6 | `DecisionProvenance`, `src/domain/provenance.ts` | **live** |
 | Replay reconstructs state; missing history rejected | A6 | `replayLearnerHistory`, `src/decisioning/replay.ts` | **live** |
 | Open matters declared, not hard-coded | A8 | `openPolicyExtensionPoints`, `src/domain/policy-governance.ts` | **live** |
-| Permission is a token mintable only in governance | A4, A5 | `AuthorizedAction`, `src/governance/authorization.ts` | *Phase 3* |
-| Constructing that token elsewhere is a compile error | A4 | negative typecheck | *Phase 3* |
+| Permission is a token mintable only in governance | A4, A5 | `AuthorizedAction`, `evaluateGovernance`, `src/governance/authorization.ts` | **live** |
+| Constructing that token elsewhere is a compile error | A4 | unexported brand symbol — proven: removing it fails typecheck with TS2578 | **live** |
+| A fabricated token fails at runtime even when cast | A4 | `isMintedAuthorization`, module-private WeakSet | **live** |
+| Admission is not a state change | A4, A5 | `AuthorizedAction` carries no delta, commitment, or authorization | **live** |
+| Admission needs a policy scoped to `ai-proposal-acceptance` | A5 | `evaluateGovernance` | **live** |
+| Assessment-bearing proposal kinds are inadmissible | A5, O4 | `admissibleProposalKinds`, `src/governance/proposal-policy.ts` | **live** |
+| Only learner-originated authorisation may back a commitment, as a reportable policy | A2, A6 | `evaluateStateMutationPolicy`, same file | **live** |
 | A hostile proposer cannot cross the seam | A4, A5 | `test/hostile-boundary.test.ts` | *Phase 4* |
 
 Rows marked *Phase N* are claims the articles make that the code does not yet keep. They are listed as gaps rather than quietly omitted.
