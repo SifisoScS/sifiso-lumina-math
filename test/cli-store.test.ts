@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
-import { forgetRecord, loadRecord, saveRecord } from "../cli/store.js";
+import { forgetRecord, loadRecord, recordExists, saveRecord } from "../cli/store.js";
 import { applyChoice, applyReflection, startSession } from "../cli/session.js";
 
 /**
@@ -222,4 +222,19 @@ test("what is written contains only this learner's own material", () => {
     "the file holds something other than the learner's record",
   );
   rmSync(path);
+});
+
+test("whether anything is kept can be asked before it is claimed", () => {
+  // Found by running the terminal: a learner who typed `forget` and then quit
+  // was told "Saved to .lumina/learner-record.json. It will be here next time."
+  // The file was gone. Of everything this terminal says, a false assurance
+  // about deletion is the worst one to get wrong.
+  const path = scratch();
+  assert.equal(recordExists(path), false);
+
+  saveRecord(aSessionWithHistory().record, path);
+  assert.equal(recordExists(path), true);
+
+  forgetRecord(path);
+  assert.equal(recordExists(path), false, "something was kept after being forgotten");
 });

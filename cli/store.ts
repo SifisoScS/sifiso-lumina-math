@@ -268,6 +268,11 @@ export function loadRecord(path: string = DEFAULT_RECORD_PATH): LoadResult {
   }
 }
 
+/** Whether anything is being kept. Asked before telling a learner anything is. */
+export function recordExists(path: string = DEFAULT_RECORD_PATH): boolean {
+  return existsSync(path);
+}
+
 /** Deletes the record. This is what "delete my data" means here: the file goes. */
 export function forgetRecord(path: string = DEFAULT_RECORD_PATH): boolean {
   if (!existsSync(path)) return false;

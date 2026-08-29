@@ -3,7 +3,7 @@ import { stdin, stdout } from "node:process";
 
 import { functionsSeedKnowledge, LearnerChoiceKind } from "../src/index.js";
 import { conceptSummary, describeOffers, materialFor } from "./describe.js";
-import { DEFAULT_RECORD_PATH, forgetRecord, loadRecord, saveRecord } from "./store.js";
+import { DEFAULT_RECORD_PATH, forgetRecord, loadRecord, recordExists, saveRecord } from "./store.js";
 import {
   applyChoice,
   applyReflection,
@@ -267,7 +267,13 @@ async function main(): Promise<void> {
     showOffers(session);
   }
 
-  stdout.write(`\n  Saved to ${DEFAULT_RECORD_PATH}. It will be here next time.\n\n`);
+  // A learner who typed `forget` and then quit was told their record was saved
+  // and would be waiting. It was not, and it will not be. Of everything this
+  // terminal says, a false assurance about deletion is the worst one to get
+  // wrong, so it is checked at the moment of saying it rather than assumed.
+  stdout.write(recordExists()
+    ? `\n  Saved to ${DEFAULT_RECORD_PATH}. It will be here next time.\n\n`
+    : `\n  Nothing is kept. There is no record of this on your computer.\n\n`);
   rl.close();
 }
 
