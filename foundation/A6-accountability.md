@@ -1,6 +1,6 @@
 # A6 — Accountability and Provenance
 
-*Article 6 of the Math Lumina foundation. Version 1.1.*
+*Article 6 of the Math Lumina foundation. Version 1.2.*
 
 ## The rule
 
@@ -64,9 +64,10 @@ Where the same person proposes and approves, or where AI drafts material approve
 | Uncertainty is a validated value object, defaulting to unknown | `UncertaintyStatement`, `src/domain/primitives.ts` |
 | A claim may not be more confident than the basis it rests on | `claimsMoreConfidenceThan`, same file; enforced in `evaluateGovernance` |
 | Material about a learner cannot be cited outside the scope declared for them | `provenanceScope`, `src/governance/proposal-policy.ts` |
+| A task's scope is derived from one learner's own record, so it cannot name another's | `reasoningScopeForContext`, `src/decisioning/reasoning-scope.ts` |
 | Learner-owned reflection text cannot be silently overwritten | `assertReflectionPreserved`, `src/domain/policy-governance.ts` |
 
-*Amendment record. v1.1 (2026-08-29): recording update under A8. Normative text unchanged. Hostile testing found two ways the rules above were stated but not enforced: a proposal could claim low uncertainty on a basis stated as uncalibrated, laundering confidence out of nothing; and material about one learner could be cited as the basis for material shown to another. Both are now checked.*
+*Amendment record. v1.1 (2026-08-29): recording update under A8. Normative text unchanged. Hostile testing found two ways the rules above were stated but not enforced: a proposal could claim low uncertainty on a basis stated as uncalibrated, laundering confidence out of nothing; and material about one learner could be cited as the basis for material shown to another. Both are now checked. v1.2 (2026-08-29): recording update; scope is now derived from the assembled context rather than declared by hand, so the cross-learner case is closed a second time and earlier.*
 
 ---
 

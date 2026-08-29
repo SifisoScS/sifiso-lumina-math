@@ -20,3 +20,4 @@ export * from "./decisioning/replay.js";
 export * from "./decisioning/learner-record-evolution.js";
 export * from "./governance/authorization.js";
 export * from "./governance/proposal-policy.js";
+export * from "./decisioning/reasoning-scope.js";
