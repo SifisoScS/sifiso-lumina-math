@@ -12,7 +12,8 @@
     "demo:slice3": "tsx demo/slice3-event-loop.ts",
     "demo:slice4": "tsx demo/slice4-knowledge-pedagogy.ts",
     "demo:slice5": "tsx demo/slice5-learning-experience-delivery.ts",
-    "test:live": "tsx --test live/**/*.test.ts"
+    "test:live": "tsx --test live/**/*.test.ts",
+    "learn": "tsx cli/learn.ts"
   },
   "devDependencies": {
     "@types/node": "^22.15.3",

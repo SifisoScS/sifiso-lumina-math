@@ -82,6 +82,11 @@ The point of this foundation is that its load-bearing rules are **types and test
 | An inadmissible task kind never reaches a provider | A5 | same — returns before any network call | **live** |
 | Real model output passes the seam | A4, A5 | `live/anthropic-conformance.test.ts` — 5 tests, run against Claude Opus 5 | **live** |
 | The two provenance classifiers cannot drift apart | A4 | `test/governance-authorization.test.ts` | **live** |
+| A learner drives the engine directly, with no model in the path | A5 | `cli/learn.ts` — deterministic execution only; no provider, no key, no network | **live** |
+| Declining, deferring and pausing are honoured in front of a person | A2 | `cli/session.ts`; `test/cli-session.test.ts` — 11 tests over the session, without a terminal | **live** |
+| The same opportunity is never offered twice | A2 | `generateCandidateLearningOpportunities` — proven: removing the guard fails both the engine and session tests | **live** |
+| The engine's reading of a reflection is never shown as the learner's own words | A2, A6 | `test/cli-session.test.ts` asserts evidence and interpretation stay distinct | **live** |
+| Nothing a learner types is stored or transmitted | A2, O2 | `cli/session.ts` holds the record in memory only — no file write, no network call | **live** |
 
 Every row is built. Where a claim is not enforceable — a model's calibration cannot be checked from outside it — the article says so rather than implying a guarantee it cannot give.
 

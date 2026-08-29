@@ -24,7 +24,7 @@ What is retained, for how long, who may see it, how a learner deletes it, and wh
 
 **Why open:** these are legal obligations, not design preferences, and they depend on where the system operates and who uses it. Neither is settled.
 
-**Current behaviour:** the engine is headless and stores nothing itself. This question becomes urgent the moment anything persists — see Phase 6.
+**Current behaviour:** the engine is headless and stores nothing itself, and the terminal in `cli/` holds a session in memory and writes no file. Nothing persists yet, so nothing is retained, seen, or deleted. This question becomes urgent the moment anything does persist, which is the next thing a real learner will need.
 
 **One irreversible choice already made:** the Anthropic workspace Lumina's provider key belongs to was created with a US data geography, which cannot be changed after creation. It carries no learner data today — the adapter sends concept text only — but it is the jurisdiction any future provider-bound learner material would land in.
 

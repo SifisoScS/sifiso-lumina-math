@@ -13,5 +13,5 @@
     "declaration": true,
     "outDir": "dist"
   },
-  "include": ["src/**/*.ts", "test/**/*.ts", "live/**/*.ts"]
+  "include": ["src/**/*.ts", "test/**/*.ts", "live/**/*.ts", "cli/**/*.ts"]
 }

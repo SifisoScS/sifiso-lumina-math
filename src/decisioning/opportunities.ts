@@ -152,10 +152,20 @@ export function generateCandidateLearningOpportunities(
     addLayerMovementCandidates(context, delivery, candidates);
   }
 
+  // An experience that expects reflection evidence can be offered as a place to
+  // write, even when reflecting is not what the experience is for. That is what
+  // this candidate is for.
+  //
+  // The loop above already offers every compatible experience, and an experience
+  // whose own intent is reflection is offered there as `reflect` under this
+  // identical id. Adding it again put the same opportunity in front of the
+  // learner twice, with nothing to choose between the two. An opportunity is
+  // offered once; a person cannot make a choice between two identical options.
   const reflectionExperience = delivery.compatible.find((candidate) =>
     candidate.experience.expectedEvidenceTypes.includes("reflection"),
   )?.experience;
-  if (reflectionExperience !== undefined) {
+  if (reflectionExperience !== undefined &&
+      experienceOpportunityKind(reflectionExperience) !== "reflect") {
     candidates.push(candidateLearningOpportunity({
       id: opportunityId(context, `reflect.${reflectionExperience.id}`),
       kind: "reflect",

@@ -454,3 +454,34 @@ test("an invalid stale-offer transition is rejected without mutating learner sta
   assert.equal(result.nextState, state);
   assert.match(result.reason, /no longer compatible/);
 });
+
+test("no concept is offered the same opportunity twice", () => {
+  // Found by walking a real session in the terminal: two offers for
+  // concept.inverse-function were byte-for-byte identical, opportunity id
+  // included. Two generation paths reached the same reflection experience --
+  // one keyed on the experience's intent, one on the evidence it expects -- and
+  // nothing collapsed them. A learner was shown the same option twice with no
+  // way to tell which was which, which is not a choice at all.
+  //
+  // Asserted over every concept in the catalogue and both layers, so the next
+  // path that converges is caught here rather than in front of a person.
+  for (const concept of functionsSeedKnowledge.concepts) {
+    for (const layer of ["intuition", "mechanics", "exam-patterns"] as const) {
+      const execution = execute(exploreConceptCommand({
+        id: `command.distinct.${concept.id}.${layer}`,
+        commandReference: `occurrence.distinct.${concept.id}.${layer}`,
+        learnerId,
+        issuedAt: timestamp,
+        conceptId: concept.id,
+        pedagogicalLayer: layer,
+      }));
+
+      const ids = execution.decision.offers.map((offer) => offer.opportunity.id);
+      assert.equal(
+        new Set(ids).size,
+        ids.length,
+        `${concept.id} at ${layer} was offered a duplicate opportunity: ${ids.join(", ")}`,
+      );
+    }
+  }
+});
