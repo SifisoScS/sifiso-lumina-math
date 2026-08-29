@@ -78,11 +78,47 @@ export function evolveLearnerRecord(
     });
   }
   if (execution.transition.kind !== "committed") {
-    return Object.freeze({
-      disposition: "unchanged",
+    const unchanged = Object.freeze({
+      disposition: "unchanged" as const,
       learnerRecord: record,
       addedEvidenceIds: readonlyList([]),
       addedEventIds: readonlyList([]),
+      addedInterpretationIds: readonlyList([]),
+      addedCommitmentIds: readonlyList([]),
+      reason: execution.transition.reason,
+    });
+
+    // O9. A learner action that plans no state change is still something the
+    // learner did, and it is kept. Only when the action stands: an incomplete
+    // or prohibited context is not the learner acting, and must write nothing.
+    if (execution.transition.learnerAction !== "learner-action-stands") {
+      return unchanged;
+    }
+
+    const acted = commandEvidence(command);
+    const evidence = acted === undefined
+      ? readonlyList(record.evidence)
+      : appendIfAbsent(record.evidence, acted);
+    const events = execution.events.reduce(
+      (accumulated, event) => appendIfAbsent(accumulated, event),
+      readonlyList(record.events),
+    );
+    if (evidence.length === record.evidence.length && events.length === record.events.length) {
+      return unchanged;
+    }
+
+    return Object.freeze({
+      disposition: "evolved",
+      learnerRecord: learnerRecord({
+        learnerId: record.learnerId,
+        evidence,
+        events,
+        interpretations: record.interpretations,
+        state: record.state,
+        commitments: record.commitments,
+      }),
+      addedEvidenceIds: readonlyList(acted === undefined ? [] : [acted.id]),
+      addedEventIds: readonlyList(execution.events.map((event) => event.id)),
       addedInterpretationIds: readonlyList([]),
       addedCommitmentIds: readonlyList([]),
       reason: execution.transition.reason,

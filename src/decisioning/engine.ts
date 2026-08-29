@@ -169,6 +169,10 @@ export function executeDeterministicLearningInteraction(
       kind: "not-committed",
       reason: "Context is incomplete or prohibited; a safe non-material outcome cannot mutate learner state.",
       nextState: input.learnerRecord.state,
+      // Nothing here is the learner's doing, and an actor outside the learner's
+      // scope reaches this branch. Nothing may be written to their record.
+      learnerAction: "no-learner-action",
+      events: readonlyList([]),
     });
     const diagnostics: EngineDiagnostics = Object.freeze({
       contextAssembly: assembly,
@@ -204,7 +208,9 @@ export function executeDeterministicLearningInteraction(
     derivedInterpretationIds: evidenceEvaluation.newInterpretations.map((interpretation) => interpretation.id),
     committedAt: input.evaluatedAt,
   });
-  const events = transition.kind === "committed" ? transition.events : readonlyList([]);
+  // Both outcomes now carry their own events. A decline produces one; it is no
+  // less part of the history for having committed nothing.
+  const events = transition.events;
   const diagnostics: EngineDiagnostics = Object.freeze({
     contextAssembly: assembly,
     consideredEvidenceIds: readonlyList(assembly.context.observedEvidence.map((item) => item.id)),

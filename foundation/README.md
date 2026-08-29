@@ -105,6 +105,10 @@ The point of this foundation is that its load-bearing rules are **types and test
 | Every written asset is shown to someone | A1 | same — nine assets were written and never displayed | **live** |
 | Every concept can be practised, not only read | A1 | same | **live** |
 | Every concept carries material at more than one layer | A1 | same | **live** |
+| A learner's action is kept even when it moves nothing | A2, A6, O9 | `LearnerActionDisposition`, `src/decisioning/state-transitions.ts` | **live** |
+| A decline is provable from the record alone | A6, O9 | `learning-path-declined` with no `stateCommitmentId` — the absence is the proof | **live** |
+| A refused command writes nothing to a learner's record | A2, A3 | `evolveLearnerRecord` — proven: removing the check lets an out-of-scope actor write | **live** |
+| Every non-commitment says whether the learner acted | A6 | required field on the `not-committed` variant, so a new path cannot omit it | **live** |
 
 Every row is built. Where a claim is not enforceable — a model's calibration cannot be checked from outside it — the article says so rather than implying a guarantee it cannot give.
 

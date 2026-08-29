@@ -307,10 +307,10 @@ test("the two counts never collapse into each other", () => {
     "some evidence is neither a reflection nor a choice and is going unreported",
   );
 
-  // Only the accepted choice is here. The decline left no trace in the record
-  // at all -- see O9. Asserted so the number is a stated fact rather than an
-  // assumption, and so closing O9 breaks this test rather than passing quietly.
-  assert.equal(choicesMade(session), 1);
+  // Both choices are here: the one that moved the learner and the one that
+  // deliberately did not. Before O9 was closed this was 1, because a decline
+  // was kept only if the system had agreed to move.
+  assert.equal(choicesMade(session), 2);
 });
 
 test("a learner who pauses stays paused until they act", () => {

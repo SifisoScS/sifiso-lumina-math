@@ -94,19 +94,25 @@ A state commitment is recorded whenever a delta names a dimension, whether or no
 
 ---
 
-## O9 — A decline leaves no trace
+## Closed
 
-Accepting an offer records evidence, two events, and a commitment. Declining the same offer records nothing at all — the learner's evidence, events, and commitments are all unchanged. Their "no" is invisible.
+An open question leaves this register by being decided, never by being forgotten. What it said is kept, so that the reasoning stays inspectable after the fact.
 
-**Cause:** `evolveLearnerRecord` returns the record untouched whenever the planned transition is not `committed`, and the learner's own evidence is appended inside that same branch. So whether a learner's action is recorded depends on whether the system agreed to move, which inverts who the evidence belongs to. The evidence is the learner's; the commitment is the system's.
+### O9 — A decline leaves no trace · **closed 2026-08-29**
 
-**Why this is not a small thing:** the defect this project was founded on was declines not being honoured. Declines *are* honoured now, and there are tests for it — but a decline cannot be shown after the fact to have been honoured, because nothing records that it happened. That is the audit gap which let the original defect survive the entire lifetime of the preceding corpus without anyone noticing.
+**Was:** accepting an offer recorded evidence, two events and a commitment; declining the same offer recorded nothing at all. `evolveLearnerRecord` returned the record untouched on any non-committed transition, and the learner's evidence was appended inside that branch — so whether a learner's action was kept depended on whether the system agreed to move them. That inverted who the evidence belongs to.
 
-**Why open rather than fixed:** it changes what the record contains, and `disposition` becomes `evolved` for a command that commits nothing. That is a decision about what the record *is*, which belongs to the founder — the same reason [O8](#o8--commitments-that-change-nothing) is open.
+**Closed by:** the Founder, instructing "Close O9". Drafted and implemented by Claude (Opus 5).
 
-**Measured cost of closing it:** appending the learner's evidence on a non-committed transition breaks exactly one test — the one written to pin the current behaviour — and nothing else. Replay, the agency suite, and the governance suite are unaffected. Whether the matching `learning-path-declined` event should also be recorded is a second question; the event kind already exists in the domain.
+**Self-review declared under A8:** the same author wrote O9's text, measured the cost of closing it, recommended closing it, and implemented the closure. The Founder authorised it; nothing else about that sequence is independent, and it should be read as the work of one hand.
 
-**Found by:** the second real session, 2026-08-29. Raised by the engineer, not decided by them.
+**How it was closed:** every non-commitment now states whether the learner acted, as `LearnerActionDisposition` on the `not-committed` result. Where the action stands, the learner's evidence is kept and the record evolves. Where it does not — an incomplete or prohibited context, including an actor outside the learner's scope — nothing is written. That distinction is the load-bearing part: the same `not-committed` result is returned for "you declined" and "your command was refused", and conflating them would have let an unauthorised actor write into a learner's record.
+
+A decline is additionally recorded as a `learning-path-declined` event carrying **no** `stateCommitmentId`. The absence is the proof: the record shows both that the learner declined and that nothing moved them. `HistoricalEvent.stateCommitmentId` was already optional and replay already skipped events without one, so nothing in the model had to be bent to say this.
+
+**Deliberately not done:** deferring and requesting an alternative are recorded as evidence but produce no event. The domain has no event kind for either, and labelling them `learning-path-declined` would put a claim in the history the learner never made. A choice made against an offer that was never active is still not recorded, because there is no resolved action to record.
+
+**Enforced by:** `test/learner-agency.test.ts` — a decline is provable from the record alone, and an actor outside the learner's scope cannot write to it. Both proven by mutation, in both directions.
 
 ---
 

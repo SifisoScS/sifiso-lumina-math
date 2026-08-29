@@ -28,7 +28,31 @@ export type StateTransitionResult =
       readonly events: readonly HistoricalEvent[];
       readonly nextState: CurrentLearnerState;
     }
-  | { readonly kind: "not-committed"; readonly reason: string; readonly nextState: CurrentLearnerState };
+  | {
+      readonly kind: "not-committed";
+      readonly reason: string;
+      readonly nextState: CurrentLearnerState;
+      /**
+       * Whether the learner did something here. A decline is a learner action
+       * that changes no state; a prohibited context is not a learner action at
+       * all, and nothing of it may be written into a learner's record.
+       */
+      readonly learnerAction: LearnerActionDisposition;
+      readonly events: readonly HistoricalEvent[];
+    };
+
+/**
+ * O9. Accepting an offer recorded evidence, two events and a commitment, while
+ * declining the same offer recorded nothing at all -- so a decline could not be
+ * shown afterwards to have been honoured. Whether a learner's action was kept
+ * depended on whether the system agreed to move, which inverts who the evidence
+ * belongs to: the evidence is the learner's, the commitment is the system's.
+ *
+ * Stated on every non-commitment rather than inferred, because the same
+ * `not-committed` result is also returned for an incomplete or prohibited
+ * context -- where an actor outside the learner's scope must write nothing.
+ */
+export type LearnerActionDisposition = "learner-action-stands" | "no-learner-action";
 
 export interface StateTransitionInput {
   readonly command: InteractionCommand;
@@ -215,6 +239,8 @@ export function validateAndPlanStateTransition(input: StateTransitionInput): Sta
       kind: "not-committed",
       reason: "Safe non-material outcomes cannot create learner-state commitments.",
       nextState: input.currentState,
+      learnerAction: "no-learner-action",
+      events: readonlyList([]),
     });
   }
   if (input.decision.status !== "offer-available") {
@@ -222,6 +248,8 @@ export function validateAndPlanStateTransition(input: StateTransitionInput): Sta
       kind: "not-committed",
       reason: "Only a policy-permitted material decision with available offers can support a transition.",
       nextState: input.currentState,
+      learnerAction: "no-learner-action",
+      events: readonlyList([]),
     });
   }
 
@@ -284,6 +312,8 @@ export function validateAndPlanStateTransition(input: StateTransitionInput): Sta
       kind: "not-committed",
       reason: "A recommendation, offer, or guidance request is not a learner path commitment.",
       nextState: input.currentState,
+      learnerAction: "no-learner-action",
+      events: readonlyList([]),
     });
   }
 
@@ -325,10 +355,35 @@ export function validateAndPlanStateTransition(input: StateTransitionInput): Sta
   // The guard precedes offer resolution so the invariant does not depend on
   // offer validity.
   if (offerAdvancement(choice.choiceKind) === "must-not-advance-toward-offer") {
+    // O9. The learner's "no" is a fact and belongs in the record. It is written
+    // as an event carrying no state commitment, because there is no state
+    // commitment -- and that absence is exactly what shows the decline was
+    // honoured. `HistoricalEvent.stateCommitmentId` is optional and replay
+    // already skips events without one, so nothing had to be bent to say this.
+    // Only an actual decline is written as a decline. Deferring and asking for
+    // an alternative are not refusals, and the domain has no event kind for
+    // them -- labelling them `learning-path-declined` would put a claim in the
+    // history the learner never made. Their choice is still kept as evidence,
+    // which carries the exact choiceKind.
+    const declined = choice.choiceKind !== "decline-offer" ? undefined : historicalEvent({
+      id: `event.${input.command.id}.learning-path-declined`,
+      kind: "learning-path-declined",
+      learnerId: input.command.learnerId,
+      occurredAt: input.committedAt,
+      interactionCommandId: input.command.id,
+      learningDecisionId: input.decision.id,
+      contextVersion,
+      ...(input.currentState.activeConceptId === undefined
+        ? {}
+        : { conceptId: input.currentState.activeConceptId }),
+      evidenceId: choice.id,
+    });
     return Object.freeze({
       kind: "not-committed",
       reason: "Only an explicit acceptance may authorize a commitment toward the offered opportunity.",
       nextState: input.currentState,
+      learnerAction: "learner-action-stands",
+      events: readonlyList(declined === undefined ? [] : [declined]),
     });
   }
 
@@ -338,6 +393,8 @@ export function validateAndPlanStateTransition(input: StateTransitionInput): Sta
       kind: "not-committed",
       reason: "A learner choice that targets an offer requires a currently active offer.",
       nextState: input.currentState,
+      learnerAction: "no-learner-action",
+      events: readonlyList([]),
     });
   }
   if (!selectedOpportunityStillAllowed(offer, input.decision)) {
@@ -345,6 +402,8 @@ export function validateAndPlanStateTransition(input: StateTransitionInput): Sta
       kind: "not-committed",
       reason: "The selected offer is no longer compatible with the current material decision.",
       nextState: input.currentState,
+      learnerAction: "learner-action-stands",
+      events: readonlyList([]),
     });
   }
 
@@ -362,6 +421,8 @@ export function validateAndPlanStateTransition(input: StateTransitionInput): Sta
       kind: "not-committed",
       reason: "Choosing to decide for oneself does not move the learner toward anything.",
       nextState: input.currentState,
+      learnerAction: "learner-action-stands",
+      events: readonlyList([]),
     });
   }
 
