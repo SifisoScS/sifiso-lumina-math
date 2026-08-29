@@ -26,6 +26,8 @@ What is retained, for how long, who may see it, how a learner deletes it, and wh
 
 **Current behaviour:** the engine is headless and stores nothing itself. This question becomes urgent the moment anything persists — see Phase 6.
 
+**One irreversible choice already made:** the Anthropic workspace Lumina's provider key belongs to was created with a US data geography, which cannot be changed after creation. It carries no learner data today — the adapter sends concept text only — but it is the jurisdiction any future provider-bound learner material would land in.
+
 ---
 
 ## O3 — Safeguarding and wellbeing

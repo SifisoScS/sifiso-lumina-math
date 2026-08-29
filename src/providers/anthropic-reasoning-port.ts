@@ -65,6 +65,12 @@ export interface AnthropicReasoningPortOptions {
   /** Character bound the policy envelope will enforce; told to the model to reduce refusals. */
   readonly maxSummaryCharacters: number;
   readonly model?: string;
+  /**
+   * Workspace the request acts in. Required for identity-linked API keys, which
+   * the API rejects with a 400 unless the header is present; ignored by keys
+   * that do not need it. Defaults to ANTHROPIC_WORKSPACE_ID.
+   */
+  readonly workspaceId?: string;
   readonly client?: Anthropic;
 }
 
@@ -96,9 +102,18 @@ function parseModelProposal(raw: string): ModelProposal | undefined {
 }
 
 export function anthropicReasoningPort(options: AnthropicReasoningPortOptions): ReasoningPort {
-  // Constructed with no arguments: the SDK resolves the credential from the
-  // environment. The key is never read, logged, or held by this module.
-  const client = options.client ?? new Anthropic();
+  // The SDK resolves the credential from the environment; the key is never
+  // read, logged, or held by this module. The workspace header is added only
+  // when one is configured - the SDK sends it for profile-based credentials but
+  // not for a bare API key, and identity-linked keys are refused without it.
+  const workspaceId = options.workspaceId ?? process.env["ANTHROPIC_WORKSPACE_ID"];
+  const client =
+    options.client ??
+    new Anthropic(
+      workspaceId === undefined || workspaceId.length === 0
+        ? {}
+        : { defaultHeaders: { "anthropic-workspace-id": workspaceId } },
+    );
   const model = options.model ?? DEFAULT_MODEL;
 
   return {

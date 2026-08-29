@@ -25,9 +25,19 @@ import {
  * output nobody wrote by hand.
  */
 
+// Load .env if one is present, so credentials need not be set by hand on every
+// shell. Optional by design: an absent file is the normal case and not an error.
+// .env is gitignored; see .env.example for the shape. Only this suite reads it —
+// nothing in src/ touches environment files.
+try {
+  process.loadEnvFile(".env");
+} catch {
+  // No .env, or unreadable. Fall through to whatever the environment already has.
+}
+
 const skip = reasoningProviderEnabled()
   ? false
-  : "set LUMINA_REASONING_ENABLED=1 and ANTHROPIC_API_KEY to run";
+  : "set LUMINA_REASONING_ENABLED=1 and ANTHROPIC_API_KEY (or create .env) to run";
 
 const envelope = resolveApprovedEnvelope(aiProposalAcceptancePolicy.id);
 if (envelope === undefined) throw new Error("the approved envelope should resolve");

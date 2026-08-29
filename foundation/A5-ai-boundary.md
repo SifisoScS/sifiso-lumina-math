@@ -1,6 +1,6 @@
 # A5 — AI Boundary
 
-*Article 5 of the Math Lumina foundation. Version 1.3.*
+*Article 5 of the Math Lumina foundation. Version 1.4.*
 
 ## The principle
 
@@ -72,20 +72,18 @@ Two limits worth stating plainly rather than papering over. A model's *calibrati
 | Rule | Where |
 |---|---|
 | A proposal carries uncertainty, evidence scope, and provenance | `ReasoningProposal`, `src/contracts/reasoning-port.ts` |
-| A proposal is validated for scope, task match, and non-evaluative language | `validateReasoningProposal`, same file |
 | The engine cannot involve reasoning unless a proposal was actually used | `reasoningInvolved`, `src/decisioning/engine.ts` |
 | AI cannot construct permission | `AuthorizedAction`, `src/governance/authorization.ts` |
 | Only explanation, representation and dialogue kinds are admissible | `admissibleProposalKinds`, `src/governance/proposal-policy.ts` |
 | A hostile model cannot cross the seam | `test/hostile-boundary.test.ts` — 19 tests, 15 attack kinds |
-| A model may not cite a downstream stage as its basis | `admissibleProvenanceKinds`, `src/governance/proposal-policy.ts` |
-| Claimed confidence buys no privilege | `test/hostile-boundary.test.ts` — a confident and an uncertain proposal are treated identically |
-| A caller cannot widen what a policy permits | `resolveApprovedEnvelope`, `src/governance/proposal-policy.ts` |
 
 The full enforcement map is in [README](README.md); the rows above are the load-bearing ones.
 
-Both AI ports — `ReasoningPort` and `AssessmentBoundary` — are currently unwired. Nothing in this article authorises wiring them; that is Phase 5, gated on Phase 4.
+`ReasoningPort` now has a real adapter, admitted for one task kind. **Nothing in the engine calls it**, so `reasoningInvolved` is still `false` and no proposal has reached a learner. `AssessmentBoundary` remains unwired, and O4 bars it regardless.
 
-*Amendment record. v1.1 (2026-08-29): governance stage reported as built. v1.2 (2026-08-29): hostile suite built, provenance gaps closed, two limits stated. v1.3 (2026-08-29): policy limits bound to the policy; task kinds now classified exhaustively. All recording updates under A8; normative text unchanged throughout.*
+The adapter receives concept text and nothing else — no learner material reaches a provider, enforced by a content type with no field for any. It supplies only a summary and an uncertainty statement; identity, task, kind, evidence scope and provenance are built from the task.
+
+*Amendment record. v1.1 (2026-08-29): governance stage reported as built. v1.2: hostile suite built, provenance gaps closed, two limits stated. v1.3: policy limits bound to the policy; task kinds classified exhaustively. v1.4 (2026-08-29): a real model admitted behind the port for explanation-generation, verified against live output; no learner data is sent and the engine still does not call it. All recording updates under A8; normative text unchanged throughout.*
 
 ---
 

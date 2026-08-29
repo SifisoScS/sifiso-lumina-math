@@ -10,7 +10,7 @@ Eight articles governing the Math Lumina learning engine.
 
 | | |
 |---|---|
-| **Articles** | A1–A8 · A4 v1.4 · A5 v1.3 · A6 v1.2 · A7 v1.1 · rest v1.0 |
+| **Articles** | A1–A8 · A4 v1.4 · A5 v1.4 · A6 v1.2 · A7 v1.1 · rest v1.0 |
 | **Adopted** | Yes — [ADOPTION.md](ADOPTION.md), 2026-08-29 |
 | **In force** | **Yes** |
 | **Founder** | Sifiso Cyprian Shezi — [RECOGNITION.md](RECOGNITION.md) R1 |
@@ -77,6 +77,10 @@ The point of this foundation is that its load-bearing rules are **types and test
 | — and a task's scope is derived from one learner's record, so it cannot name another's | A2, A6 | `reasoningScopeForContext`, `src/decisioning/reasoning-scope.ts` | **live** |
 | Content outside the task's declared basis cannot be cited | A4, A6 | `permittedBasisIds` on `ReasoningTask` | **live** |
 | A claim may not be more confident than its basis | A6 | `claimsMoreConfidenceThan`, `src/domain/primitives.ts` | **live** |
+| No learner-owned material reaches a provider | A2, A6 | `ConceptContent` — a content type with no field for it; asserted in `test/reasoning-prompt.test.ts` against real reflection text | **live** |
+| A provider influences only the summary and the uncertainty statement | A4, A5 | `anthropicReasoningPort` — identity, task, kind, evidence scope and provenance all built from the task | **live** |
+| An inadmissible task kind never reaches a provider | A5 | same — returns before any network call | **live** |
+| Real model output passes the seam | A4, A5 | `live/anthropic-conformance.test.ts` — 5 tests, run against Claude Opus 5 | **live** |
 | The two provenance classifiers cannot drift apart | A4 | `test/governance-authorization.test.ts` | **live** |
 
 Every row is built. Where a claim is not enforceable — a model's calibration cannot be checked from outside it — the article says so rather than implying a guarantee it cannot give.
