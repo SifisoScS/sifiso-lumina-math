@@ -129,6 +129,37 @@ export type LearnerChoiceKind =
   | "request-alternative"
   | "pause";
 
+/**
+ * Whether a choice kind may move the learner toward the opportunity that was
+ * offered. Foundation article A2: only acceptance may advance; declining,
+ * deferring, requesting an alternative, and pausing must not.
+ */
+export type OfferAdvancement = "may-advance-toward-offer" | "must-not-advance-toward-offer";
+
+/**
+ * Every LearnerChoiceKind must be classified here. The `never` assertion makes
+ * the switch exhaustive at compile time, so a new choice kind cannot be added
+ * without an explicit decision about whether it may advance the learner. The
+ * unclassified default is deliberately the restrictive one.
+ */
+export function offerAdvancement(choiceKind: LearnerChoiceKind): OfferAdvancement {
+  switch (choiceKind) {
+    case "select-offer":
+      return "may-advance-toward-offer";
+    case "decline-offer":
+    case "defer-offer":
+    case "request-alternative":
+    case "pause":
+      return "must-not-advance-toward-offer";
+    default: {
+      const unclassified: never = choiceKind;
+      throw new DomainValidationError(
+        `Learner choice kind is not classified for offer advancement: ${String(unclassified)}`,
+      );
+    }
+  }
+}
+
 export interface LearnerChoice {
   readonly id: StableId;
   readonly kind: "learner-choice";

@@ -56,9 +56,10 @@ Observation of a learner requires their explicit consent, separately from any ch
 |---|---|
 | Only learner-originated authorisation can back a commitment | `StateCommitmentAuthorization` in `src/domain/learner-record.ts` — three variants, none of them AI or system-originated |
 | The same, checked at runtime | `assertCommitmentHasLearnerAuthorization` in `src/domain/policy-governance.ts` |
-| Decline, defer, and request-alternative produce no commitment and no movement | `validateAndPlanStateTransition` in `src/decisioning/state-transitions.ts` |
-| The above, proven | `test/decisioning.test.ts` — three tests, each verified to fail against the pre-fix engine |
-| A new choice kind cannot be added without classifying it | Exhaustiveness check, `src/decisioning/state-transitions.ts` *(planned — Phase 2)* |
+| Only acceptance may advance a learner toward an offer | `offerAdvancement` in `src/domain/learner-record.ts` |
+| That classification is applied before offer resolution, so it cannot be bypassed | `validateAndPlanStateTransition` in `src/decisioning/state-transitions.ts` |
+| A new choice kind cannot be added without classifying it | `never` exhaustiveness assertion in `offerAdvancement` — verified: adding an unclassified kind produces a compile error |
+| The above, proven behaviourally | `test/learner-agency.test.ts` — one test per choice kind, plus `test/decisioning.test.ts`; both suites verified to fail when the classification is broken |
 
 If a change to this article is not accompanied by a change to the code and tests above, one of the two is wrong.
 

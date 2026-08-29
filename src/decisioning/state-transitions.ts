@@ -11,6 +11,7 @@ import {
   historicalEvent,
   LearnerStateDelta,
   learnerStateDelta,
+  offerAdvancement,
   StateCommitment,
   stateCommitment,
   stateDeltaDimensions,
@@ -302,21 +303,18 @@ export function validateAndPlanStateTransition(input: StateTransitionInput): Sta
     });
   }
 
-  // Declining, deferring, and requesting an alternative must not move the
-  // learner toward the offered opportunity. Only an explicit choice applicable
-  // to that opportunity may authorise the commitment, and none of these three
-  // is applicable to it. A commitment cannot express "no movement" — a state
-  // commitment must identify at least one changed dimension — so these choices
-  // plan no state effect at all. The guard precedes offer resolution so the
-  // invariant does not depend on offer validity.
-  if (
-    choice.choiceKind === "decline-offer" ||
-    choice.choiceKind === "defer-offer" ||
-    choice.choiceKind === "request-alternative"
-  ) {
+  // Foundation article A2: only acceptance may move the learner toward what was
+  // offered. The classification lives in `offerAdvancement`, which is exhaustive
+  // at compile time, so a new choice kind cannot reach here unclassified. A
+  // commitment cannot express "no movement" — a state commitment must identify
+  // at least one changed dimension — so a non-advancing choice plans no state
+  // effect at all; the choice itself remains recorded as an InteractionCommand.
+  // The guard precedes offer resolution so the invariant does not depend on
+  // offer validity.
+  if (offerAdvancement(choice.choiceKind) === "must-not-advance-toward-offer") {
     return Object.freeze({
       kind: "not-committed",
-      reason: "Declining, deferring, or requesting an alternative does not authorize a commitment toward the offered opportunity.",
+      reason: "Only an explicit acceptance may authorize a commitment toward the offered opportunity.",
       nextState: input.currentState,
     });
   }
