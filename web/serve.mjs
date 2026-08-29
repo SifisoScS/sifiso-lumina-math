@@ -30,7 +30,34 @@ const server = createServer(async (request, response) => {
   }
 });
 
-server.listen(PORT, "127.0.0.1", () => {
-  process.stdout.write(`\n  Math Lumina is running at http://127.0.0.1:${PORT}\n`);
+// Reported from the address actually bound, not from the port that was asked
+// for. A listen callback is a one-time "listening" listener, so the one from a
+// failed attempt survives to fire on the successful one -- which had this
+// announcing a URL that was not serving anything.
+server.on("listening", () => {
+  const { port } = server.address();
+  process.stdout.write(`\n  Math Lumina is running at http://127.0.0.1:${port}\n`);
   process.stdout.write("  Local only. Ctrl-C to stop.\n\n");
 });
+
+function listen(port, attemptsLeft) {
+  server.once("error", (error) => {
+    // A port left busy by an earlier run is an ordinary thing to walk into, and
+    // answering it with an unhandled 'error' event and a stack trace is not a
+    // useful reply. Step along the range, and say which port was taken.
+    if (error.code !== "EADDRINUSE") throw error;
+    if (attemptsLeft > 0) {
+      process.stdout.write(`  port ${port} is in use - trying ${port + 1}\n`);
+      listen(port + 1, attemptsLeft - 1);
+      return;
+    }
+    process.stderr.write(`\n  Ports ${PORT} to ${port} are all in use.\n`);
+    process.stderr.write("  Something is still running from an earlier session,\n");
+    process.stderr.write("  or set PORT to choose another.\n\n");
+    process.exit(1);
+  });
+
+  server.listen(port, "127.0.0.1");
+}
+
+listen(PORT, 12);
