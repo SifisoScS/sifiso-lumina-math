@@ -2,7 +2,7 @@ import { createInterface } from "node:readline/promises";
 import { stdin, stdout } from "node:process";
 
 import { functionsSeedKnowledge, LearnerChoiceKind } from "../src/index.js";
-import { conceptSummary, describeOffers } from "./describe.js";
+import { conceptSummary, describeOffers, materialFor } from "./describe.js";
 import {
   applyChoice,
   applyReflection,
@@ -51,6 +51,35 @@ function showState(session: Session): void {
   }
   stdout.write(`    Written down: ${reflectionsWritten(session)}\n`);
   stdout.write(`    Choices made: ${choicesMade(session)}\n\n`);
+}
+
+/**
+ * Prints what the learner asked to see, indented as a block so material is
+ * visibly distinct from the terminal talking about itself.
+ */
+function showMaterial(lines: readonly string[]): void {
+  if (lines.length === 0) return;
+  stdout.write("\n");
+  for (const line of lines) stdout.write(`    ${line}\n`);
+  stdout.write("\n");
+}
+
+/** The write flow, shared by the `w` command and by accepting a reflect offer. */
+async function writeSomething(
+  rl: ReturnType<typeof createInterface>,
+  session: Session,
+  conceptId: string,
+): Promise<Session> {
+  const text = (await rl.question("  What are you thinking? ")).trim();
+  if (text.length === 0) {
+    stdout.write("  Nothing written down.\n");
+    return session;
+  }
+  const next = applyReflection(session, text, conceptId).session;
+  stdout.write("  Written down - your words, kept exactly as you typed them.\n");
+  stdout.write("  The system may form its own reading of them. That reading is\n");
+  stdout.write("  kept separate, and is never shown as something you said.\n");
+  return next;
 }
 
 function showOffers(session: Session): void {
@@ -113,12 +142,7 @@ async function main(): Promise<void> {
     if (answer === "s") { showState(session); continue; }
 
     if (answer === "w") {
-      const text = (await rl.question("  What are you thinking? ")).trim();
-      if (text.length === 0) { stdout.write("  Nothing written down.\n"); continue; }
-      session = applyReflection(session, text, chosen.id).session;
-      stdout.write("  Written down - your words, kept exactly as you typed them.\n");
-      stdout.write("  The system may form its own reading of them. That reading is\n");
-      stdout.write("  kept separate, and is never shown as something you said.\n");
+      session = await writeSomething(rl, session, chosen.id);
       showOffers(session);
       continue;
     }
@@ -140,6 +164,9 @@ async function main(): Promise<void> {
       index = Number(held[2] ?? "") - 1;
     }
 
+    // Captured before the choice is applied, because applying it replaces the
+    // offer list. This is the thing the learner asked for.
+    const offerTaken = choiceKind === "pause" ? undefined : session.offers[index];
     const result = applyChoice(session, choiceKind, index);
     session = result.session;
 
@@ -154,7 +181,9 @@ async function main(): Promise<void> {
         stdout.write("  Left to you. Nothing was chosen on your behalf.\n");
         break;
       case "already-there":
-        stdout.write("  You are already there - nothing moved.\n");
+        // Not a refusal. The learner asked to be shown something and is about
+        // to be; where they are simply did not need to change.
+        stdout.write("  You were already here - nothing about where you are changed.\n");
         break;
       case "held":
         stdout.write(
@@ -181,6 +210,17 @@ async function main(): Promise<void> {
       stdout.write("  s to see where you are, w to write, a number to pick this up\n");
       stdout.write("  again, q to close.\n");
       continue;
+    }
+
+    if (offerTaken !== undefined &&
+        (result.outcome.kind === "moved" || result.outcome.kind === "already-there")) {
+      showMaterial(materialFor(offerTaken.opportunity, catalogue));
+
+      // Accepting 'write down what you are thinking' is a request to write.
+      // Listing it again and waiting would be an odd answer to that.
+      if (offerTaken.opportunity.kind === "reflect") {
+        session = await writeSomething(rl, session, chosen.id);
+      }
     }
 
     showOffers(session);

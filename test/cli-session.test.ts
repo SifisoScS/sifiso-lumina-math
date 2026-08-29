@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { evaluateStateMutationPolicy, functionsSeedKnowledge } from "../src/index.js";
-import { describeOffers, describeOpportunity } from "../cli/describe.js";
+import { describeOffers, describeOpportunity, materialFor } from "../cli/describe.js";
 import {
   applyChoice,
   applyReflection,
@@ -326,4 +326,89 @@ test("a learner who pauses stays paused until they act", () => {
   // engine must not return them to active focus on its own.
   const resumed = applyChoice(paused.session, "select-offer", 0);
   assert.equal(resumed.session.record.state.engagementFocus, "active-focus");
+});
+
+// ---------------------------------------------------------------------------
+// Actually showing the learner something
+//
+// Three field sessions in, nobody had been shown any learning material at all.
+// A learner who chose "see this shown a different way" was told "you are
+// already there - nothing moved" and shown nothing. Showing someone something
+// is not a state change, and the terminal had been treating it as one.
+// ---------------------------------------------------------------------------
+
+test("choosing to see a representation actually shows it", () => {
+  const session = startSession("concept.inverse-function");
+  const offer = session.offers.find((candidate) => candidate.opportunity.kind === "explore-representation");
+  assert.ok(offer, "there is nothing to show a learner");
+
+  const lines = materialFor(offer.opportunity, catalogue);
+  assert.ok(lines.length > 0, "the learner asked to be shown something and got nothing");
+
+  const asset = catalogue.assets.find((a) => a.id === offer.opportunity.knowledgeAssetId);
+  assert.ok(asset);
+  assert.ok(lines.includes(asset.content), "the asset was named but its content was never shown");
+});
+
+test("every offer that names material can show it", () => {
+  for (const concept of functionsSeedKnowledge.concepts) {
+    for (const offer of startSession(concept.id).offers) {
+      const names = offer.opportunity.knowledgeAssetId !== undefined ||
+        offer.opportunity.learningExperienceId !== undefined ||
+        offer.opportunity.relatedConceptId !== undefined;
+      if (!names) continue;
+      assert.ok(
+        materialFor(offer.opportunity, catalogue).length > 0,
+        `${offer.opportunity.id} names material a learner cannot be shown`,
+      );
+    }
+  }
+});
+
+test("nothing is shown for an offer that names nothing", () => {
+  const session = startSession("concept.function");
+  for (const kind of ["pause", "allow-learner-choice"] as const) {
+    const offer = session.offers.find((candidate) => candidate.opportunity.kind === kind);
+    assert.ok(offer);
+    assert.deepEqual(materialFor(offer.opportunity, catalogue), []);
+  }
+});
+
+test("nothing shown to a learner is invented", () => {
+  // The one line that must never drift: every word a learner reads as material
+  // is a word the catalogue contains. Not paraphrased, not summarised, not
+  // generated -- A5 keeps a model out of this path entirely, and this keeps the
+  // terminal itself out of it too.
+  const permitted = new Set<string>();
+  for (const asset of catalogue.assets) {
+    permitted.add(asset.title);
+    permitted.add(asset.content);
+  }
+  for (const concept of catalogue.concepts) {
+    permitted.add(concept.title);
+    permitted.add(concept.conceptualDescription);
+  }
+
+  for (const concept of functionsSeedKnowledge.concepts) {
+    for (const offer of startSession(concept.id).offers) {
+      for (const line of materialFor(offer.opportunity, catalogue)) {
+        assert.ok(permitted.has(line), `a learner would be shown text no asset contains: ${line}`);
+      }
+    }
+  }
+});
+
+test("a retired asset is never shown to a learner", () => {
+  const session = startSession("concept.inverse-function");
+  const offer = session.offers.find((candidate) => candidate.opportunity.kind === "explore-representation");
+  assert.ok(offer);
+
+  const retired = {
+    ...catalogue,
+    assets: catalogue.assets.map((asset) => ({ ...asset, status: "retired" as const })),
+  };
+  const lines = materialFor(offer.opportunity, retired);
+  for (const asset of catalogue.assets) {
+    assert.equal(lines.includes(asset.content), false, "retired material reached a learner");
+  }
 });

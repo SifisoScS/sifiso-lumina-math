@@ -83,7 +83,7 @@ The point of this foundation is that its load-bearing rules are **types and test
 | Real model output passes the seam | A4, A5 | `live/anthropic-conformance.test.ts` — 5 tests, run against Claude Opus 5 | **live** |
 | The two provenance classifiers cannot drift apart | A4 | `test/governance-authorization.test.ts` | **live** |
 | A learner drives the engine directly, with no model in the path | A5 | `cli/learn.ts` — deterministic execution only; no provider, no key, no network | **live** |
-| Declining, deferring and pausing are honoured in front of a person | A2 | `cli/session.ts`; `test/cli-session.test.ts` — 18 tests over the session, without a terminal | **live** |
+| Declining, deferring and pausing are honoured in front of a person | A2 | `cli/session.ts`; `test/cli-session.test.ts` — 23 tests over the session, without a terminal | **live** |
 | The same opportunity is never offered twice | A2 | `generateCandidateLearningOpportunities` — proven: removing the guard fails both the engine and session tests | **live** |
 | The engine's reading of a reflection is never shown as the learner's own words | A2, A6 | `test/cli-session.test.ts` asserts evidence and interpretation stay distinct | **live** |
 | Nothing a learner types is stored or transmitted | A2, O2 | `cli/session.ts` holds the record in memory only — no file write, no network call | **live** |
@@ -98,6 +98,9 @@ The point of this foundation is that its load-bearing rules are **types and test
 | A learner is never told they wrote something they did not write | A6 | `reflectionsWritten` counts reflections; choices are counted separately | **live** |
 | A learner who pauses is not handed the menu again in the same breath | A2 | `cli/learn.ts` suppresses offers after a pause until the learner acts | **live** |
 | Returning from a pause is the learner's move alone | A2 | `test/cli-session.test.ts` | **live** |
+| A learner who asks to be shown something is shown it | A1 | `materialFor`, `cli/describe.ts` — showing is not a state change and is no longer gated on one | **live** |
+| Nothing a learner reads as material is invented | A1, A5 | every line is asserted to be a string the catalogue contains | **live** |
+| Retired material never reaches a learner | A1 | `materialFor` — proven by its own mutation check | **live** |
 
 Every row is built. Where a claim is not enforceable — a model's calibration cannot be checked from outside it — the article says so rather than implying a guarantee it cannot give.
 

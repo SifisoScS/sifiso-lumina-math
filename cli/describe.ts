@@ -102,6 +102,51 @@ export function describeOffers(
   );
 }
 
+/**
+ * The material an accepted opportunity leads to.
+ *
+ * Showing a learner something is not a state change, and the terminal used to
+ * behave as though it were: a learner who chose "see this shown a different
+ * way" was told "you are already there - nothing moved" and shown nothing at
+ * all. The engine had done its job; nothing was rendering the asset it named.
+ *
+ * Nothing here is generated. Every line is read from the catalogue, and an
+ * opportunity naming nothing to show returns nothing rather than an improvised
+ * sentence. A learner is never shown text the corpus does not contain.
+ */
+export function materialFor(
+  opportunity: CandidateLearningOpportunity,
+  catalogue: Catalogue,
+): readonly string[] {
+  const lines: string[] = [];
+  const shown = new Set<string>();
+
+  const show = (id: string | undefined): void => {
+    if (id === undefined || shown.has(id)) return;
+    const asset = catalogue.assets.find((candidate) => candidate.id === id);
+    // A retired asset is deliberately out of circulation. The catalogue is read
+    // raw here, so the check belongs here too.
+    if (asset === undefined || asset.status !== "published") return;
+    shown.add(id);
+    lines.push(asset.title, asset.content);
+  };
+
+  show(opportunity.knowledgeAssetId);
+
+  const experience = opportunity.learningExperienceId === undefined
+    ? undefined
+    : catalogue.experiences.find((candidate) => candidate.id === opportunity.learningExperienceId);
+  for (const assetId of experience?.knowledgeAssetIds ?? []) show(assetId);
+
+  // A prerequisite or bridge leads somewhere else. Say where, in its own words.
+  const related = opportunity.relatedConceptId === undefined
+    ? undefined
+    : catalogue.concepts.find((candidate) => candidate.id === opportunity.relatedConceptId);
+  if (related !== undefined) lines.push(related.title, related.conceptualDescription);
+
+  return Object.freeze(lines);
+}
+
 export function conceptSummary(concept: Concept): string {
   return `${concept.title}\n\n${concept.conceptualDescription}`;
 }
