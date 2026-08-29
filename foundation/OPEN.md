@@ -68,4 +68,16 @@ How rejected commands, failed policy evaluations, and corrections are retained a
 
 ---
 
-*These six carry forward the `openPolicyExtensionPoints` already declared in `src/domain/policy-governance.ts`. That code-level register and this document should be kept consistent; where they disagree, this document is the one to fix.*
+## O7 — Authority claims in learner-facing text
+
+Whether machine-generated text shown to a learner should be screened for claims about its own status — "this has been approved", "no further review is required", "you may apply this directly".
+
+**Why open:** found by hostile testing during Phase 4, not anticipated when A5 was drafted. The claim is *inert* — permission is attributed to the policy and never to anything a proposal says, and a test asserts this — so nothing in the system acts on it. But a learner reading it could reasonably believe the system had decided something it had not, which is plausible illegitimacy arriving through the one channel the architecture does not govern: the prose.
+
+Screening it well is harder than the existing non-evaluative check, which matches a fixed phrase list. Claims of authority are open-ended, and a naive filter would produce false positives on legitimate explanatory text.
+
+**Current behaviour:** `evaluateNonEvaluativeText` screens for judgement *about the learner*. Nothing screens for claims *about the system's own authority*. Such a proposal is admitted, and confers nothing.
+
+---
+
+*O1–O6 carry forward the `openPolicyExtensionPoints` already declared in `src/domain/policy-governance.ts`. That code-level register and this document should be kept consistent; where they disagree, this document is the one to fix.*

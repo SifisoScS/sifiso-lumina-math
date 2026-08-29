@@ -1,6 +1,6 @@
 # A4 — The Authority Seam
 
-*Article 4 of the Math Lumina foundation. Version 1.1.*
+*Article 4 of the Math Lumina foundation. Version 1.2.*
 
 ## The principle
 
@@ -72,11 +72,14 @@ If a change to learner state cannot name its authorisation, it does not happen.
 | Constructing that token outside governance is a compile error | brand symbol is unexported — verified: removing it fails typecheck with TS2578 |
 | A fabricated token fails at runtime even if cast into the type | `isMintedAuthorization`, module-private WeakSet |
 | Admitting machine material is not a state change | `AuthorizedAction` carries no delta, commitment, or authorization field |
-| A hostile proposer cannot cross the seam | `test/hostile-boundary.test.ts` *(planned — Phase 4)* |
+| A proposal may not claim a downstream stage as its own basis | `admissibleProvenanceKinds`, `src/governance/proposal-policy.ts` |
+| A hostile proposer cannot cross the seam | `test/hostile-boundary.test.ts` — 16 tests against an adversarial provider |
 
-The seam is a compile error, not a paragraph. One row remains a paragraph — the hostile-proposer test — and that is a gap to close, not a standard to accept.
+The seam is a compile error, not a paragraph, and every row above is built.
 
-*Amendment record. v1.1 (2026-08-29): recording update under A8. The normative text is unchanged; the enforcement table now reports the seam as built rather than planned, following Phase 3.*
+Hostile testing earned its place immediately: it found that provenance was a second, unchecked channel into the same decision. A proposal could cite the very policy about to evaluate it — reading as prior approval it did not have — or keep `evidenceIds` clean while smuggling out-of-scope learner evidence through `provenance.references`. Both are now refused. Neither was visible from reading the article.
+
+*Amendment record. v1.1 (2026-08-29): recording update under A8; enforcement table reports the seam as built, following Phase 3. v1.2 (2026-08-29): recording update; hostile-boundary suite built and two provenance-channel gaps closed, following Phase 4. Normative text unchanged throughout.*
 
 ---
 

@@ -1,5 +1,6 @@
 import { PolicyEvaluation } from "../contracts/core-contracts.js";
 import { ReasoningTaskKind } from "../contracts/reasoning-port.js";
+import { ProvenanceReferenceKind } from "../domain/provenance.js";
 import { StateCommitment } from "../domain/learner-record.js";
 import { kernelPolicyEvaluation, policyDefinition } from "../domain/policy-governance.js";
 
@@ -34,6 +35,38 @@ export const admissibleProposalKinds: readonly ReasoningTaskKind[] = Object.free
 ]);
 
 /**
+ * Provenance reference kinds a proposal may claim as its own basis.
+ *
+ * A4's non-collapse rule runs in one direction: evidence, then interpretation,
+ * then proposal, then policy evaluation, then authorised action. A proposal
+ * citing a *later* stage as its basis inverts that, and reads as prior approval
+ * it does not have. Hostile testing found this to be a live channel — a
+ * proposal citing `policy` looks grounded and is claiming the very thing the
+ * policy is about to decide.
+ *
+ * Excluded, and why:
+ *
+ *   policy, learning-decision,   later or lateral stages; citing them collapses
+ *   reasoning-proposal           the ladder A4 keeps apart
+ *   interaction-command,         actor and authority context; citing them
+ *   trusted-actor-context        implies standing a proposal does not have
+ *   assessment-boundary,         assessment authority is open (OPEN.md O4) and
+ *   assessment-evidence          A5 bars AI assessment outright
+ */
+export const admissibleProvenanceKinds: readonly ProvenanceReferenceKind[] = Object.freeze([
+  "learner-evidence",
+  "knowledge",
+  "knowledge-version",
+  "pedagogical-rule",
+  "historical-event",
+  "derived-interpretation",
+  "learning-experience",
+  "learning-experience-version",
+  "delivery-capability",
+  "delivery-compatibility",
+]);
+
+/**
  * Fills `PolicyScope: "ai-proposal-acceptance"`. Authorizes admission of
  * machine-originated material into a learner-facing decision, and nothing else.
  */
@@ -42,7 +75,7 @@ export const aiProposalAcceptancePolicy = policyDefinition({
   scope: "ai-proposal-acceptance",
   version: "policy.ai-proposal-acceptance.v1",
   statement:
-    "A reasoning proposal may be admitted into a learner-facing decision only when it matches its task, cites evidence within the task's permitted scope, carries no evaluative language about the learner, and is of an admissible task kind. Admission permits the proposal's content to be offered. It authorizes no learner conclusion, no assessment, and no state change; a learner's explicit choice remains the only thing that may move them.",
+    "A reasoning proposal may be admitted into a learner-facing decision only when it matches its task, cites evidence within the task's permitted scope, carries no evaluative language about the learner, claims as its basis only stages upstream of itself, and is of an admissible task kind. Admission permits the proposal's content to be offered. It authorizes no learner conclusion, no assessment, and no state change; a learner's explicit choice remains the only thing that may move them.",
 });
 
 /**

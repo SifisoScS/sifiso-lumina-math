@@ -1,6 +1,6 @@
 # A5 — AI Boundary
 
-*Article 5 of the Math Lumina foundation. Version 1.1.*
+*Article 5 of the Math Lumina foundation. Version 1.2.*
 
 ## The principle
 
@@ -34,9 +34,9 @@ All of it carries uncertainty explicitly, cites the evidence it was permitted to
 
 ## Capability changes none of this
 
-A more capable model does not acquire authority by being more capable. Neither does a more accurate one, a faster one, a cheaper one, or one that has been right a thousand times.
+A more capable model does not acquire authority by being more capable — nor a more accurate, faster, or cheaper one, nor one that has been right a thousand times.
 
-This applies to every model, including whichever one is best on the day someone reads this, and including any AI that helped draft these articles. **AI drafting a governance document does not make the document authoritative and does not give the AI standing over it.** These articles were drafted with AI assistance and adopted by a human; that provenance is recorded in `ADOPTION.md` precisely because the distinction matters.
+This applies to every model, including any AI that helped draft these articles. **Drafting a governance document does not make it authoritative and gives the AI no standing over it.** These articles were AI-drafted and human-adopted; `ADOPTION.md` records that because the distinction matters.
 
 ## The gate
 
@@ -56,6 +56,8 @@ The human decision is real and it happens earlier. What a policy permits, its ve
 A model is admitted to a task kind only after the boundary has been tested against a deliberately hostile proposer that tries to claim authority, cite evidence outside its scope, forge provenance, and induce a state change without a learner choice. Each new task kind is a separate admission.
 
 The question is never "is the model good enough." It is **"can the architecture stop cleverness from becoming authority."** That is testable, and it is tested before the model arrives, not after.
+
+Two limits worth stating plainly rather than papering over. A model's *calibration* cannot be verified from outside it; what is guaranteed is that a confident claim and an uncertain one are treated identically, so confidence buys nothing. And a proposal asserting its own authority in the text a learner reads is admitted — the claim is inert, because permission is attributed to the policy and never to anything a proposal says, but the text itself is not currently screened for it. See OPEN.md O7.
 
 ## What this does not establish
 
@@ -77,11 +79,13 @@ The question is never "is the model good enough." It is **"can the architecture 
 | Admission requires a policy scoped to `ai-proposal-acceptance` | `evaluateGovernance`, same file |
 | Only explanation, representation and dialogue kinds are admissible | `admissibleProposalKinds`, `src/governance/proposal-policy.ts` |
 | Assessment-bearing kinds are excluded while O4 stands | same — refusal is the default |
-| A hostile model cannot cross the seam | `test/hostile-boundary.test.ts` *(Phase 4)* |
+| A hostile model cannot cross the seam | `test/hostile-boundary.test.ts` — 16 tests, 11 attack kinds |
+| A model may not cite a downstream stage as its basis | `admissibleProvenanceKinds`, `src/governance/proposal-policy.ts` |
+| Claimed confidence buys no privilege | `test/hostile-boundary.test.ts` — a confident and an uncertain proposal are treated identically |
 
 Both AI ports — `ReasoningPort` and `AssessmentBoundary` — are currently unwired. Nothing in this article authorises wiring them; that is Phase 5, gated on Phase 4.
 
-*Amendment record. v1.1 (2026-08-29): recording update under A8. The normative text is unchanged; the enforcement table now reports the governance stage as built rather than planned, following Phase 3.*
+*Amendment record. v1.1 (2026-08-29): recording update under A8; enforcement table reports the governance stage as built, following Phase 3. v1.2 (2026-08-29): recording update; hostile-boundary suite built, provenance gaps closed, two limits stated explicitly, following Phase 4. Normative text unchanged throughout.*
 
 ---
 

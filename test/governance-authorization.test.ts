@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   admissibleProposalKinds,
+  admissibleProvenanceKinds,
   aiProposalAcceptancePolicy,
   AuthorizedAction,
   evaluateGovernance,
@@ -57,6 +58,7 @@ function authorize(proposal: ReturnType<typeof reasoningProposal>) {
     proposal,
     policy: aiProposalAcceptancePolicy,
     admissibleKinds: admissibleProposalKinds,
+    admissibleProvenanceKinds,
     authorizedAt: timestamp,
   });
 }
@@ -145,6 +147,7 @@ test("a policy scoped to something other than ai-proposal-acceptance cannot auth
     proposal: proposalWith({}),
     policy: wrongScope,
     admissibleKinds: admissibleProposalKinds,
+    admissibleProvenanceKinds,
     authorizedAt: timestamp,
   });
 
@@ -200,6 +203,7 @@ test("an inadmissible task kind is refused even when the proposal is otherwise w
     }),
     policy: aiProposalAcceptancePolicy,
     admissibleKinds: admissibleProposalKinds,
+    admissibleProvenanceKinds,
     authorizedAt: timestamp,
   });
 

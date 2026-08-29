@@ -10,7 +10,7 @@ Eight articles governing the Math Lumina learning engine.
 
 | | |
 |---|---|
-| **Articles** | A1–A8 · A4 and A5 at v1.1, the rest at v1.0 |
+| **Articles** | A1–A8 · A4 and A5 at v1.2, the rest at v1.0 |
 | **Adopted** | Yes — [ADOPTION.md](ADOPTION.md), 2026-08-29 |
 | **In force** | **Yes** |
 | **Founder** | Sifiso Cyprian Shezi — [RECOGNITION.md](RECOGNITION.md) R1 |
@@ -62,9 +62,12 @@ The point of this foundation is that its load-bearing rules are **types and test
 | Admission needs a policy scoped to `ai-proposal-acceptance` | A5 | `evaluateGovernance` | **live** |
 | Assessment-bearing proposal kinds are inadmissible | A5, O4 | `admissibleProposalKinds`, `src/governance/proposal-policy.ts` | **live** |
 | Only learner-originated authorisation may back a commitment, as a reportable policy | A2, A6 | `evaluateStateMutationPolicy`, same file | **live** |
-| A hostile proposer cannot cross the seam | A4, A5 | `test/hostile-boundary.test.ts` | *Phase 4* |
+| A hostile proposer cannot cross the seam | A4, A5 | `test/hostile-boundary.test.ts` — 16 tests, 11 attack kinds | **live** |
+| A proposal may not claim a downstream stage as its basis | A4, A5 | `admissibleProvenanceKinds`, `src/governance/proposal-policy.ts` | **live** |
+| Out-of-scope evidence cannot be smuggled via provenance | A4, A6 | `evaluateGovernance` | **live** |
+| Claimed confidence buys no privilege | A4 | `test/hostile-boundary.test.ts` | **live** |
 
-Rows marked *Phase N* are claims the articles make that the code does not yet keep. They are listed as gaps rather than quietly omitted.
+Every row is built. Where a claim is not enforceable — a model's calibration cannot be checked from outside it — the article says so rather than implying a guarantee it cannot give.
 
 ---
 

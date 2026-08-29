@@ -6,6 +6,7 @@ import {
   ReasoningTaskKind,
   validateReasoningProposal,
 } from "../contracts/reasoning-port.js";
+import { ProvenanceReferenceKind } from "../domain/provenance.js";
 import { IsoTimestamp, PolicyVersionRef, readonlyList, StableId } from "../domain/primitives.js";
 
 /**
@@ -77,6 +78,7 @@ export function evaluateGovernance(input: {
   readonly proposal: ReasoningProposal;
   readonly policy: PolicyDefinition;
   readonly admissibleKinds: readonly ReasoningTaskKind[];
+  readonly admissibleProvenanceKinds: readonly ProvenanceReferenceKind[];
   readonly authorizedAt: IsoTimestamp;
 }): GovernanceEvaluation {
   const reasons: string[] = [];
@@ -95,6 +97,39 @@ export function evaluateGovernance(input: {
   if (!input.admissibleKinds.includes(input.proposal.kind)) {
     reasons.push(
       `Reasoning task kind ${input.proposal.kind} is not admissible under the supplied policy.`,
+    );
+  }
+
+  // Provenance is a second channel into the same decision, and it was not
+  // checked before hostile testing found it. Two ways through it:
+  //
+  //   1. Claiming a later stage as the proposal's own basis - citing the very
+  //      policy about to evaluate it, or a decision downstream of it. That
+  //      inverts the ladder A4 keeps in one direction and reads as prior
+  //      approval the proposal does not have.
+  //   2. Citing learner evidence the task never permitted, while keeping
+  //      `evidenceIds` clean so the scope check passes.
+  const inadmissibleKinds = [
+    ...new Set(
+      input.proposal.provenance.references
+        .filter((reference) => !input.admissibleProvenanceKinds.includes(reference.kind))
+        .map((reference) => reference.kind),
+    ),
+  ];
+  if (inadmissibleKinds.length > 0) {
+    reasons.push(
+      `Reasoning proposal provenance claims a basis it may not claim: ${inadmissibleKinds.join(", ")}.`,
+    );
+  }
+
+  const permittedEvidence = new Set<string>(input.task.permittedEvidenceIds);
+  if (
+    input.proposal.provenance.references.some(
+      (reference) => reference.kind === "learner-evidence" && !permittedEvidence.has(reference.id),
+    )
+  ) {
+    reasons.push(
+      "Reasoning proposal provenance references learner evidence outside the task's permitted evidence scope.",
     );
   }
 
