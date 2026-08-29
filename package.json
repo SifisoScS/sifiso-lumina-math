@@ -13,10 +13,13 @@
     "demo:slice4": "tsx demo/slice4-knowledge-pedagogy.ts",
     "demo:slice5": "tsx demo/slice5-learning-experience-delivery.ts",
     "test:live": "tsx --test live/**/*.test.ts",
-    "learn": "tsx cli/learn.ts"
+    "learn": "tsx cli/learn.ts",
+    "build:web": "esbuild web/app.ts --bundle --format=iife --target=es2022 --outfile=web/app.js && node web/verify.mjs",
+    "ui": "pnpm build:web && node web/serve.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.15.3",
+    "esbuild": "^0.28.2",
     "tsx": "^4.19.3",
     "typescript": "^5.8.3"
   },

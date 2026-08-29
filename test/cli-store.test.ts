@@ -176,11 +176,13 @@ test("a record written by a future version is refused rather than guessed at", (
   assert.ok(loaded.reason.includes("v99"), "the refusal does not say what it found");
 });
 
-test("evidence this terminal never writes is refused", () => {
+test("evidence no Lumina surface writes is refused", () => {
+  // Was written against confidence-report, which the browser surface now
+  // legitimately collects. A context report is still written by nothing.
   const path = scratch();
   saveRecord(aSessionWithHistory().record, path);
   const stored = JSON.parse(readFileSync(path, "utf8")) as { evidence: unknown[] };
-  stored.evidence.push({ kind: "confidence-report", id: "evidence.smuggled" });
+  stored.evidence.push({ kind: "learning-context-report", id: "evidence.smuggled" });
   writeFileSync(path, JSON.stringify(stored), "utf8");
 
   const loaded = loadRecord(path);
@@ -190,7 +192,7 @@ test("evidence this terminal never writes is refused", () => {
   // whenever anything downstream happens to reject the record, which is not the
   // same as this guard doing its job.
   assert.ok(
-    loaded.reason.includes("confidence-report"),
+    loaded.reason.includes("learning-context-report"),
     `refused for the wrong reason: ${loaded.reason}`,
   );
 });

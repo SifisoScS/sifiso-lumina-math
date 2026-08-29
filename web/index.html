@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Math Lumina</title>
+  <style>
+    /* Paper Geometry — the same palette as the landing page, because this is
+       the same product. Fonts are the system stack: nothing is requested from
+       anywhere, which is the point of the whole surface. */
+    :root {
+      --paper: #f6f1e8;
+      --paper-deep: #ebe2d3;
+      --white: #fffdf8;
+      --ink: #172a3a;
+      --ink-soft: #365063;
+      --teal: #377d7a;
+      --saffron: #e5a13a;
+      --coral: #d96c55;
+      --line: rgba(23, 42, 58, 0.18);
+      --serif: ui-serif, Georgia, "Iowan Old Style", "Times New Roman", serif;
+      --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: var(--sans);
+      line-height: 1.55;
+    }
+    button { font: inherit; cursor: pointer; }
+    button:focus-visible { outline: 3px solid var(--saffron); outline-offset: 3px; }
+    h1, h2, h3 { font-family: var(--serif); font-weight: 600; text-wrap: balance; margin: 0; }
+    p { margin: 0; }
+    .muted { color: var(--ink-soft); font-size: 0.92rem; }
+
+    header {
+      border-bottom: 1px solid var(--line);
+      padding: 22px clamp(20px, 5vw, 56px);
+      display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap;
+    }
+    header strong { font-family: var(--serif); font-size: 1.25rem; letter-spacing: -0.02em; }
+    header span { font-size: 0.68rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--teal); }
+    header .spacer { margin-left: auto; }
+
+    main { padding: clamp(24px, 4vw, 44px) clamp(20px, 5vw, 56px); max-width: 1180px; }
+
+    .note {
+      min-height: 1.6em; margin-bottom: 20px;
+      color: var(--coral); font-size: 0.92rem;
+    }
+
+    /* Choosing an idea */
+    .concepts { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
+    .concept-card {
+      text-align: left; background: var(--white); border: 1px solid var(--line);
+      border-radius: 3px; padding: 20px; display: grid; gap: 8px; color: inherit;
+      transition: border-color .15s ease, transform .15s ease;
+    }
+    .concept-card:hover { border-color: var(--teal); transform: translateY(-2px); }
+    .concept-card strong { font-family: var(--serif); font-size: 1.12rem; }
+    .concept-card p { color: var(--ink-soft); font-size: 0.9rem; }
+
+    /* The session */
+    .layout { display: grid; gap: clamp(20px, 3vw, 38px); grid-template-columns: minmax(0, 1.6fr) minmax(260px, 0.85fr); }
+    @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+
+    .panel { background: var(--white); border: 1px solid var(--line); border-radius: 3px; padding: 22px; }
+    .panel + .panel { margin-top: 18px; }
+    .panel > h2 { font-size: 1.02rem; margin-bottom: 12px; }
+    .eyebrow {
+      font-size: 0.64rem; letter-spacing: 0.16em; text-transform: uppercase;
+      color: var(--teal); display: block; margin-bottom: 6px;
+    }
+
+    .depth { display: grid; gap: 8px; grid-template-columns: repeat(3, 1fr); margin-bottom: 18px; }
+    @media (max-width: 620px) { .depth { grid-template-columns: 1fr; } }
+    .depth-chip {
+      text-align: left; background: var(--paper-deep); border: 1px solid transparent;
+      border-radius: 3px; padding: 10px 12px; display: grid; gap: 2px; color: var(--ink-soft);
+    }
+    .depth-chip.is-current { background: var(--white); border-color: var(--teal); color: var(--ink); }
+    .depth-label { font-weight: 600; font-size: 0.86rem; }
+    .depth-hint { font-size: 0.74rem; }
+
+    ul.offers { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+    .offer {
+      border: 1px solid var(--line); border-radius: 3px; padding: 14px 16px;
+      display: flex; gap: 14px; align-items: center; flex-wrap: wrap;
+    }
+    .offer-text { flex: 1 1 260px; }
+    .offer-actions { display: flex; gap: 6px; }
+    .act {
+      background: none; border: 1px solid var(--line); border-radius: 2px;
+      padding: 6px 12px; font-size: 0.8rem; color: var(--ink-soft);
+    }
+    .act:hover { border-color: var(--ink-soft); color: var(--ink); }
+    .act-take { border-color: var(--ink); color: var(--ink); font-weight: 600; }
+    .act-take:hover { background: var(--ink); color: var(--paper); }
+
+    .material-block + .material-block { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); }
+    .material-block h3 { font-size: 0.98rem; margin-bottom: 5px; }
+
+    textarea {
+      width: 100%; min-height: 92px; resize: vertical; padding: 11px;
+      font: inherit; color: inherit; background: var(--paper);
+      border: 1px solid var(--line); border-radius: 3px;
+    }
+    textarea:focus-visible { outline: 3px solid var(--saffron); outline-offset: 2px; }
+
+    #reading:empty { display: none; }
+    #reading {
+      margin-top: 14px; padding: 12px 14px; border-left: 3px solid var(--saffron);
+      background: var(--paper-deep); font-size: 0.9rem;
+    }
+    .reading-tag {
+      display: block; font-size: 0.62rem; letter-spacing: 0.14em;
+      text-transform: uppercase; color: var(--ink-soft); margin-bottom: 5px;
+    }
+
+    .state-row { display: flex; justify-content: space-between; gap: 12px; padding: 5px 0; font-size: 0.87rem; }
+    .state-row + .state-row { border-top: 1px solid var(--line); }
+    .state-label { color: var(--ink-soft); }
+    .state-value { font-variant-numeric: tabular-nums; }
+
+    .confidence { display: flex; flex-wrap: wrap; gap: 6px; }
+    footer {
+      border-top: 1px solid var(--line); margin-top: 34px;
+      padding: 18px clamp(20px, 5vw, 56px); color: var(--ink-soft); font-size: 0.8rem;
+      display: flex; gap: 14px; flex-wrap: wrap; align-items: center;
+    }
+    footer .spacer { margin-left: auto; }
+  </style>
+</head>
+<body>
+  <header>
+    <strong>Math Lumina</strong>
+    <span>a learning engine</span>
+    <span class="spacer"></span>
+    <button class="act" id="leave" type="button">Stop for now</button>
+    <button class="act" id="forget" type="button" hidden>Delete everything kept</button>
+  </header>
+
+  <main>
+    <p class="note" id="note" role="status" aria-live="polite"></p>
+
+    <section id="picker">
+      <h1>What would you like to look at?</h1>
+      <p class="muted" style="margin: 8px 0 20px">
+        What you write is kept in this browser, on this computer. Nothing is sent anywhere —
+        there is no account and no server. Delete it whenever you like.
+      </p>
+      <div class="concepts" id="concepts"></div>
+    </section>
+
+    <section id="session" hidden>
+      <div class="layout">
+        <div>
+          <div class="panel">
+            <span class="eyebrow">You are looking at</span>
+            <h1 id="concept-title"></h1>
+            <p class="muted" id="concept-body" style="margin-top: 8px"></p>
+          </div>
+
+          <div class="panel">
+            <h2>How would you like to approach it?</h2>
+            <div class="depth" id="depth"></div>
+            <h2>What you could do next</h2>
+            <ul class="offers" id="offers"></ul>
+          </div>
+
+          <div class="panel">
+            <h2>What you asked to see</h2>
+            <div id="material"></div>
+          </div>
+        </div>
+
+        <aside>
+          <div class="panel">
+            <h2>Where you are</h2>
+            <div id="state"></div>
+          </div>
+
+          <div class="panel">
+            <h2>Write down what you are thinking</h2>
+            <textarea id="reflection" aria-label="What are you thinking?"
+              placeholder="Your words, kept exactly as you type them."></textarea>
+            <button class="act act-take" id="write" type="button" style="margin-top: 10px">Write it down</button>
+            <div id="reading"></div>
+          </div>
+
+          <div class="panel">
+            <h2>How sure do you feel?</h2>
+            <p class="muted" style="margin-bottom: 10px">
+              Your own account of yourself. Nothing concludes anything from it.
+            </p>
+            <div class="confidence" id="confidence"></div>
+          </div>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <span>Nothing here is generated. Every word shown as material is read from the catalogue.</span>
+    <span class="spacer"></span>
+    <span>No network. No provider. No account.</span>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

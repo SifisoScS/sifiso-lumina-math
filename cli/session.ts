@@ -1,25 +1,32 @@
 import {
-  canonicalPedagogicalGuidance,
-  currentLearnerState,
-  CurrentLearnerState,
-  deliveryCapabilityProfile,
-  EngineExecutionResult,
-  evolveLearnerRecord,
-  executeDeterministicLearningInteraction,
-  exploreConceptCommand,
-  functionsSeedKnowledge,
-  isoTimestamp,
-  LearnerChoiceKind,
-  LearnerRecord,
-  learnerChoice,
-  learnerRecord,
-  learnerReflection,
   LearningOffer,
+  deliveryCapabilityProfile,
+  exploreConceptCommand,
   opportunityAcceptanceEffect,
+  submitConfidenceReportCommand,
   submitLearnerChoiceCommand,
   submitReflectionCommand,
   trustedActorContext,
-} from "../src/index.js";
+} from "../src/contracts/core-contracts.js";
+import {
+  EngineExecutionResult,
+  executeDeterministicLearningInteraction,
+} from "../src/decisioning/engine.js";
+import { evolveLearnerRecord } from "../src/decisioning/learner-record-evolution.js";
+import {
+  CurrentLearnerState,
+  LearnerChoiceKind,
+  LearnerRecord,
+  currentLearnerState,
+  confidenceReport,
+  learnerChoice,
+  learnerRecord,
+  learnerReflection,
+} from "../src/domain/learner-record.js";
+import { PedagogicalLayer } from "../src/domain/mathematical-knowledge.js";
+import { canonicalPedagogicalGuidance } from "../src/domain/pedagogical-model.js";
+import { isoTimestamp } from "../src/domain/primitives.js";
+import { functionsSeedKnowledge } from "../src/seed/functions-seed.js";
 
 /**
  * The session, with no terminal in it.
@@ -71,6 +78,7 @@ export type Outcome =
   | { readonly kind: "paused" }
   | { readonly kind: "left-to-you" }
   | { readonly kind: "written-down" }
+  | { readonly kind: "confidence-recorded" }
   | { readonly kind: "no-such-offer" };
 
 function now() {
@@ -280,6 +288,63 @@ export function applyChoice(
     session: next.session,
     outcome: { kind: "moved", conceptId: after.activeConceptId },
   };
+}
+
+/**
+ * Opens a concept at a depth the learner picked.
+ *
+ * `activePedagogicalLayer` is already learner state and `move-toward-layer` is
+ * already an opportunity kind, but nothing let a learner simply say how they
+ * wanted to approach an idea -- depth was only ever a side effect of which offer
+ * they happened to take.
+ */
+export function chooseDepth(
+  session: Session,
+  conceptId: string,
+  layer: PedagogicalLayer,
+): Session {
+  return advance(
+    session,
+    exploreConceptCommand({
+      ...ids(session, "depth"),
+      learnerId: LEARNER_ID,
+      issuedAt: now(),
+      conceptId,
+      pedagogicalLayer: layer,
+    }),
+  ).session;
+}
+
+/**
+ * Records how sure the learner says they are.
+ *
+ * `confidence-report` has been a `LearnerEvidenceKind` all along -- modelled,
+ * validated and replayable -- and no surface collected one. It is the learner's
+ * own account of themselves, not an assessment of them: A4 and O4 both stand,
+ * and nothing reads this to conclude anything about what they understand.
+ */
+export function applyConfidence(
+  session: Session,
+  reportedValue: string,
+  conceptId: string,
+): { readonly session: Session; readonly outcome: Outcome } {
+  const next = advance(
+    session,
+    submitConfidenceReportCommand({
+      ...ids(session, "confidence"),
+      learnerId: LEARNER_ID,
+      issuedAt: now(),
+      confidenceReport: confidenceReport({
+        id: `evidence.confidence.${session.token}.${session.step + 1}`,
+        learnerId: LEARNER_ID,
+        conceptId: session.record.state.activeConceptId ?? conceptId,
+        reportedValue,
+        scaleLabel: "learner-stated confidence",
+        reportedAt: now(),
+      }),
+    }),
+  );
+  return { session: next.session, outcome: { kind: "confidence-recorded" } };
 }
 
 /** Records something the learner wrote. It is theirs; nothing is inferred from it. */

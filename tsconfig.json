@@ -11,7 +11,17 @@
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
     "declaration": true,
-    "outDir": "dist"
+    "outDir": "dist",
+    "lib": [
+      "ES2022",
+      "DOM"
+    ]
   },
-  "include": ["src/**/*.ts", "test/**/*.ts", "live/**/*.ts", "cli/**/*.ts"]
+  "include": [
+    "src/**/*.ts",
+    "test/**/*.ts",
+    "live/**/*.ts",
+    "cli/**/*.ts",
+    "web/**/*.ts"
+  ]
 }

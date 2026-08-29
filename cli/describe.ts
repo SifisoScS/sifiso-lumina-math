@@ -1,10 +1,12 @@
 import {
   CandidateLearningOpportunity,
+  LearningOffer,
+} from "../src/contracts/core-contracts.js";
+import {
   Concept,
   KnowledgeAsset,
   LearningExperience,
-  LearningOffer,
-} from "../src/index.js";
+} from "../src/domain/mathematical-knowledge.js";
 
 /**
  * Presentation. Deliberately outside the engine.

@@ -1,7 +1,8 @@
 import { createInterface } from "node:readline/promises";
 import { stdin, stdout } from "node:process";
 
-import { functionsSeedKnowledge, LearnerChoiceKind } from "../src/index.js";
+import { LearnerChoiceKind } from "../src/domain/learner-record.js";
+import { functionsSeedKnowledge } from "../src/seed/functions-seed.js";
 import { conceptSummary, describeOffers, materialFor } from "./describe.js";
 import { DEFAULT_RECORD_PATH, forgetRecord, loadRecord, recordExists, saveRecord } from "./store.js";
 import {

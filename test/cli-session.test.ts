@@ -3,9 +3,12 @@ import test from "node:test";
 
 import { evaluateStateMutationPolicy, functionsSeedKnowledge } from "../src/index.js";
 import { describeOffers, describeOpportunity, materialFor } from "../cli/describe.js";
+import { decodeRecord, encodeRecord } from "../cli/record-format.js";
 import {
   applyChoice,
+  applyConfidence,
   applyReflection,
+  chooseDepth,
   choicesMade,
   reflectionsWritten,
   startSession,
@@ -509,3 +512,67 @@ test("asking to see a representation shows the representation, not everything ne
   assert.deepEqual(lines, [asset.title, asset.content]);
 });
 
+// ---------------------------------------------------------------------------
+// Things a learner can say for themselves
+// ---------------------------------------------------------------------------
+
+test("a learner can say how they want to approach an idea", () => {
+  // Depth used to be a side effect of which offer someone happened to take.
+  let session = startSession("concept.function");
+  assert.equal(session.record.state.activePedagogicalLayer, undefined);
+
+  session = chooseDepth(session, "concept.function", "mechanics");
+  assert.equal(session.record.state.activePedagogicalLayer, "mechanics");
+
+  session = chooseDepth(session, "concept.function", "intuition");
+  assert.equal(session.record.state.activePedagogicalLayer, "intuition", "a learner could not go back");
+});
+
+test("choosing a depth changes what is offered, without choosing anything for them", () => {
+  const opened = startSession("concept.function");
+  const deep = chooseDepth(opened, "concept.function", "exam-patterns");
+
+  assert.notEqual(deep.offers.length, opened.offers.length);
+  for (const offer of deep.offers) {
+    const layer = offer.opportunity.pedagogicalLayer;
+    if (layer !== undefined) assert.equal(layer, "exam-patterns");
+  }
+  assert.equal(deep.record.state.activeConceptId, opened.record.state.activeConceptId);
+});
+
+test("a learner's own account of their confidence is recorded as theirs", () => {
+  // `confidence-report` has been a LearnerEvidenceKind all along and nothing
+  // collected one. It is the learner's statement about themselves, not an
+  // assessment of them -- O4 is untouched by it.
+  let session = startSession("concept.function");
+  const { session: next, outcome } = applyConfidence(session, "Getting there", "concept.function");
+  session = next;
+
+  assert.equal(outcome.kind, "confidence-recorded");
+  const reported = session.record.evidence.find((item) => item.kind === "confidence-report");
+  assert.ok(reported, "the learner said how sure they were and nothing kept it");
+  if (reported.kind !== "confidence-report") return;
+  assert.equal(reported.reportedValue, "Getting there");
+  assert.equal(reported.scaleLabel, "learner-stated confidence");
+
+  // It is evidence, not a verdict: nothing derived a claim about them from it.
+  for (const interpretation of session.record.interpretations) {
+    assert.equal(
+      interpretation.evidenceIds.includes(reported.id),
+      false,
+      "a conclusion was drawn from the learner's own confidence report",
+    );
+  }
+});
+
+test("a confidence report survives being written down and read back", () => {
+  let session = startSession("concept.function");
+  session = applyConfidence(session, "Not yet", "concept.function").session;
+
+  const encoded = encodeRecord(session.record);
+  const decoded = decodeRecord(encoded);
+  assert.equal(decoded.kind, "loaded");
+  if (decoded.kind !== "loaded") return;
+  const reported = decoded.record.evidence.find((item) => item.kind === "confidence-report");
+  assert.ok(reported);
+});

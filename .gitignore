@@ -9,3 +9,6 @@ coverage/
 
 # A learner's record. Their words, on their machine, never in this repository.
 .lumina/
+
+# The learner surface bundle is built, not authored.
+web/app.js
