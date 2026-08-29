@@ -17,7 +17,7 @@ import {
   stateCommitment,
   stateDeltaDimensions,
 } from "../domain/learner-record.js";
-import { IsoTimestamp, readonlyList, StableId } from "../domain/primitives.js";
+import { DomainValidationError, IsoTimestamp, readonlyList, StableId } from "../domain/primitives.js";
 
 export const DETERMINISTIC_CONTEXT_VERSION = "engine.behaviour.v1";
 
@@ -65,8 +65,20 @@ function evidenceSubmission(command: InteractionCommand) {
       return { evidence: command.confidenceReport, eventKind: "confidence-reported" as const };
     case "submit-learning-context":
       return { evidence: command.learningContextReport, eventKind: undefined };
-    default:
+    // A learner choice is evidence, but it is committed by the choice branch
+    // below rather than here, so it is excluded deliberately and not by
+    // omission. The remaining kinds carry no evidence at all.
+    case "submit-learner-choice":
+    case "explore-concept":
+    case "request-alternative-representation":
+    case "request-learning-guidance":
       return undefined;
+    default: {
+      const unhandled: never = command;
+      throw new DomainValidationError(
+        `Interaction command kind is not classified for evidence: ${JSON.stringify(unhandled)}`,
+      );
+    }
   }
 }
 

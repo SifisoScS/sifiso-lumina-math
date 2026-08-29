@@ -164,8 +164,19 @@ function commandSubmittedEvidence(command: InteractionCommand): LearnerEvidence 
       return command.learningContextReport;
     case "submit-learner-choice":
       return command.learnerChoice;
-    default:
+    // These carry no learner-authored evidence. Named explicitly rather than
+    // caught by a default, so a new command kind cannot be silently treated as
+    // evidence-free -- which would drop a learner's own words on the floor.
+    case "explore-concept":
+    case "request-alternative-representation":
+    case "request-learning-guidance":
       return undefined;
+    default: {
+      const unhandled: never = command;
+      throw new DomainValidationError(
+        `Interaction command kind is not classified for evidence: ${JSON.stringify(unhandled)}`,
+      );
+    }
   }
 }
 

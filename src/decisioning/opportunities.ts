@@ -3,6 +3,7 @@ import {
   CandidateLearningOpportunity,
 } from "../contracts/core-contracts.js";
 import { LearningExperience, PedagogicalLayer } from "../domain/mathematical-knowledge.js";
+import { DomainValidationError } from "../domain/primitives.js";
 import {
   DeliveryFilteringResult,
   filterExperiencesForDelivery,
@@ -37,10 +38,32 @@ function opportunityId(context: AssembledLearningContext, suffix: string): strin
   return `opportunity.${context.command.id}.${suffix}`;
 }
 
+/**
+ * How an experience is offered, from what the experience is for.
+ *
+ * Every intent is named. The two-line version this replaces returned "continue"
+ * for anything it did not recognise, so a new intent would have been offered to
+ * a learner as "carry on with this" without anyone deciding that it should be.
+ */
 function experienceOpportunityKind(experience: LearningExperience): "continue" | "practise" | "reflect" {
-  if (experience.intent === "practice") return "practise";
-  if (experience.intent === "reflection") return "reflect";
-  return "continue";
+  switch (experience.intent) {
+    case "practice":
+      return "practise";
+    case "reflection":
+      return "reflect";
+    case "intuition":
+    case "mechanics":
+    case "exam-patterns":
+    case "low-energy":
+    case "concept-bridge":
+      return "continue";
+    default: {
+      const unclassified: never = experience.intent;
+      throw new DomainValidationError(
+        `Learning experience intent is not classified for offering: ${String(unclassified)}`,
+      );
+    }
+  }
 }
 
 function addLayerMovementCandidates(

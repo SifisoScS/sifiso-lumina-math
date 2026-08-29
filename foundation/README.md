@@ -94,6 +94,7 @@ The point of this foundation is that its load-bearing rules are **types and test
 | No pedagogical depth is chosen on the learner's behalf | A2 | `startSession` pins no layer; every concept opens with something on offer | **live** |
 | A learner with nothing on offer is told their exits | A7 | `cli/learn.ts` | **live** |
 | The terminal never reports movement that did not happen | A6 | the `already-there` outcome; `test/cli-session.test.ts` | **live** |
+| A union cannot grow without the paths that consume it being reconsidered | A2, A7 | `never` assertions in `experienceOpportunityKind` and the three command-evidence switches — proven: adding an intent, or dropping a case, fails typecheck | **live** |
 
 Every row is built. Where a claim is not enforceable — a model's calibration cannot be checked from outside it — the article says so rather than implying a guarantee it cannot give.
 
