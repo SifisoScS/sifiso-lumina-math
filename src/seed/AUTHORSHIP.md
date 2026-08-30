@@ -96,6 +96,9 @@ as solid, which is worth recording: two readers, and the errors survived one of 
 7. `asset.sequence-as-function.joined-line-misconception` is now shown at the
    exam-patterns layer as well as in reflection, because joining the dots and
    reading between them is an exam habit and that is where it bites.
+8. `asset.quadratic-sequence.building-rule-procedure` assumed a growing pattern.
+   It now says that a negative second difference gives a negative `a` and changes
+   nothing else about the method. Raised on the signatory's second read.
 
 Nothing else in the corpus changed. Items 1-3 are worth a second look by the
 signatory, since they are the ones where the content a learner would have

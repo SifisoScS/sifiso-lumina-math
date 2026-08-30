@@ -365,7 +365,7 @@ export const sequencesTopicSeed: TopicSeed = {
       id: "asset.quadratic-sequence.building-rule-procedure",
       kind: "procedure",
       title: "From two rows of gaps to a rule",
-      content: "Write the first differences, then the second differences. Halve the second difference to get a. The first two terms then give two equations: a + b + c = T1 and 4a + 2b + c = T2. Subtracting the first from the second leaves 3a + b = T2 - T1, so b comes out on its own, and c is whatever is left of T1 once a and b are taken off.",
+      content: "Write the first differences, then the second differences. Halve the second difference to get a. The first two terms then give two equations: a + b + c = T1 and 4a + 2b + c = T2. Subtracting the first from the second leaves 3a + b = T2 - T1, so b comes out on its own, and c is whatever is left of T1 once a and b are taken off. None of this assumes the pattern is growing: a second difference of -2 gives a = -1, the same steps follow unchanged, and the terms turn downward instead of upward.",
       conceptIds: ["concept.quadratic-sequence"],
       supportedLayers: ["mechanics"],
       version: "math-lumina.seed.v1",
