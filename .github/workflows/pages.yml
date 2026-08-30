@@ -1,0 +1,69 @@
+name: Publish the learner surface
+
+# The page a learner is handed. It is static: no server, no account, and no way
+# to reach a network. That last part is not a promise made in prose -- the build
+# refuses to publish a bundle containing fetch, XHR, WebSocket, sendBeacon, or
+# anything belonging to a model provider, and it checks the file that actually
+# ships rather than the one the build produced.
+#
+# No secret is available to this workflow, and none is needed. The engine runs
+# in the page, the record stays in the learner's own browser, and the provider
+# path exists only in the terminal.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# A half-published page is worse than a stale one, so runs queue rather than
+# cancel each other.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Nothing reaches a learner from a tree that does not typecheck and pass.
+      # `pnpm check` never makes a network call and never costs money; the live
+      # provider suite lives outside it, in live/, and is not run here.
+      - name: Check
+        run: pnpm check
+
+      # Builds, verifies the bundle, stages exactly index.html and app.js, then
+      # verifies the staged copy.
+      - name: Build and verify the page
+        run: pnpm build:pages
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

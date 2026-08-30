@@ -126,6 +126,27 @@
     .state-value { font-variant-numeric: tabular-nums; }
 
     .confidence { display: flex; flex-wrap: wrap; gap: 6px; }
+
+    /* Touch. Keyed to the pointer rather than the screen, because a small
+       window on a laptop still has a mouse and a large tablet still has a
+       thumb. 44px is the smallest target that is reliably hit. */
+    @media (pointer: coarse) {
+      .act { min-height: 44px; padding: 10px 16px; font-size: 0.86rem; }
+      .depth-chip { min-height: 56px; }
+      .concept-card { padding: 22px; }
+      textarea { min-height: 120px; }
+    }
+
+    /* Narrow. The three answers to an offer get a row of their own and share
+       it equally, so no one of them is easier to reach than the others. */
+    @media (max-width: 540px) {
+      .offer { gap: 10px; }
+      .offer-text { flex: 1 1 100%; }
+      .offer-actions { flex: 1 1 100%; }
+      .offer-actions .act { flex: 1 1 0; text-align: center; }
+      header { gap: 10px; }
+      header .spacer { flex-basis: 100%; margin-left: 0; }
+    }
     footer {
       border-top: 1px solid var(--line); margin-top: 34px;
       padding: 18px clamp(20px, 5vw, 56px); color: var(--ink-soft); font-size: 0.8rem;
@@ -148,9 +169,15 @@
 
     <section id="picker">
       <h1>What would you like to look at?</h1>
-      <p class="muted" style="margin: 8px 0 20px">
-        What you write is kept in this browser, on this computer. Nothing is sent anywhere —
-        there is no account and no server. Delete it whenever you like.
+      <p class="muted" style="margin: 8px 0 8px; max-width: 62ch">
+        What you write is kept in this browser, on this device. Nothing is sent anywhere —
+        there is no account, no server, and nothing here can reach a network. Delete it
+        whenever you like, with the button at the top, and deleting means deleting.
+      </p>
+      <p class="muted" style="margin: 0 0 20px; max-width: 62ch">
+        No model is connected. Everything you will be shown was written by a person and read
+        from a catalogue. You decide what happens: if you decline something it does not
+        happen, and you will not be quietly moved along.
       </p>
       <div class="concepts" id="concepts"></div>
     </section>

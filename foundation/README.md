@@ -68,7 +68,7 @@ The point of this foundation is that its load-bearing rules are **types and test
 | The screen's limit is held open adversarially rather than described | A5, A7 | `implied-authority` — a reworded claim is admitted, and a test asserts that it is | **live** |
 | Machine text is shown as machine text, beside the record it cannot change | A5, A6 | `describeExplanation`, `cli/describe.ts` — proven by mutation, in both halves: dropping the label fails, dropping the record fails | **live** |
 | A model's words reach a learner only when the learner asks for them | A2, A5 | `cli/learn.ts` — the `x` command and nothing else requests reasoning; no offer, no prompt, no automatic call | **live** |
-| A learner is told whether a model is connected before they consent | A2, A6 | `cli/learn.ts` says which, in the opening text, before the first question | **live** |
+| A learner is told whether a model is connected before they consent | A2, A6 | `cli/learn.ts` says which, in the opening text, before the first question | **by review** |
 | An explanation task has no evidence scope, and no parameter to give it one | A2, A5 | `explanationTask` — proven: giving it a scope fails two tests; a `@ts-expect-error` holds the absent parameter absent | **live** |
 | An explanation citing anything a learner wrote is refused | A2, A5 | `test/explanation-request.test.ts` — the Phase 4 adversary pointed at this path | **live** |
 | A refused explanation is not shown with a caveat attached | A7 | `requestExplanation` returns no summary on refusal — proven by mutation | **live** |
@@ -98,7 +98,13 @@ The point of this foundation is that its load-bearing rules are **types and test
 | The same opportunity is never offered twice | A2 | `generateCandidateLearningOpportunities` — proven: removing the guard fails both the engine and session tests | **live** |
 | The engine's reading of a reflection is never shown as the learner's own words | A2, A6 | `test/cli-session.test.ts` asserts evidence and interpretation stay distinct | **live** |
 | A learner's record is kept only on their own machine | A2, O2 | `cli/store.ts` — one gitignored file, no network call anywhere in the path | **live** |
-| A learner is told what is kept, where, and how to delete it | A2, O2 | `cli/learn.ts` says so before consent is asked | **live** |
+| The learner's page cannot reach a network, and neither can the page itself | A2, O2 | `web/verify.mjs` — bundle *and* HTML; proven: a reachable `fetch(` fails the build, and so does a font-host link | **live** |
+| The artefact that is published is the artefact that was verified | A2, A6 | `web/stage.mjs`, then `verify` against `dist/` — checking the build and shipping something else would be a guarantee about the wrong file | **live** |
+| Exactly two files are published, each named one by one | A7 | `web/stage.mjs` — `web/` also holds source and a dev server, and copying the directory is how those would ship | **live** |
+| Nothing reaches a learner from a tree that does not pass | A7 | `.github/workflows/pages.yml` — `pnpm check` gates the publish; the live provider suite is not run there and no secret is available to it | **live** |
+| A learner is told what the page is before anything is written | A2, A6 | `web/index.html` — where the record lives, that nothing can reach a network, that no model is connected, and that declining is honoured | **by review** |
+| Every control can be hit with a thumb | A1, A2 | `@media (pointer: coarse)` — 44px targets; a mis-tap on a three-button offer row would decline something the learner meant to take | **by review** |
+| A learner is told what is kept, where, and how to delete it | A2, O2 | `cli/learn.ts` says so before consent is asked | **by review** |
 | Deleting means deleting — nothing survives it | A2, O2 | `forgetRecord`; asserted there is nothing left to load | **live** |
 | A stored record is rebuilt from its own history, never trusted | A6, A7 | `replayLearnerHistory` on every load — proven: trusting the stored state fails the test | **live** |
 | A record that does not reconstruct is refused, not repaired | A7 | `loadRecord` returns `unreadable` and leaves the file untouched | **live** |
@@ -117,7 +123,7 @@ The point of this foundation is that its load-bearing rules are **types and test
 | A learner cannot hold two depths for one concept | A6 | `currentLearnerState` — proven by mutation | **live** |
 | A record in an unrecognised format is refused, named, and left untouched | A7, O2 | `decodeRecord` — proven: leaving the version unchanged past a shape change fails the test | **live** |
 | A fragment spread into a state delta is still checked | A7 | `LearnerStateDeltaInput` with `satisfies` — spreading otherwise skips excess-property checking, and a renamed field is dropped in silence | **live** |
-| A learner with nothing on offer is told their exits | A7 | `cli/learn.ts` | **live** |
+| A learner with nothing on offer is told their exits | A7 | `cli/learn.ts` | **by review** |
 | Offers always describe where the learner is now | A2, A6 | `refreshed`, `cli/session.ts` — proven: removing it fails two tests | **live** |
 | A learner is never shown an option the engine would then refuse | A2 | `test/cli-session.test.ts` walks every offer after a move | **live** |
 | Re-asking what is on offer is not the learner acting | A6 | the refresh writes no commitment | **live** |
@@ -147,9 +153,9 @@ The point of this foundation is that its load-bearing rules are **types and test
 | Taking up an offer that moves nothing is still recorded | A2, A6, O8 | `learning-path-accepted` with no `stateCommitmentId` | **live** |
 | A commitment means state changed, with no exceptions to check | A4, A6 | no non-mutating commitment kind exists — the proposal to add one was declined | **live** |
 
-Every row is built and has a test that fails when it is broken.
+Every row is built. **live** means a test or a build gate fails when the row is broken. **by review** means the enforcement is a sentence a learner reads or a rule about how something looks, which no test defends — a person has to, and saying which is which is the same discipline as marking a row pending rather than quietly counting it.
 
-Where a claim is not enforceable — a model's calibration cannot be checked from outside it, an authority claim can always be reworded, and nothing enforces that an explanation is pitched at the right reader — the article says so rather than implying a guarantee it cannot give.
+Where a claim is not enforceable at all — a model's calibration cannot be checked from outside it, an authority claim can always be reworded, and nothing enforces that an explanation is pitched at the right reader — the article says so rather than implying a guarantee it cannot give.
 
 ---
 

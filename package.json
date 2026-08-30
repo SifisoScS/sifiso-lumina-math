@@ -15,7 +15,8 @@
     "test:live": "tsx --test live/**/*.test.ts",
     "learn": "tsx cli/learn.ts",
     "build:web": "esbuild web/app.ts --bundle --format=iife --target=es2022 --outfile=web/app.js && node web/verify.mjs",
-    "ui": "pnpm build:web && node web/serve.mjs"
+    "ui": "pnpm build:web && node web/serve.mjs",
+    "build:pages": "pnpm build:web && node web/stage.mjs && node web/verify.mjs dist"
   },
   "devDependencies": {
     "@types/node": "^22.15.3",
