@@ -1,4 +1,4 @@
-import { evaluateNonEvaluativeText } from "../domain/policy-governance.js";
+import { evaluateNonEvaluativeText, evaluateSelfAuthorityClaim } from "../domain/policy-governance.js";
 import { DecisionProvenance } from "../domain/provenance.js";
 import {
   DomainValidationError,
@@ -140,6 +140,12 @@ export function validateReasoningProposal(
   }
   if (evaluateNonEvaluativeText(proposal.summary).outcome === "prohibited") {
     reasons.push("Reasoning proposal violates the non-evaluative language policy guard.");
+  }
+  // O7. A proposal whose learner-facing text speaks about the system's own
+  // standing is refused rather than admitted-and-inert. It never reaches
+  // governance, so it never reaches a learner.
+  if (evaluateSelfAuthorityClaim(proposal.summary).outcome === "prohibited") {
+    reasons.push("Reasoning proposal makes a claim about the system's own authority.");
   }
   return Object.freeze({
     outcome: reasons.length === 0 ? "accepted" : "rejected",

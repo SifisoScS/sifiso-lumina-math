@@ -1,6 +1,6 @@
 # A5 — AI Boundary
 
-*Article 5 of the Math Lumina foundation. Version 1.4.*
+*Article 5 of the Math Lumina foundation. Version 1.5.*
 
 ## The principle
 
@@ -57,7 +57,19 @@ A model is admitted to a task kind only after the boundary has been tested again
 
 The question is never "is the model good enough." It is **"can the architecture stop cleverness from becoming authority."** That is testable, and it is tested before the model arrives, not after.
 
-Two limits worth stating plainly rather than papering over. A model's *calibration* cannot be verified from outside it; what is guaranteed is that a confident claim and an uncertain one are treated identically, so confidence buys nothing. And a proposal asserting its own authority in the text a learner reads is admitted — the claim is inert, because permission is attributed to the policy and never to anything a proposal says, but the text itself is not currently screened for it. See OPEN.md O7.
+Two limits worth stating plainly rather than papering over.
+
+A model's *calibration* cannot be verified from outside it. What is guaranteed is that a confident claim and an uncertain one are treated identically, so confidence buys nothing.
+
+And **learner-facing text is screened for claims about the system's own standing, but only for the ones that say so.** Text speaking of approval, review, authority, or policy is refused before governance sees it. A claim reworded to avoid that vocabulary is not caught, and a hostile test holds that limit open on purpose rather than letting the screen be mistaken for coverage it does not have. What holds regardless is structural: permission is attributed to the policy and never to anything a proposal says, and a proposal's words reach no field the engine acts on. See OPEN.md O7, closed.
+
+## Showing machine text to a person
+
+Because that screen is a floor rather than a guarantee, **a surface that shows machine-originated text to a learner must show it as machine-originated, and beside the learner's actual record rather than in place of it.**
+
+A learner who can see what is recorded about them can check any claim made about it. That is what makes an unscreened claim survivable: not that the words were caught, but that the person reading them can see they changed nothing.
+
+No surface shows model text today. This binds the first one that does.
 
 ## What this does not establish
 

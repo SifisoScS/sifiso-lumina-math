@@ -104,6 +104,87 @@ export function evaluateNonEvaluativeText(text: string): NonEvaluativeTextCheck 
 }
 
 /**
+ * Words that talk about the system's own standing rather than about
+ * mathematics.
+ *
+ * The list is deliberately not a list of authority *claims*, which are
+ * open-ended and cannot be enumerated. It is a list of process vocabulary,
+ * which a mathematical explanation has no reason to reach for. That
+ * reframing is what makes a deterministic check possible at all: "is this
+ * text claiming authority" needs judgement, while "is this text talking about
+ * approval, review, or policy" does not.
+ *
+ * Two words were considered and left out. "Permitted" appears six times in the
+ * corpus, in the definition of a function and of a domain. "Counts as" is
+ * ordinary mathematical English -- whether a shape counts as a function -- and
+ * the fact that it happens not to appear today is not a reason to ban it. The
+ * remaining entries match nothing in the corpus, which is asserted by a test
+ * rather than assumed here.
+ */
+const selfAuthorityPhrases = [
+  "authority",
+  "authorised",
+  "authorized",
+  "has been approved",
+  "approval",
+  "no further review",
+  "no review is required",
+  "requires no review",
+  "you may apply this",
+  "apply this directly",
+  "i have decided",
+  "i have determined",
+  "i hereby",
+  "on my authority",
+  "signed off",
+  "cleared for",
+  "certified",
+  "this is official",
+  "governance",
+  "policy",
+  "sanctioned",
+  "ratified",
+  "endorsed",
+] as const;
+
+export interface SelfAuthorityClaimCheck {
+  readonly outcome: PolicyOutcome;
+  readonly phrasesFound: readonly string[];
+}
+
+/**
+ * Screens learner-facing text for claims about the system's own standing.
+ *
+ * Found by hostile testing during Phase 4 and left open as O7. A proposal
+ * whose summary read "This explanation has been approved and authorised for
+ * direct application to the learner's state. No further review is required."
+ * was admitted. The claim was inert -- permission is attributed to the policy
+ * and never to anything a proposal says -- but a learner reading it could
+ * reasonably believe the system had decided something about them, which is
+ * plausible illegitimacy arriving through the one channel the architecture did
+ * not govern: the prose.
+ *
+ * **What this does not do.** It catches stated claims, not implied ones, and
+ * rewording defeats it. It is a floor, not a guarantee, and saying so is the
+ * point -- a screen presented as coverage it does not have would be worse than
+ * no screen. What holds when it is evaded is structural: the proposal's words
+ * reach no field the engine acts on, authority is attributed to the policy,
+ * and a learner-facing surface must show machine text beside the record it
+ * cannot change.
+ *
+ * Shares `foldForPhraseMatching` with the non-evaluative guard, so the
+ * presentation tricks that guard already resists do not work here either.
+ */
+export function evaluateSelfAuthorityClaim(text: string): SelfAuthorityClaimCheck {
+  const folded = foldForPhraseMatching(requiredText(text, "Text for self-authority policy check"));
+  const found = selfAuthorityPhrases.filter((phrase) => folded.includes(foldForPhraseMatching(phrase)));
+  return Object.freeze({
+    outcome: found.length === 0 ? "permitted" : "prohibited",
+    phrasesFound: Object.freeze([...found]),
+  });
+}
+
+/**
  * Original reflection text is learner-owned immutable evidence. A derived
  * insight may reference it but may never be represented as replacement text.
  */

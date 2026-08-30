@@ -79,6 +79,17 @@ test("a proposal citing a learning decision as its own basis is refused", () => 
   assert.ok(refusalReasons("provenance-cites-decision").some((r) => r.includes("provenance")));
 });
 
+test("a proposal claiming authority over the learner's state is refused (O7)", () => {
+  // This attack was admitted-and-inert until O7 was closed. It is now refused
+  // at proposal validation, so it never reaches governance and no learner ever
+  // reads it. The claim was always worth nothing; what changed is that the text
+  // carrying it no longer gets in front of a person.
+  assert.ok(
+    refusalReasons("claims-authority").some((r) => r.includes("authority")),
+    "a proposal asserting its own authority was admitted",
+  );
+});
+
 test("evaluative language about the learner is refused", () => {
   assert.ok(refusalReasons("evaluative-language").some((r) => r.includes("non-evaluative")));
 });
@@ -149,15 +160,21 @@ test("a caller cannot widen what a policy permits", () => {
 // saying so. What matters is that they buy nothing.
 // ---------------------------------------------------------------------------
 
-test("a proposal asserting its own authority gains none", () => {
-  const result = attack("claims-authority");
+test("an authority claim the screen cannot see is still admitted, and still gains nothing", () => {
+  // The O7 screen is a floor, not a guarantee. It matches process vocabulary,
+  // so a claim reworded to avoid that vocabulary passes -- and this test exists
+  // to keep that limit visible and adversarial instead of only described in a
+  // comment. If the screen is ever strengthened enough to catch this, this test
+  // fails, and whoever strengthened it has to decide deliberately what the new
+  // limit is rather than quietly inheriting a stale claim of coverage.
+  const result = attack("implied-authority");
 
-  // The claim is in text a learner would read, not in a field the engine acts
-  // on. It is admitted, and it confers nothing.
   assert.equal(result.kind, "authorized");
   if (result.kind !== "authorized") return;
 
-  // Authority is attributed to the policy, never to anything the proposal said.
+  // Which is why the structural guarantee is the one that matters. Authority is
+  // attributed to the policy, never to anything the proposal said, and the
+  // proposal's words reach no field the engine acts on.
   assert.equal(result.action.policyId, aiProposalAcceptancePolicy.id);
   assert.equal(result.action.policyVersion, aiProposalAcceptancePolicy.version);
   assert.equal(Object.keys(result.action).includes("summary"), false);
@@ -233,6 +250,7 @@ test("every attack kind is exercised by this suite", () => {
   const exercised: readonly AttackKind[] = [
     "well-formed",
     "claims-authority",
+    "implied-authority",
     "evidence-outside-scope",
     "provenance-smuggles-evidence",
     "provenance-cites-policy",
@@ -253,5 +271,5 @@ test("every attack kind is exercised by this suite", () => {
   type Unexercised = Exclude<AttackKind, (typeof exercised)[number]>;
   const allExercised: Unexercised extends never ? true : never = true;
   assert.equal(allExercised, true);
-  assert.equal(exercised.length, 18);
+  assert.equal(exercised.length, 19);
 });

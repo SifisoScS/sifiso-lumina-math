@@ -80,21 +80,33 @@ How rejected commands, failed policy evaluations, and corrections are retained a
 
 ---
 
-## O7 — Authority claims in learner-facing text
-
-Whether machine-generated text shown to a learner should be screened for claims about its own status — "this has been approved", "no further review is required", "you may apply this directly".
-
-**Why open:** found by hostile testing during Phase 4, not anticipated when A5 was drafted. The claim is *inert* — permission is attributed to the policy and never to anything a proposal says, and a test asserts this — so nothing in the system acts on it. But a learner reading it could reasonably believe the system had decided something it had not, which is plausible illegitimacy arriving through the one channel the architecture does not govern: the prose.
-
-Screening it well is harder than the existing non-evaluative check, which matches a fixed phrase list. Claims of authority are open-ended, and a naive filter would produce false positives on legitimate explanatory text.
-
-**Current behaviour:** `evaluateNonEvaluativeText` screens for judgement *about the learner*. Nothing screens for claims *about the system's own authority*. Such a proposal is admitted, and confers nothing.
-
----
-
 ## Closed
 
 An open question leaves this register by being decided, never by being forgotten. What it said is kept, so that the reasoning stays inspectable after the fact.
+
+### O7 — Authority claims in learner-facing text · **closed 2026-08-30**
+
+**Was:** whether machine-generated text shown to a learner should be screened for claims about its own status — "this has been approved", "no further review is required", "you may apply this directly". Found by hostile testing during Phase 4 and not anticipated when A5 was drafted. The claim was *inert*, because permission is attributed to the policy and never to anything a proposal says, but a learner reading it could reasonably believe the system had decided something it had not. That is plausible illegitimacy arriving through the one channel the architecture did not govern: the prose.
+
+The register recorded the difficulty honestly — claims of authority are open-ended, and a naive filter would produce false positives on legitimate explanatory text.
+
+**Closed by:** the Founder, choosing to refuse rather than to leave inert, against both options and their stated costs. Drafted and implemented by Claude (Opus 5).
+
+**Self-review declared under A8:** the same author wrote O7's text, found the defect that raised it, framed the two options, recommended one, and implemented the recommendation. The Founder chose. Nothing else in that sequence is independent, including the argument that a partial screen is better than none — which was put as the case *against* the option that was recommended, by the author who recommended it.
+
+**How it was closed.** The difficulty the register named was real but was attached to the wrong question. *Is this text claiming authority* needs judgement and cannot be enumerated. *Is this text talking about approval, review, or policy* does not. A mathematical explanation has no reason to reach for process vocabulary, so the screen is a list of that vocabulary rather than a list of claims. `evaluateSelfAuthorityClaim` refuses at `validateReasoningProposal`, before governance sees the proposal, so it never reaches a learner.
+
+**The corpus is the false-positive test set.** Of 155 strings a learner can actually be shown, exactly one candidate word collided with real material: "permitted", which appears in the definition of a function and again in the definition of a domain. It was left out. So was "counts as" — ordinary mathematical English, and the fact that it happens not to appear today is not a reason to ban it. A test asserts that nothing in the corpus is refused, and names the definition of a function separately because it is the closest call and a regression there would refuse the first sentence a learner ever reads.
+
+**What it does not do, asserted rather than implied.** It catches stated claims, not implied ones, and rewording defeats it. A second hostile attack, `implied-authority`, makes the same claim using none of the vocabulary. It is admitted, and a test asserts that it is admitted. If the screen is ever strengthened enough to catch it, that test fails, and whoever strengthened it has to decide deliberately what the new limit is rather than inheriting a stale claim of coverage.
+
+**A Phase 4 result changed category.** `claims-authority` moved from "attacks that are inert rather than refused" to "attacks that must be refused". That is a real change to a documented Phase 4 outcome, recorded here so it is not later found as a discrepancy between the suite and what was said about it.
+
+**A standing constraint on Phase 5b.** Because the screen is a floor, [A5](A5-ai-boundary.md) now requires that any surface showing machine-originated text shows it as machine-originated and beside the learner's own record rather than in place of it. A learner who can see what is recorded can check any claim about it — that is what makes an unscreened claim survivable. No surface shows model text today, so this is listed as **pending** in the enforcement map rather than live, and it binds the first surface that does.
+
+**Enforced by:** `test/reasoning-port.test.ts` and `test/hostile-boundary.test.ts`. Proven by mutation in both directions: unwiring the screen fails the two refusal tests, and adding a word the corpus actually uses fails the two false-positive tests.
+
+---
 
 ### O8 — Commitments that change nothing · **closed 2026-08-29**
 

@@ -10,7 +10,7 @@ Eight articles governing the Math Lumina learning engine.
 
 | | |
 |---|---|
-| **Articles** | A1–A8 · A4 v1.4 · A5 v1.4 · A6 v1.2 · A7 v1.1 · rest v1.0 |
+| **Articles** | A1–A8 · A4 v1.4 · A5 v1.5 · A6 v1.2 · A7 v1.1 · rest v1.0 |
 | **Adopted** | Yes — [ADOPTION.md](ADOPTION.md), 2026-08-29 |
 | **In force** | **Yes** |
 | **Founder** | Sifiso Cyprian Shezi — [RECOGNITION.md](RECOGNITION.md) R1 |
@@ -62,7 +62,11 @@ The point of this foundation is that its load-bearing rules are **types and test
 | Admission needs a policy scoped to `ai-proposal-acceptance` | A5 | `evaluateGovernance` | **live** |
 | Assessment-bearing proposal kinds are inadmissible | A5, O4 | `admissibleProposalKinds`, `src/governance/proposal-policy.ts` | **live** |
 | Only learner-originated authorisation may back a commitment, as a reportable policy | A2, A6 | `evaluateStateMutationPolicy`, same file | **live** |
-| A hostile proposer cannot cross the seam | A4, A5 | `test/hostile-boundary.test.ts` — 22 tests, 18 attack kinds | **live** |
+| A hostile proposer cannot cross the seam | A4, A5 | `test/hostile-boundary.test.ts` — 23 tests, 19 attack kinds | **live** |
+| Learner-facing text claiming the system's own standing is refused | A5, O7 | `evaluateSelfAuthorityClaim` — refused at `validateReasoningProposal`, before governance; proven by mutation | **live** |
+| No material a learner is actually shown is refused by that screen | A1, A5 | `test/reasoning-port.test.ts` — the corpus is the false-positive set; proven: banning a word the corpus uses fails it | **live** |
+| The screen's limit is held open adversarially rather than described | A5, A7 | `implied-authority` — a reworded claim is admitted, and a test asserts that it is | **live** |
+| Machine text is shown as machine text, beside the record it cannot change | A5, A6 | **not built.** No surface shows model text; A5 binds the first that does (Phase 5b) | **pending** |
 | A proposal may not claim a downstream stage as its basis | A4, A5 | `admissibleProvenanceKinds`, `src/governance/proposal-policy.ts` | **live** |
 | Out-of-scope evidence cannot be smuggled via provenance | A4, A6 | `evaluateGovernance` | **live** |
 | Claimed confidence buys no privilege | A4 | `test/hostile-boundary.test.ts` | **live** |
@@ -136,7 +140,9 @@ The point of this foundation is that its load-bearing rules are **types and test
 | Taking up an offer that moves nothing is still recorded | A2, A6, O8 | `learning-path-accepted` with no `stateCommitmentId` | **live** |
 | A commitment means state changed, with no exceptions to check | A4, A6 | no non-mutating commitment kind exists — the proposal to add one was declined | **live** |
 
-Every row is built. Where a claim is not enforceable — a model's calibration cannot be checked from outside it — the article says so rather than implying a guarantee it cannot give.
+Every row marked **live** is built and has a test that fails when it is broken. The one row marked **pending** is a requirement A5 imposes on work not yet done, and it is listed rather than omitted so that the work cannot quietly skip it — a row claiming enforcement it does not have would be worse than an admitted gap, and so would a requirement nobody wrote down.
+
+Where a claim is not enforceable — a model's calibration cannot be checked from outside it, and an authority claim can always be reworded — the article says so rather than implying a guarantee it cannot give.
 
 ---
 
