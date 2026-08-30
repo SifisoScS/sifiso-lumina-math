@@ -21,8 +21,8 @@ surfaces over it. The engine holds every rule; the surfaces hold none.
 | | |
 |---|---|
 | **Governing order** | [`foundation/`](foundation/) — articles A1–A8, adopted 2026-08-29 by [ADOPTION.md](foundation/ADOPTION.md) |
-| **Enforcement** | 119 rules with a test or build gate behind them, 6 marked `by review` because nothing enforces them — see the [map](foundation/README.md) |
-| **Tests** | 224 in `pnpm check`, plus 7 live provider tests kept outside it so no ordinary run costs money or touches a network |
+| **Enforcement** | 120 rules with a test or build gate behind them, 6 marked `by review` because nothing enforces them — see the [map](foundation/README.md) |
+| **Tests** | 225 in `pnpm check`, plus 7 live provider tests kept outside it so no ordinary run costs money or touches a network |
 | **Corpus** | 2 topics, 12 concepts, 27 relationships, 122 assets, 76 learning experiences |
 | **Surfaces** | `pnpm learn` (terminal) and `pnpm ui` (browser, `127.0.0.1`) — both run the same engine |
 | **Deployed** | <https://sifisoscs.github.io/sifiso-lumina-math/> — a static page, no server, no account, build-verified to contain no network primitive |
@@ -314,7 +314,7 @@ src/
 
 cli/                                  # Terminal surface — presentation only, no decisions
 web/                                  # Browser surface — same engine, build-verified offline
-test/                                 # Headless contract and behaviour tests (224)
+test/                                 # Headless contract and behaviour tests (225)
 test/hostile/                         # Attacks on the authority seam
 live/                                 # Provider tests, deliberately outside `pnpm check`
 foundation/                           # A1–A8, the adoption record, and the enforcement map
@@ -367,7 +367,7 @@ Consumers should use the types/contracts as semantic interfaces. They must not a
 ## Verification
 
 ```bash
-pnpm check          # strict typecheck, then the full suite — 224 tests
+pnpm check          # strict typecheck, then the full suite — 225 tests
 pnpm learn          # the terminal surface
 pnpm ui             # the browser surface, at 127.0.0.1
 pnpm build:pages    # build, stage, and re-verify the deployable artefact
@@ -379,6 +379,12 @@ Two disciplines are worth stating because they decide what the numbers mean:
 code it defends has been deliberately broken and *that specific test* has been
 watched failing. A test that passes for the wrong reason is worse than no test,
 and this project has caught itself writing one.
+
+**No path is wrong, not just the chosen one.** `test/learner-walk.test.ts` drives
+the session layer with seeded pseudo-random orderings — including leaving and
+returning — and holds every step to invariants that must hold whatever a learner
+does. Raise `LUMINA_WALKS` for a longer soak; a failure names the seed that
+reproduces it.
 
 **The web artefact is gated, not just built.** `web/verify.mjs` fails the build
 if the bundle ever gains `fetch(`, `XMLHttpRequest`, `WebSocket`,

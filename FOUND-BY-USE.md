@@ -23,8 +23,8 @@ It says something narrower and more uncomfortable:
 > time.
 
 The suite was not thin. When the worst defect in this list was live, **126
-tests were green.** Today there are 224, and the honest position is that a
-225th class of defect is probably live right now and will be found the same
+tests were green.** Today there are 225, and the honest position is that a
+226th class of defect is probably live right now and will be found the same
 way.
 
 ---
@@ -301,15 +301,54 @@ put the distinction somewhere that fails the build.
 
 ---
 
+## Standing in for the stranger
+
+The gate this project cannot close by writing code is a person who is not the
+founder using the system. The reason it matters is entry 18: the founder sets a
+depth before following a bridge, because they know what the chips do. A stranger
+takes the interesting-looking option and *then* reaches for a control, and that
+ordering is the whole defect.
+
+That much can be mechanised. `test/learner-walk.test.ts` drives the session layer
+with seeded pseudo-random orderings — taking, declining, deferring, writing,
+answering, asking for a depth, and leaving and coming back another day — and
+holds every step to invariants that must be true whatever a learner does:
+
+- only taking up an offer ever moves a learner;
+- everything the learner supplies is filed where they actually were;
+- a depth is only recorded for an idea they have opened;
+- the offers on the table describe where they are now;
+- nothing they have done is ever lost, including across a return visit;
+- every word they could be shown comes from the catalogue.
+
+Where a scripted test asserts that one chosen path is right, this asserts that
+**no path is wrong.** 160,000 steps, no violations.
+
+It was worthless on its first run. Defect 18 was deliberately restored and the
+walker passed, because the invariant that mattered — *asking for a depth must
+not move you* — was the one I had not written, and because the walk recorded
+whatever concept the engine had landed on, which laundered the very move it was
+meant to catch. It now fails on seed 1 step 11 with 18 restored, and fails the
+return-visit checks with defect 15 restored. Entry 17, one more time.
+
+**It is not a person.** It does only what it was told a learner might do. It has
+never typed nonsense into a prompt, deleted its record halfway through, mistaken
+one control for another, or given up. It cannot tell you that a sentence reads
+badly, that an option is frightening, or that a page is unusable on a phone.
+Every entry in the ledger above came from a person meeting the system with an
+intention, and no amount of this replaces one.
+
+---
+
 ## What this does not prove
 
 - **No stranger has used it.** Every session in this ledger was the founder's
-  own, or CI's. The next entry in this list will come from the first person who
+  own, or CI's, or a walker's. The next entry in this list will come from the first person who
   is not either, and that gate is deliberately still open.
-- **Nothing here checks that the mathematics is correct.** 224 tests prove that
+- **Nothing here checks that the mathematics is correct.** 225 tests prove that
   content is reachable, shown, and unmodified. Not one of them knows whether the
   content is true. See [`src/seed/AUTHORSHIP.md`](src/seed/AUTHORSHIP.md).
-- **The count is not the argument.** 224 green tests is exactly the state the
+- **The count is not the argument.** 225 green tests is exactly the state the
   project was in when it was answering "stop" by starting.
 
 ---
@@ -321,6 +360,9 @@ pnpm install
 pnpm check          # strict typecheck, then the full suite
 pnpm learn          # the terminal surface — use it as a learner
 pnpm ui             # the same engine in a browser, at 127.0.0.1
+
+# a longer soak of the walker; a failure names the seed that reproduces it
+LUMINA_WALKS=4000 LUMINA_WALK_STEPS=40 npx tsx --test test/learner-walk.test.ts
 ```
 
 The claims above are checkable three ways:
