@@ -89,6 +89,27 @@ function now() {
   return isoTimestamp(new Date().toISOString());
 }
 
+let sessionsStarted = 0;
+
+/**
+ * A prefix unique to one session, for the identifiers this surface mints.
+ *
+ * It was the clock alone, in base 36. Two sessions started in the same
+ * millisecond therefore shared a token, and since a session's step counter
+ * restarts at zero, the second session's opening command carried an identifier
+ * the first had already used. The counter distinguishes sessions within a
+ * process and the random suffix distinguishes processes, so neither the
+ * terminal nor the page can mint the same prefix twice.
+ *
+ * A collision is no longer merely unlikely: `evolveLearnerRecord` refuses one
+ * rather than dropping whichever entry arrived second.
+ */
+function sessionToken(): string {
+  const ordinal = (sessionsStarted++).toString(36);
+  const noise = Math.floor(Math.random() * 0x1000000).toString(36).padStart(5, "0");
+  return `${Date.now().toString(36)}-${ordinal}-${noise}`;
+}
+
 function ids(session: Session, prefix: string) {
   const suffix = `${session.token}.${String(session.step + 1).padStart(3, "0")}`;
   return {
@@ -192,7 +213,7 @@ export function startSession(conceptId: string, prior?: LearnerRecord): Session 
     }),
     offers: [],
     step: 0,
-    token: Date.now().toString(36),
+    token: sessionToken(),
   };
 
   return advance(

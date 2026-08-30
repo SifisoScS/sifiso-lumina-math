@@ -45,10 +45,39 @@ function commandEvidence(command: InteractionCommand): LearnerEvidence | undefin
   }
 }
 
+/**
+ * Appends, unless the record already holds exactly this item.
+ *
+ * The distinction between *the same thing again* and *a different thing whose
+ * identifier collides* is the whole of it. This used to compare identifiers
+ * only and silently keep the earlier item, which meant a collision quietly
+ * discarded something a learner had actually done.
+ *
+ * CI found it on its first run. Two sessions started in the same millisecond
+ * shared a token, the second session's opening command carried the first's
+ * identifier, and a learner's depth choice vanished on reload -- in memory it
+ * was there, and after a save and a load it was gone. Windows was slow enough
+ * to hide it; a Linux runner was not.
+ *
+ * Replay protection does not depend on this. It is handled above, by the
+ * engine's own idempotency disposition, which knows that a command was replayed
+ * rather than inferring it from a name. What is left here is a guard against
+ * losing history, so identical content is idempotent and differing content is
+ * an error. A6: the record is what happened, and silently holding the wrong one
+ * of two things is worse than refusing both.
+ */
 function appendIfAbsent<T extends { readonly id: StableId }>(items: readonly T[], item: T): readonly T[] {
-  return items.some((candidate) => candidate.id === item.id)
-    ? readonlyList(items)
-    : readonlyList([...items, item]);
+  const existing = items.find((candidate) => candidate.id === item.id);
+  if (existing === undefined) {
+    return readonlyList([...items, item]);
+  }
+  if (JSON.stringify(existing) !== JSON.stringify(item)) {
+    throw new DomainValidationError(
+      `Two different things in this learner's history share the identifier '${item.id}'. ` +
+        "One of them would be lost, so neither is written.",
+    );
+  }
+  return readonlyList(items);
 }
 
 /**

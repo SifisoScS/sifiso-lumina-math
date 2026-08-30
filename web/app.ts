@@ -1,7 +1,12 @@
 import { functionsSeedKnowledge } from "../src/seed/functions-seed.js";
 import { PedagogicalLayer } from "../src/domain/mathematical-knowledge.js";
 import { LearnerChoiceKind, activePedagogicalLayer } from "../src/domain/learner-record.js";
-import { conceptSummary, describeOpportunity, materialFor } from "../cli/describe.js";
+import {
+  conceptSummary,
+  describeHistory,
+  describeOpportunity,
+  materialFor,
+} from "../cli/describe.js";
 import {
   applyChoice,
   applyConfidence,
@@ -50,6 +55,8 @@ interface View {
   reading: string | undefined;
   /** The question the learner has open, if they took one. */
   practising: string | undefined;
+  /** Whether the learner is reading their own record back. */
+  reviewing: boolean;
 }
 
 const view: View = {
@@ -59,6 +66,7 @@ const view: View = {
   note: "",
   reading: undefined,
   practising: undefined,
+  reviewing: false,
 };
 
 // ---------------------------------------------------------------------------
@@ -211,11 +219,29 @@ function renderNote(): void {
   mount("note").textContent = view.note;
 }
 
+function renderHistory(): void {
+  const panel = clear(mount("history-lines"));
+  const record = view.session?.record;
+  const lines = record === undefined
+    ? ["Nothing is kept about you yet.", "Pick an idea and anything you do will appear here."]
+    : describeHistory(record, catalogue);
+
+  for (const line of lines) {
+    if (line === "") {
+      panel.appendChild(el("div", undefined, " "));
+      continue;
+    }
+    panel.appendChild(el("p", undefined, line));
+  }
+}
+
 function render(): void {
   const started = view.session !== undefined;
-  mount("picker").hidden = started;
-  mount("session").hidden = !started;
-  if (started) {
+  mount("picker").hidden = started || view.reviewing;
+  mount("history-view").hidden = !view.reviewing;
+  mount("session").hidden = !started || view.reviewing;
+  if (view.reviewing) renderHistory();
+  if (started && !view.reviewing) {
     mount("concept-title").textContent = conceptTitle(view.conceptId);
     mount("concept-body").textContent =
       catalogue.concepts.find((c) => c.id === view.conceptId)?.conceptualDescription ?? "";
@@ -353,6 +379,7 @@ function renderConfidence(): void {
 
 function forget(): void {
   const existed = forgetRecord();
+  view.reviewing = false;
   view.session = undefined;
   view.conceptId = undefined;
   view.material = [];
@@ -371,6 +398,15 @@ export function start(): void {
   renderConfidence();
   mount("write").addEventListener("click", write);
   mount("answer").addEventListener("click", answer);
+  mount("history").addEventListener("click", () => {
+    view.reviewing = true;
+    view.note = "";
+    render();
+  });
+  mount("history-close").addEventListener("click", () => {
+    view.reviewing = false;
+    render();
+  });
   mount("leave").addEventListener("click", () => {
     view.session = undefined;
     view.conceptId = undefined;

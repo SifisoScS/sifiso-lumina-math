@@ -106,6 +106,10 @@ The point of this foundation is that its load-bearing rules are **types and test
 | Every control can be hit with a thumb | A1, A2 | `@media (pointer: coarse)` — 44px targets; a mis-tap on a three-button offer row would decline something the learner meant to take | **by review** |
 | A learner is told what is kept, where, and how to delete it | A2, O2 | `cli/learn.ts` says so before consent is asked | **by review** |
 | Deleting means deleting — nothing survives it | A2, O2 | `forgetRecord`; asserted there is nothing left to load | **live** |
+| A learner can read back everything kept about them, in their own words | A2, A6 | `describeHistory`, `cli/describe.ts` — exhaustive over `LearnerEvidenceKind`, so a kind that can be written but not read back will not compile | **live** |
+| The engine's readings are shown apart from the learner's own words | A2 | same — a heading names whose they are, and a test asserts they never come first | **live** |
+| Two different things cannot share an identifier in a learner's history | A6 | `evolveLearnerRecord` — proven: without it, a learner's second reflection is silently discarded | **live** |
+| Two sessions in the same millisecond cost a learner nothing | A6 | `sessionToken`, `cli/session.ts` — proven: the clock alone loses a depth the learner chose | **live** |
 | A stored record is rebuilt from its own history, never trusted | A6, A7 | `replayLearnerHistory` on every load — proven: trusting the stored state fails the test | **live** |
 | A record that does not reconstruct is refused, not repaired | A7 | `loadRecord` returns `unreadable` and leaves the file untouched | **live** |
 | A refusal never silently starts a learner over | A2, A7 | the terminal stops rather than overwrite what it could not read | **live** |

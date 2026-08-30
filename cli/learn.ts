@@ -7,7 +7,13 @@ import { requestExplanation } from "../src/decisioning/explanation-request.js";
 import { anthropicReasoningPort, reasoningProviderEnabled } from "../src/providers/anthropic-reasoning-port.js";
 import { resolveApprovedEnvelope, aiProposalAcceptancePolicy } from "../src/governance/proposal-policy.js";
 import { functionsSeedKnowledge } from "../src/seed/functions-seed.js";
-import { conceptSummary, describeExplanation, describeOffers, materialFor } from "./describe.js";
+import {
+  conceptSummary,
+  describeExplanation,
+  describeHistory,
+  describeOffers,
+  materialFor,
+} from "./describe.js";
 import { DEFAULT_RECORD_PATH, forgetRecord, loadRecord, recordExists, saveRecord } from "./store.js";
 import {
   applyChoice,
@@ -45,6 +51,7 @@ const HELP = `
   w      write down what you are thinking
   x      ask a model to put this idea another way
   s      show where you are
+  h      read back everything kept about you
   forget delete everything kept about you, permanently
   ?      this help
   q      quit
@@ -62,7 +69,8 @@ function showState(session: Session): void {
   }
   stdout.write(`    Written down: ${reflectionsWritten(session)}\n`);
   stdout.write(`    Answered:     ${practiceAttemptsMade(session)}\n`);
-  stdout.write(`    Choices made: ${choicesMade(session)}\n\n`);
+  stdout.write(`    Choices made: ${choicesMade(session)}\n`);
+  stdout.write("    (h reads all of it back, in your own words)\n\n");
 }
 
 /**
@@ -242,6 +250,16 @@ async function main(): Promise<void> {
     }
     if (answer === "?") { stdout.write(HELP); continue; }
     if (answer === "s") { showState(session); continue; }
+
+    if (answer === "h") {
+      // Their own words, back. Not a summary of them, and not a count of them.
+      stdout.write("\n");
+      for (const line of describeHistory(session.record, catalogue)) {
+        stdout.write(`  ${line}\n`);
+      }
+      stdout.write("\n");
+      continue;
+    }
 
     if (answer === "w") {
       session = await writeSomething(rl, session, chosen.id);

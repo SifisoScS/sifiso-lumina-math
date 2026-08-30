@@ -160,6 +160,7 @@
     <strong>Math Lumina</strong>
     <span>a learning engine</span>
     <span class="spacer"></span>
+    <button class="act" id="history" type="button">What is kept about me</button>
     <button class="act" id="leave" type="button">Stop for now</button>
     <button class="act" id="forget" type="button" hidden>Delete everything kept</button>
   </header>
@@ -180,6 +181,18 @@
         happen, and you will not be quietly moved along.
       </p>
       <div class="concepts" id="concepts"></div>
+    </section>
+
+    <section id="history-view" hidden>
+      <h1>What is kept about you</h1>
+      <p class="muted" style="margin: 8px 0 20px; max-width: 62ch">
+        Everything below is on this device and nowhere else. Your own words are exactly
+        as you typed them.
+      </p>
+      <div class="panel"><div id="history-lines"></div></div>
+      <button class="act act-take" id="history-close" type="button" style="margin-top: 18px">
+        Back to what I was doing
+      </button>
     </section>
 
     <section id="session" hidden>

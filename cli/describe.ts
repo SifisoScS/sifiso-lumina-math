@@ -7,7 +7,13 @@ import {
   KnowledgeAsset,
   LearningExperience,
 } from "../src/domain/mathematical-knowledge.js";
-import { activePedagogicalLayer, CurrentLearnerState } from "../src/domain/learner-record.js";
+import {
+  activePedagogicalLayer,
+  CurrentLearnerState,
+  LearnerChoice,
+  LearnerEvidence,
+  LearnerRecord,
+} from "../src/domain/learner-record.js";
 import { ExplanationOutcome } from "../src/decisioning/explanation-request.js";
 
 /**
@@ -153,6 +159,119 @@ export function materialFor(
     : catalogue.concepts.find((candidate) => candidate.id === opportunity.relatedConceptId);
   if (related !== undefined) lines.push(related.title, related.conceptualDescription);
 
+  return Object.freeze(lines);
+}
+
+/**
+ * One line of history, in the words of whoever produced it.
+ *
+ * Exhaustive over `LearnerEvidenceKind`, which is the point. A learner's record
+ * is theirs, and a kind of evidence that can be written but not read back makes
+ * it a record *about* them instead. A new evidence kind therefore cannot be
+ * added without someone deciding how its subject reads it, because until they
+ * do this will not compile.
+ *
+ * A learner's own text is returned exactly as they typed it. Nothing here
+ * summarises, shortens, or tidies it -- `assertReflectionPreserved` guards the
+ * same thing at the domain boundary, and this is where it would be broken in
+ * practice, by being helpful.
+ */
+export function describeEvidence(evidence: LearnerEvidence, catalogue: Catalogue): readonly string[] {
+  switch (evidence.kind) {
+    case "reflection":
+      return Object.freeze([
+        `You wrote, about ${conceptTitle(catalogue, evidence.conceptId)}:`,
+        evidence.originalText,
+      ]);
+
+    case "practice-attempt":
+      return Object.freeze([
+        `You answered, on ${conceptTitle(catalogue, evidence.conceptId)}:`,
+        evidence.learnerResponse,
+        "Nothing marked it.",
+      ]);
+
+    case "confidence-report":
+      return Object.freeze([
+        `You said how sure you felt about ${conceptTitle(catalogue, evidence.conceptId)}:`,
+        `${evidence.reportedValue} (${evidence.scaleLabel})`,
+        "Nothing was concluded from it.",
+      ]);
+
+    case "learner-choice":
+      return Object.freeze([describeChoice(evidence.choiceKind)]);
+
+    case "learning-context-report":
+      return Object.freeze([
+        "You said what you were here for:",
+        evidence.learningIntention,
+        ...(evidence.selfReportedEnergyContext === undefined
+          ? []
+          : [`and how you had the energy for it: ${evidence.selfReportedEnergyContext}`]),
+      ]);
+
+    default: {
+      const unreadable: never = evidence;
+      throw new Error(
+        `A learner cannot read back evidence of this kind: ${JSON.stringify(unreadable)}`,
+      );
+    }
+  }
+}
+
+function describeChoice(kind: LearnerChoice["choiceKind"]): string {
+  switch (kind) {
+    case "select-offer": return "You took something up.";
+    case "decline-offer": return "You said no to something.";
+    case "defer-offer": return "You put something off.";
+    case "request-alternative": return "You asked to see something another way.";
+    case "pause": return "You stopped for a while.";
+    default: {
+      const unnamed: never = kind;
+      throw new Error(`A learner choice has no plain description: ${String(unnamed)}`);
+    }
+  }
+}
+
+/**
+ * Everything the system holds about a learner, in the order it happened.
+ *
+ * `originalText` was written to the record from the first session and displayed
+ * by nothing. A learner saw "Written down: 3" and could not read the three.
+ * That is the same shape as every other defect found here -- modelled,
+ * validated, stored, never surfaced -- and the one that matters most, because
+ * a record its subject cannot read is not really theirs.
+ *
+ * The engine's readings are shown too, and shown apart, under a heading that
+ * says whose they are. A2 keeps evidence and interpretation separate in the
+ * domain; showing them in one undifferentiated list is how that separation
+ * would be lost at the only point where a person can see it.
+ */
+export function describeHistory(record: LearnerRecord, catalogue: Catalogue): readonly string[] {
+  if (record.evidence.length === 0 && record.interpretations.length === 0) {
+    return Object.freeze([
+      "Nothing is kept about you yet.",
+      "What you write, answer, and choose will appear here, in your words.",
+    ]);
+  }
+
+  const lines: string[] = ["What is kept about you", ""];
+  for (const evidence of record.evidence) {
+    lines.push(...describeEvidence(evidence, catalogue), "");
+  }
+
+  if (record.interpretations.length > 0) {
+    lines.push("The system's readings of that — not your words, and revisable", "");
+    for (const interpretation of record.interpretations) {
+      lines.push(
+        `About ${conceptTitle(catalogue, interpretation.conceptId)}: ${interpretation.summary}`,
+        "",
+      );
+    }
+  }
+
+  lines.push(`That is all of it: ${String(record.evidence.length)} things you did, ` +
+    `${String(record.interpretations.length)} readings of them. Nothing else is held.`);
   return Object.freeze(lines);
 }
 

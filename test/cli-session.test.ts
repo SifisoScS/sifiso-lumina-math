@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { evaluateStateMutationPolicy, functionsSeedKnowledge } from "../src/index.js";
-import { describeOffers, describeOpportunity, materialFor } from "../cli/describe.js";
+import { describeHistory, describeOffers, describeOpportunity, materialFor } from "../cli/describe.js";
 import { decodeRecord, encodeRecord } from "../cli/record-format.js";
 import { activePedagogicalLayer, pedagogicalLayerFor } from "../src/domain/learner-record.js";
 import {
@@ -14,6 +14,7 @@ import {
   choicesMade,
   practiceAttemptsMade,
   reflectionsWritten,
+  Session,
   startSession,
 } from "../cli/session.js";
 
@@ -694,4 +695,114 @@ test("an empty answer is not recorded as one", () => {
     /Practice learner response/,
   );
   assert.equal(practiceAttemptsMade(session), 0);
+});
+
+// ---------------------------------------------------------------------------
+// Identifiers, and not losing what happened
+// ---------------------------------------------------------------------------
+
+test("two sessions in the same millisecond do not cost a learner their history", () => {
+  // Found by CI on its first run, and invisible on a slower machine. The
+  // session token was the clock in base 36, and a session's step counter
+  // restarts at zero, so two sessions started in the same millisecond minted
+  // the same opening identifier. In memory the second session looked right;
+  // after a save and a load, a depth the learner had chosen was simply gone.
+  const realNow = Date.now;
+  Date.now = () => 1756545000000;
+  try {
+    const first = chooseDepth(startSession("concept.function"), "concept.function", "mechanics");
+    const second = chooseDepth(
+      startSession("concept.domain-range", first.record),
+      "concept.domain-range",
+      "exam-patterns",
+    );
+
+    const loaded = decodeRecord(encodeRecord(second.record));
+    assert.equal(loaded.kind, "loaded");
+    if (loaded.kind !== "loaded") return;
+
+    assert.equal(pedagogicalLayerFor(loaded.record.state, "concept.function"), "mechanics");
+    assert.equal(
+      pedagogicalLayerFor(loaded.record.state, "concept.domain-range"),
+      "exam-patterns",
+      "a second session in the same millisecond overwrote the first",
+    );
+  } finally {
+    Date.now = realNow;
+  }
+});
+
+test("two different things cannot share an identifier in a learner's history", () => {
+  // The class behind the defect above. Appending used to compare identifiers
+  // and keep whichever arrived first, which cannot tell the same thing again
+  // from a different thing whose identifier collides. Here that difference is
+  // two sets of the learner's own words, and dropping either is unacceptable.
+  const opened = startSession("concept.function");
+  const written = applyReflection(opened, "first thoughts", "concept.function").session;
+
+  // Rewound so the next reflection mints an identifier already in use.
+  const rewound: Session = { ...written, step: opened.step };
+
+  assert.throws(
+    () => applyReflection(rewound, "completely different thoughts", "concept.function"),
+    /share the identifier/,
+  );
+  // Replay protection is unaffected: it is decided by the engine's idempotency
+  // disposition, above this, and does not depend on comparing names.
+  assert.equal(reflectionsWritten(written), 1);
+});
+
+// ---------------------------------------------------------------------------
+// Reading your own record back
+// ---------------------------------------------------------------------------
+
+test("a learner can read back their own words, exactly as they typed them", () => {
+  // `originalText` was written to the record from the first session and shown
+  // by nothing. A learner saw "Written down: 1" and could not read the one.
+  const words = "I get that each input has one output, but I don't see why that matters yet.";
+  let session = startSession("concept.function");
+  session = applyReflection(session, words, "concept.function").session;
+  session = applyConfidence(session, "Getting there", "concept.function").session;
+
+  const shown = describeHistory(session.record, catalogue).join("\n");
+
+  assert.ok(shown.includes(words), "a learner cannot read back what they wrote");
+  assert.ok(shown.includes("Getting there"), "a learner cannot read back what they said about themselves");
+  assert.match(shown, /Nothing was concluded from it/);
+});
+
+test("an answer a learner gave is readable back, and still unmarked", () => {
+  let session = startSession("concept.function");
+  const index = session.offers.findIndex((offer) => offer.opportunity.kind === "practise");
+  const experienceId = session.offers[index]?.opportunity.learningExperienceId;
+  assert.ok(experienceId);
+  session = applyChoice(session, "select-offer", index).session;
+  session = applyPractice(session, "f(5) = 11", experienceId, "concept.function").session;
+
+  const shown = describeHistory(session.record, catalogue).join("\n");
+
+  assert.ok(shown.includes("f(5) = 11"));
+  assert.match(shown, /Nothing marked it/);
+});
+
+test("the engine's readings are shown apart from the learner's words", () => {
+  // A2 keeps evidence and interpretation separate in the domain. Showing them
+  // in one undifferentiated list is how that separation would be lost at the
+  // only point where a person can see it.
+  let session = startSession("concept.function");
+  session = applyReflection(session, "I want to see this drawn instead.", "concept.function").session;
+
+  const lines = describeHistory(session.record, catalogue);
+  const wordsAt = lines.findIndex((line) => line.includes("I want to see this drawn instead."));
+  const readingsAt = lines.findIndex((line) => line.startsWith("The system's readings"));
+
+  assert.ok(wordsAt >= 0, "the learner's words are missing");
+  if (readingsAt >= 0) {
+    assert.ok(readingsAt > wordsAt, "a reading was presented before, or among, the learner's own words");
+  }
+});
+
+test("a learner with nothing kept is told that, not shown an empty list", () => {
+  const shown = describeHistory(startSession("concept.function").record, catalogue).join("\n");
+  assert.match(shown, /Nothing is kept about you yet/);
 });
