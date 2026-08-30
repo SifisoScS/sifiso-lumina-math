@@ -82,7 +82,9 @@ test("multiple independently addressable representation forms and layer-compatib
   if (all === undefined || intuition === undefined || mechanics === undefined) throw new Error("Expected knowledge contexts to resolve.");
   assert.deepEqual(
     new Set(all.representationAssets.map((asset) => asset.representationForm)),
-    new Set(["contextual", "visual", "symbolic", "numerical", "graphical"]),
+    // "verbal" arrived with the bridge asset that speaks from a function
+    // toward reversing one.
+    new Set(["contextual", "visual", "symbolic", "numerical", "graphical", "verbal"]),
   );
   assert.equal(intuition.relevantExperiences.every((experience) => experience.pedagogicalLayers.includes("intuition")), true);
   assert.equal(mechanics.relevantExperiences.every((experience) => experience.pedagogicalLayers.includes("mechanics")), true);

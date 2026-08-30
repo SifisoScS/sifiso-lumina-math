@@ -11,17 +11,61 @@ import {
 } from "../src/index.js";
 import { evidenceTypeCollection } from "../cli/session.js";
 
-test("minimal Functions seed knowledge resolves as a consistent versioned catalog", () => {
+test("Functions seed knowledge resolves as a consistent versioned catalog", () => {
   assert.equal(functionsSeedKnowledge.domains.length, 1);
   assert.equal(functionsSeedKnowledge.topics.length, 1);
-  assert.equal(functionsSeedKnowledge.concepts.length, 3);
-  assert.equal(functionsSeedKnowledge.relationships.length, 4);
-  assert.equal(functionsSeedKnowledge.assets.length, 33);
-  assert.equal(functionsSeedKnowledge.experiences.length, 17);
-  assert.equal(functionsSeedKnowledge.experiences.some((experience) => experience.intent === "practice"), true);
-  assert.equal(functionsSeedKnowledge.relationships[0]?.semanticKind, "prerequisite-of");
-  assert.equal(functionsSeedKnowledge.relationships[1]?.semanticKind, "related-to");
-  assert.equal(functionsSeedKnowledge.relationships[2]?.semanticKind, "bridges-to");
+
+  // Floors, not exact figures. An exact count turns every addition to the
+  // corpus into a failing test, which teaches whoever is writing content that
+  // the guards are an obstacle rather than a help -- and the guards worth
+  // having are the ones about whether the content reaches a learner, not the
+  // ones about how much of it there is.
+  assert.ok(functionsSeedKnowledge.concepts.length >= 3);
+  assert.ok(functionsSeedKnowledge.relationships.length >= 4);
+  assert.ok(functionsSeedKnowledge.assets.length >= 33);
+  assert.ok(functionsSeedKnowledge.experiences.length >= 17);
+
+  // Looked up by kind rather than by position, so reordering the corpus is not
+  // a failure and adding to it does not shift what is being asserted.
+  const semantics = new Map(
+    functionsSeedKnowledge.relationships.map((relationship) => [relationship.kind, relationship.semanticKind]),
+  );
+  assert.equal(semantics.get("prerequisite"), "prerequisite-of");
+  assert.equal(semantics.get("related"), "related-to");
+  assert.equal(semantics.get("concept-bridge"), "bridges-to");
+});
+
+test("every experience intent a layer can offer has content behind it", () => {
+  // `concept-bridge` was a declared intent, suitable at the intuition layer,
+  // with no experience anywhere in the corpus. The vocabulary said a learner
+  // could be shown how one idea leads to another, and nothing ever was.
+  //
+  // The set of intents is derived from the pedagogical guidance rather than
+  // written out here, so a new intent that some layer can offer joins this
+  // check on the day it is declared.
+  const offerable = new Set(
+    canonicalPedagogicalGuidance.flatMap((guidance) => guidance.suitableExperienceIntents),
+  );
+  const written = new Set(functionsSeedKnowledge.experiences.map((experience) => experience.intent));
+
+  for (const intent of offerable) {
+    assert.ok(
+      written.has(intent),
+      `no experience has intent "${intent}", so a layer that would offer it has nothing to offer`,
+    );
+  }
+});
+
+test("every concept a learner can reach has somewhere to go from it", () => {
+  // A concept with no relationship is a dead end: nothing bridges to it, no
+  // prerequisite points at it, and a learner who opens it can only leave the
+  // way they came.
+  for (const concept of functionsSeedKnowledge.concepts) {
+    const connected = functionsSeedKnowledge.relationships.some((relationship) =>
+      relationship.sourceConceptId === concept.id || relationship.targetConceptId === concept.id,
+    );
+    assert.ok(connected, `${concept.title} is not connected to anything else in the graph`);
+  }
 });
 
 test("concept relationships remain explicit, typed, and non-self-referential", () => {

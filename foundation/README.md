@@ -123,6 +123,11 @@ The point of this foundation is that its load-bearing rules are **types and test
 | Every written asset is shown to someone | A1 | same — nine assets were written and never displayed | **live** |
 | Every concept can be practised, not only read | A1 | same | **live** |
 | Every concept carries material at more than one layer | A1 | same | **live** |
+| Every experience intent a layer can offer has content behind it | A1 | same — the intent set is derived from the guidance, not listed by hand; proven: dropping the bridge experiences fails it | **live** |
+| Every concept a learner can reach has somewhere to go from it | A1, A7 | same — proven: an unconnected concept fails four separate guards | **live** |
+| A learner can supply every kind of evidence the corpus asks for | A1, A2 | `evidenceTypeCollection`, `cli/session.ts` — proven: marking practice uncollectable fails the corpus test | **live** |
+| An answer a learner gives is kept, and nothing marks it | A4, O4 | `applyPractice` attaches no `ObservedPracticeOutcome`; asserted directly | **live** |
+| Corpus guards are floors, so writing more content never fails a test for being more | A1 | `test/mathematical-knowledge.test.ts` | **live** |
 | A learner's action is kept even when it moves nothing | A2, A6, O9 | `LearnerActionDisposition`, `src/decisioning/state-transitions.ts` | **live** |
 | A decline is provable from the record alone | A6, O9 | `learning-path-declined` with no `stateCommitmentId` — the absence is the proof | **live** |
 | A refused command writes nothing to a learner's record | A2, A3 | `evolveLearnerRecord` — proven: removing the check lets an out-of-scope actor write | **live** |
