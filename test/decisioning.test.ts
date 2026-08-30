@@ -491,3 +491,33 @@ test("no concept is offered the same opportunity twice", () => {
     }
   }
 });
+
+test("opening a new idea is read at that idea's own depth, not the last one used", () => {
+  // The engine's answer, before any surface gets a chance to refresh it. The
+  // context for a command is resolved against the concept the command is about;
+  // resolving it against whichever concept the learner happened to have open
+  // filtered a brand-new idea to a depth chosen for a different one (A2).
+  const result = execute(
+    exploreConceptCommand({
+      id: "command.depth.new-concept",
+      commandReference: "occurrence.depth.new-concept",
+      learnerId,
+      issuedAt: timestamp,
+      conceptId: "concept.domain-range",
+    }),
+    {
+      learnerRecord: recordWithState(currentLearnerState({
+        learnerId,
+        engagementFocus: "active-focus",
+        activeConceptId: "concept.function",
+        pedagogicalLayerByConcept: [{ conceptId: "concept.function", layer: "exam-patterns" }],
+      })),
+    },
+  );
+
+  assert.equal(result.decision.status, "offer-available");
+  assert.ok(
+    result.decision.opportunities.some((item) => item.pedagogicalLayer === "intuition"),
+    "the new idea was filtered to a depth chosen for a different one",
+  );
+});

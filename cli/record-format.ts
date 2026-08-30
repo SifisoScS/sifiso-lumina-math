@@ -34,7 +34,22 @@ import { replayLearnerHistory } from "../src/decisioning/replay.js";
  * would have refused to create.
  */
 
-const FORMAT = "math-lumina.learner-record.v1";
+/**
+ * v2 records a pedagogical layer against the concept it was chosen for.
+ *
+ * A v1 record is refused rather than read forward. Its layer changes name no
+ * concept. That is recoverable in principle -- replay is sequential, so the
+ * concept active when each change applied is determined, not guessed -- so this
+ * is a decision not to carry migration code, not an impossibility. It is worth
+ * saying plainly, because "cannot" would be false and would make the refusal
+ * look forced rather than chosen.
+ *
+ * What makes the choice safe is that refusing costs nothing: a record whose
+ * version is not recognised is named by that version and left exactly where it
+ * is, so it can still be migrated later by anyone who decides it is worth it.
+ * Nothing is deleted and nothing is overwritten (A7).
+ */
+const FORMAT = "math-lumina.learner-record.v2";
 
 export type LoadResult =
   | { readonly kind: "none" }
@@ -161,11 +176,11 @@ type DeltaInput = Parameters<typeof learnerStateDelta>[0];
 function readDelta(delta: Record<string, unknown>): ReturnType<typeof learnerStateDelta> {
   const focus = delta.engagementFocus as DeltaInput["engagementFocus"];
   const concept = delta.activeConcept as DeltaInput["activeConcept"];
-  const layer = delta.activePedagogicalLayer as DeltaInput["activePedagogicalLayer"];
+  const layer = delta.pedagogicalLayer as DeltaInput["pedagogicalLayer"];
   return learnerStateDelta({
     ...(focus === undefined ? {} : { engagementFocus: focus }),
     ...(concept === undefined ? {} : { activeConcept: concept }),
-    ...(layer === undefined ? {} : { activePedagogicalLayer: layer }),
+    ...(layer === undefined ? {} : { pedagogicalLayer: layer }),
     evidenceIdsToAdd: texts(delta.evidenceIdsToAdd ?? [], "Stored commitment evidence additions"),
     interpretationIdsToAdd: texts(
       delta.interpretationIdsToAdd ?? [],

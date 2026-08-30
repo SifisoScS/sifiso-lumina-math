@@ -30,7 +30,7 @@ function record(layer: "intuition" | "mechanics" | "exam-patterns") {
     learnerId,
     engagementFocus: "active-focus",
     activeConceptId: "concept.function",
-    activePedagogicalLayer: layer,
+    pedagogicalLayerByConcept: [{ conceptId: "concept.function", layer }],
   });
   return learnerRecord({ learnerId: state.learnerId, evidence: [], events: [], interpretations: [], state, commitments: [] });
 }

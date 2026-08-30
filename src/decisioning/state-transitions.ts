@@ -11,6 +11,7 @@ import {
   HistoricalEvent,
   historicalEvent,
   LearnerStateDelta,
+  LearnerStateDeltaInput,
   effectiveStateDelta,
   learnerStateDelta,
   offerAdvancement,
@@ -182,7 +183,13 @@ function commandFocusTransition(input: StateTransitionInput, contextVersion: str
     activeConcept: { kind: "set", value: input.command.conceptId },
     ...(input.command.pedagogicalLayer === undefined
       ? {}
-      : { activePedagogicalLayer: { kind: "set", value: input.command.pedagogicalLayer } }),
+      : {
+          pedagogicalLayer: {
+            kind: "set" as const,
+            conceptId: input.command.conceptId,
+            value: input.command.pedagogicalLayer,
+          },
+        } satisfies Pick<LearnerStateDeltaInput, "pedagogicalLayer">),
   });
   const effective = effectiveStateDelta(delta, input.currentState);
   if (stateDeltaDimensions(effective).length === 0) {
@@ -484,7 +491,13 @@ export function validateAndPlanStateTransition(input: StateTransitionInput): Sta
         activeConcept: { kind: "set", value: conceptId },
         ...(opportunity.pedagogicalLayer === undefined
           ? {}
-          : { activePedagogicalLayer: { kind: "set", value: opportunity.pedagogicalLayer } }),
+          : {
+              pedagogicalLayer: {
+                kind: "set" as const,
+                conceptId,
+                value: opportunity.pedagogicalLayer,
+              },
+            } satisfies Pick<LearnerStateDeltaInput, "pedagogicalLayer">),
       });
   // O8. A commitment must not claim a change that was not made. Accepting an
   // offer for the concept and layer already open moves nothing, and most offers

@@ -17,6 +17,7 @@ import {
   CurrentLearnerState,
   LearnerChoiceKind,
   LearnerRecord,
+  activePedagogicalLayer,
   currentLearnerState,
   confidenceReport,
   learnerChoice,
@@ -114,8 +115,9 @@ function refreshed(session: Session, before: CurrentLearnerState): Session {
   const after = session.record.state;
   const conceptId = after.activeConceptId;
   if (conceptId === undefined) return session;
+  const layer = activePedagogicalLayer(after);
   if (after.activeConceptId === before.activeConceptId &&
-      after.activePedagogicalLayer === before.activePedagogicalLayer) {
+      layer === activePedagogicalLayer(before)) {
     return session;
   }
 
@@ -125,9 +127,7 @@ function refreshed(session: Session, before: CurrentLearnerState): Session {
       learnerId: LEARNER_ID,
       issuedAt: now(),
       conceptId,
-      ...(after.activePedagogicalLayer === undefined
-        ? {}
-        : { pedagogicalLayer: after.activePedagogicalLayer }),
+      ...(layer === undefined ? {} : { pedagogicalLayer: layer }),
     }),
     actor,
     deliveryCapabilities: capabilities,
@@ -257,7 +257,7 @@ export function applyChoice(
   const unchanged =
     after.activeConceptId === before.activeConceptId &&
     after.engagementFocus === before.engagementFocus &&
-    after.activePedagogicalLayer === before.activePedagogicalLayer;
+    activePedagogicalLayer(after) === activePedagogicalLayer(before);
 
   if (choiceKind === "pause" || after.engagementFocus === "paused") {
     return { session: next.session, outcome: { kind: "paused" } };
@@ -293,10 +293,11 @@ export function applyChoice(
 /**
  * Opens a concept at a depth the learner picked.
  *
- * `activePedagogicalLayer` is already learner state and `move-toward-layer` is
- * already an opportunity kind, but nothing let a learner simply say how they
- * wanted to approach an idea -- depth was only ever a side effect of which offer
- * they happened to take.
+ * Depth is already learner state and `move-toward-layer` is already an
+ * opportunity kind, but nothing let a learner simply say how they wanted to
+ * approach an idea -- depth was only ever a side effect of which offer they
+ * happened to take. The choice is recorded against this concept, and applies to
+ * no other.
  */
 export function chooseDepth(
   session: Session,

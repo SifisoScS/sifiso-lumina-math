@@ -1,7 +1,7 @@
 import { createInterface } from "node:readline/promises";
 import { stdin, stdout } from "node:process";
 
-import { LearnerChoiceKind } from "../src/domain/learner-record.js";
+import { LearnerChoiceKind, activePedagogicalLayer } from "../src/domain/learner-record.js";
 import { functionsSeedKnowledge } from "../src/seed/functions-seed.js";
 import { conceptSummary, describeOffers, materialFor } from "./describe.js";
 import { DEFAULT_RECORD_PATH, forgetRecord, loadRecord, recordExists, saveRecord } from "./store.js";
@@ -49,8 +49,9 @@ function showState(session: Session): void {
   stdout.write("\n  Where you are\n");
   stdout.write(`    Focus:    ${state.engagementFocus}\n`);
   stdout.write(`    Concept:  ${concept?.title ?? "none yet"}\n`);
-  if (state.activePedagogicalLayer !== undefined) {
-    stdout.write(`    Depth:    ${state.activePedagogicalLayer}\n`);
+  const depth = activePedagogicalLayer(state);
+  if (depth !== undefined) {
+    stdout.write(`    Depth:    ${depth}\n`);
   }
   stdout.write(`    Written down: ${reflectionsWritten(session)}\n`);
   stdout.write(`    Choices made: ${choicesMade(session)}\n\n`);
@@ -198,7 +199,7 @@ async function main(): Promise<void> {
     // Captured before the choice is applied, because applying it replaces the
     // offer list. This is the thing the learner asked for.
     const offerTaken = choiceKind === "pause" ? undefined : session.offers[index];
-    const depthBefore = session.record.state.activePedagogicalLayer;
+    const depthBefore = activePedagogicalLayer(session.record.state);
     const result = applyChoice(session, choiceKind, index);
     session = result.session;
     if (result.outcome.kind !== "no-such-offer") saveRecord(session.record);
@@ -248,9 +249,14 @@ async function main(): Promise<void> {
     // Changing depth changes what is on offer, sometimes dramatically. Watching
     // most of the list disappear with no explanation reads as the system
     // withdrawing things rather than the learner having gone deeper.
-    const depthAfter = session.record.state.activePedagogicalLayer;
+    const depthAfter = activePedagogicalLayer(session.record.state);
     if (depthAfter !== undefined && depthAfter !== depthBefore) {
       stdout.write(`  You are now at ${depthAfter} depth, so what is on offer has changed.\n`);
+    } else if (depthAfter === undefined && depthBefore !== undefined) {
+      // A depth belongs to the idea it was chosen for. Arriving somewhere
+      // new with the list suddenly longer and no depth shown reads as a
+      // glitch unless the reason is said out loud.
+      stdout.write("  You have not chosen a depth for this idea, so all of it is on offer.\n");
     }
 
     if (offerTaken !== undefined &&

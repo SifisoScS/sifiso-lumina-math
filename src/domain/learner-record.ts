@@ -205,13 +205,51 @@ export interface DerivedInterpretation {
   readonly provenance: DecisionProvenance;
 }
 
+/**
+ * A depth a learner chose, and the concept they chose it for.
+ *
+ * The pairing is load-bearing. A bare `PedagogicalLayer` on the learner said
+ * "this person is working at mechanics", when what the learner had actually
+ * said was "show me *this concept* at mechanics". Opening a concept they had
+ * never seen then inherited a depth chosen for a different one, hiding the new
+ * concept's intuition material and its practice behind a choice nobody made
+ * about it. That is a choice inferred from behaviour, which A2 forbids.
+ */
+export interface PedagogicalLayerChoice {
+  readonly conceptId: StableId;
+  readonly layer: PedagogicalLayer;
+}
+
 export interface CurrentLearnerState {
   readonly learnerId: LearnerReference;
   readonly engagementFocus: EngagementFocus;
   readonly activeConceptId?: StableId;
-  readonly activePedagogicalLayer?: PedagogicalLayer;
+  /** Every depth this learner has chosen, each held against its own concept. */
+  readonly pedagogicalLayerByConcept: readonly PedagogicalLayerChoice[];
   readonly evidenceIds: readonly StableId[];
   readonly interpretationIds: readonly StableId[];
+}
+
+/** The depth this learner chose for a concept, if they chose one for it. */
+export function pedagogicalLayerFor(
+  state: CurrentLearnerState,
+  conceptId: string,
+): PedagogicalLayer | undefined {
+  return state.pedagogicalLayerByConcept.find((choice) => choice.conceptId === conceptId)?.layer;
+}
+
+/**
+ * The depth in force now: the one chosen for the concept currently open.
+ *
+ * Derived rather than stored, so a "current depth" cannot come to disagree with
+ * the per-concept choices it is supposed to be one of. A learner with no
+ * concept open has no depth in force, and a concept they have never chosen a
+ * depth for has none either -- which is what puts every layer back on offer.
+ */
+export function activePedagogicalLayer(state: CurrentLearnerState): PedagogicalLayer | undefined {
+  return state.activeConceptId === undefined
+    ? undefined
+    : pedagogicalLayerFor(state, state.activeConceptId);
 }
 
 export type StableIdStateChange =
@@ -219,8 +257,8 @@ export type StableIdStateChange =
   | { readonly kind: "clear" };
 
 export type PedagogicalLayerStateChange =
-  | { readonly kind: "set"; readonly value: PedagogicalLayer }
-  | { readonly kind: "clear" };
+  | { readonly kind: "set"; readonly conceptId: StableId; readonly value: PedagogicalLayer }
+  | { readonly kind: "clear"; readonly conceptId: StableId };
 
 /**
  * An explicit delta is the authoritative resulting-state information for a
@@ -230,28 +268,58 @@ export type PedagogicalLayerStateChange =
 export interface LearnerStateDelta {
   readonly engagementFocus?: EngagementFocus;
   readonly activeConcept?: StableIdStateChange;
-  readonly activePedagogicalLayer?: PedagogicalLayerStateChange;
+  readonly pedagogicalLayer?: PedagogicalLayerStateChange;
   readonly evidenceIdsToAdd: readonly StableId[];
   readonly interpretationIdsToAdd: readonly StableId[];
 }
 
-export function learnerStateDelta(input: {
+/**
+ * What a caller may ask for when building a delta.
+ *
+ * Exported so that a call site assembling a delta conditionally can write
+ * `satisfies Pick<LearnerStateDeltaInput, "pedagogicalLayer">` on the fragment
+ * it spreads in. Spreading bypasses excess-property checking, so without that
+ * annotation a stale or misspelled field name is silently dropped instead of
+ * failing to compile -- which is exactly how a layer change could go missing.
+ */
+export interface LearnerStateDeltaInput {
   readonly engagementFocus?: EngagementFocus;
   readonly activeConcept?: { readonly kind: "set"; readonly value: string } | { readonly kind: "clear" };
-  readonly activePedagogicalLayer?: { readonly kind: "set"; readonly value: PedagogicalLayer } | { readonly kind: "clear" };
+  readonly pedagogicalLayer?:
+    | { readonly kind: "set"; readonly conceptId: string; readonly value: PedagogicalLayer }
+    | { readonly kind: "clear"; readonly conceptId: string };
   readonly evidenceIdsToAdd?: readonly string[];
   readonly interpretationIdsToAdd?: readonly string[];
-}): LearnerStateDelta {
+}
+
+export function learnerStateDelta(input: LearnerStateDeltaInput): LearnerStateDelta {
   const activeConcept = input.activeConcept === undefined
     ? undefined
     : input.activeConcept.kind === "clear"
       ? Object.freeze({ kind: "clear" as const })
       : Object.freeze({ kind: "set" as const, value: stableId(input.activeConcept.value, "State delta active concept identifier") });
-  const activePedagogicalLayer = input.activePedagogicalLayer === undefined
+  const pedagogicalLayer = input.pedagogicalLayer === undefined
     ? undefined
-    : input.activePedagogicalLayer.kind === "clear"
-      ? Object.freeze({ kind: "clear" as const })
-      : Object.freeze({ kind: "set" as const, value: input.activePedagogicalLayer.value });
+    : input.pedagogicalLayer.kind === "clear"
+      ? Object.freeze({
+          kind: "clear" as const,
+          conceptId: stableId(input.pedagogicalLayer.conceptId, "State delta pedagogical layer concept identifier"),
+        })
+      : Object.freeze({
+          kind: "set" as const,
+          conceptId: stableId(input.pedagogicalLayer.conceptId, "State delta pedagogical layer concept identifier"),
+          value: input.pedagogicalLayer.value,
+        });
+  // A depth belongs to the concept it was chosen for. A delta that moves a
+  // learner to one concept while recording a depth for another would write a
+  // choice into the record that the learner never made about the concept they
+  // are now on. Refused rather than reconciled: there is no correct guess.
+  if (activeConcept !== undefined && activeConcept.kind === "set" &&
+      pedagogicalLayer !== undefined && pedagogicalLayer.conceptId !== activeConcept.value) {
+    throw new DomainValidationError(
+      "A state delta that moves a learner to a concept cannot record a pedagogical layer for a different concept.",
+    );
+  }
   const evidenceIdsToAdd = uniqueStableIds(
     (input.evidenceIdsToAdd ?? []).map((id) => stableId(id, "State delta evidence identifier")),
     "State delta evidence identifiers",
@@ -260,14 +328,14 @@ export function learnerStateDelta(input: {
     (input.interpretationIdsToAdd ?? []).map((id) => stableId(id, "State delta interpretation identifier")),
     "State delta interpretation identifiers",
   );
-  if (input.engagementFocus === undefined && activeConcept === undefined && activePedagogicalLayer === undefined &&
+  if (input.engagementFocus === undefined && activeConcept === undefined && pedagogicalLayer === undefined &&
       evidenceIdsToAdd.length === 0 && interpretationIdsToAdd.length === 0) {
     throw new DomainValidationError("A state delta must identify at least one resulting state change.");
   }
   return Object.freeze({
     ...(input.engagementFocus === undefined ? {} : { engagementFocus: input.engagementFocus }),
     ...(activeConcept === undefined ? {} : { activeConcept }),
-    ...(activePedagogicalLayer === undefined ? {} : { activePedagogicalLayer }),
+    ...(pedagogicalLayer === undefined ? {} : { pedagogicalLayer }),
     evidenceIdsToAdd,
     interpretationIdsToAdd,
   });
@@ -277,10 +345,24 @@ export function stateDeltaDimensions(delta: LearnerStateDelta): readonly string[
   const dimensions: string[] = [];
   if (delta.engagementFocus !== undefined) dimensions.push("engagement-focus");
   if (delta.activeConcept !== undefined) dimensions.push("active-concept");
-  if (delta.activePedagogicalLayer !== undefined) dimensions.push("active-pedagogical-layer");
+  if (delta.pedagogicalLayer !== undefined) dimensions.push("pedagogical-layer");
   if (delta.evidenceIdsToAdd.length > 0) dimensions.push("evidence");
   if (delta.interpretationIdsToAdd.length > 0) dimensions.push("interpretation");
   return readonlyList(dimensions);
+}
+
+/**
+ * A layer change is compared against the depth held for its own concept, never
+ * against whatever depth happens to be in force. Comparing against the latter
+ * is how the defect worked: a learner moving to a new concept at the depth they
+ * had used on the previous one looked like "no change" and was silently kept.
+ */
+function layerChangesNothing(
+  change: PedagogicalLayerStateChange,
+  state: CurrentLearnerState,
+): boolean {
+  const current = pedagogicalLayerFor(state, change.conceptId);
+  return change.kind === "clear" ? current === undefined : change.value === current;
 }
 
 function changesNothing<T>(
@@ -323,14 +405,33 @@ export function effectiveStateDelta(
     ...(changesNothing(delta.activeConcept, state.activeConceptId)
       ? {}
       : { activeConcept: delta.activeConcept }),
-    ...(changesNothing(delta.activePedagogicalLayer, state.activePedagogicalLayer)
+    ...(delta.pedagogicalLayer === undefined || layerChangesNothing(delta.pedagogicalLayer, state)
       ? {}
-      : { activePedagogicalLayer: delta.activePedagogicalLayer }),
+      : { pedagogicalLayer: delta.pedagogicalLayer }),
     evidenceIdsToAdd: readonlyList(delta.evidenceIdsToAdd.filter((id) => !alreadyKnown.has(id))),
     interpretationIdsToAdd: readonlyList(
       delta.interpretationIdsToAdd.filter((id) => !alreadyInterpreted.has(id)),
     ),
   });
+}
+
+/**
+ * Records one depth choice against its concept, replacing any earlier choice
+ * for that same concept in place. Replacing in place rather than appending
+ * keeps the order the learner's own history produced, so replaying the same
+ * events always rebuilds exactly the same state.
+ */
+function applyPedagogicalLayerChoice(
+  existing: readonly PedagogicalLayerChoice[],
+  change: PedagogicalLayerStateChange,
+): readonly PedagogicalLayerChoice[] {
+  if (change.kind === "clear") {
+    return readonlyList(existing.filter((choice) => choice.conceptId !== change.conceptId));
+  }
+  const entry = Object.freeze({ conceptId: change.conceptId, layer: change.value });
+  return readonlyList(existing.some((choice) => choice.conceptId === change.conceptId)
+    ? existing.map((choice) => (choice.conceptId === change.conceptId ? entry : choice))
+    : [...existing, entry]);
 }
 
 /** Applies a validated commitment delta without inspecting an external store. */
@@ -343,16 +444,14 @@ export function applyLearnerStateDelta(
     : delta.activeConcept.kind === "clear"
       ? undefined
       : delta.activeConcept.value;
-  const activePedagogicalLayer = delta.activePedagogicalLayer === undefined
-    ? previous.activePedagogicalLayer
-    : delta.activePedagogicalLayer.kind === "clear"
-      ? undefined
-      : delta.activePedagogicalLayer.value;
+  const pedagogicalLayerByConcept = delta.pedagogicalLayer === undefined
+    ? previous.pedagogicalLayerByConcept
+    : applyPedagogicalLayerChoice(previous.pedagogicalLayerByConcept, delta.pedagogicalLayer);
   return currentLearnerState({
     learnerId: previous.learnerId,
     engagementFocus: delta.engagementFocus ?? previous.engagementFocus,
     ...(activeConceptId === undefined ? {} : { activeConceptId }),
-    ...(activePedagogicalLayer === undefined ? {} : { activePedagogicalLayer }),
+    pedagogicalLayerByConcept,
     evidenceIds: uniqueStableIds([...previous.evidenceIds, ...delta.evidenceIdsToAdd], "Replayed learner state evidence identifiers"),
     interpretationIds: uniqueStableIds([...previous.interpretationIds, ...delta.interpretationIdsToAdd], "Replayed learner state interpretation identifiers"),
   });
@@ -559,13 +658,26 @@ export function currentLearnerState(input: {
   readonly learnerId: string;
   readonly engagementFocus: EngagementFocus;
   readonly activeConceptId?: string;
-  readonly activePedagogicalLayer?: PedagogicalLayer;
+  readonly pedagogicalLayerByConcept?: readonly {
+    readonly conceptId: string;
+    readonly layer: PedagogicalLayer;
+  }[];
   readonly evidenceIds?: readonly string[];
   readonly interpretationIds?: readonly string[];
 }): CurrentLearnerState {
+  const pedagogicalLayerByConcept = readonlyList(
+    (input.pedagogicalLayerByConcept ?? []).map((choice) => Object.freeze({
+      conceptId: stableId(choice.conceptId, "Current learner state pedagogical layer concept identifier"),
+      layer: choice.layer,
+    })),
+  );
+  if (new Set(pedagogicalLayerByConcept.map((choice) => choice.conceptId)).size !== pedagogicalLayerByConcept.length) {
+    throw new DomainValidationError("A learner cannot hold two pedagogical layers for the same concept.");
+  }
   const base = {
     learnerId: learnerReference(input.learnerId),
     engagementFocus: input.engagementFocus,
+    pedagogicalLayerByConcept,
     evidenceIds: uniqueStableIds(
       (input.evidenceIds ?? []).map((id) => stableId(id, "Current learner state evidence identifier")),
       "Current learner state evidence identifiers",
@@ -588,7 +700,6 @@ export function currentLearnerState(input: {
     ...(input.activeConceptId === undefined
       ? {}
       : { activeConceptId: stableId(input.activeConceptId, "Current learner state active concept identifier") }),
-    ...(input.activePedagogicalLayer === undefined ? {} : { activePedagogicalLayer: input.activePedagogicalLayer }),
   });
 }
 

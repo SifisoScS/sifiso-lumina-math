@@ -1,6 +1,6 @@
 import { functionsSeedKnowledge } from "../src/seed/functions-seed.js";
 import { PedagogicalLayer } from "../src/domain/mathematical-knowledge.js";
-import { LearnerChoiceKind } from "../src/domain/learner-record.js";
+import { LearnerChoiceKind, activePedagogicalLayer } from "../src/domain/learner-record.js";
 import { conceptSummary, describeOpportunity, materialFor } from "../cli/describe.js";
 import {
   applyChoice,
@@ -102,7 +102,8 @@ function renderConcepts(): void {
 
 function renderDepth(): void {
   const bar = clear(mount("depth"));
-  const current = view.session?.record.state.activePedagogicalLayer;
+  const state = view.session?.record.state;
+  const current = state === undefined ? undefined : activePedagogicalLayer(state);
   for (const layer of LAYERS) {
     const button = el("button", `depth-chip${current === layer.id ? " is-current" : ""}`);
     button.appendChild(el("span", "depth-label", layer.label));
@@ -181,7 +182,7 @@ function renderState(): void {
   const rows: readonly [string, string][] = [
     ["Focus", state.engagementFocus],
     ["Idea", conceptTitle(state.activeConceptId)],
-    ["Depth", state.activePedagogicalLayer ?? "not set"],
+    ["Depth", activePedagogicalLayer(state) ?? "not set"],
     ["Written down", String(reflectionsWritten(session))],
     ["Choices made", String(choicesMade(session))],
   ];

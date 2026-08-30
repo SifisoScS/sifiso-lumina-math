@@ -4,6 +4,7 @@ import test from "node:test";
 import { evaluateStateMutationPolicy, functionsSeedKnowledge } from "../src/index.js";
 import { describeOffers, describeOpportunity, materialFor } from "../cli/describe.js";
 import { decodeRecord, encodeRecord } from "../cli/record-format.js";
+import { activePedagogicalLayer, pedagogicalLayerFor } from "../src/domain/learner-record.js";
 import {
   applyChoice,
   applyConfidence,
@@ -268,7 +269,7 @@ test("the terminal never claims movement that did not happen", () => {
     const moved =
       after.activeConceptId !== before.activeConceptId ||
       after.engagementFocus !== before.engagementFocus ||
-      after.activePedagogicalLayer !== before.activePedagogicalLayer;
+      activePedagogicalLayer(after) !== activePedagogicalLayer(before);
 
     if (result.outcome.kind === "moved") {
       assert.ok(moved, `attempt ${attempt}: reported movement, but nothing changed`);
@@ -475,7 +476,7 @@ test("changing depth changes what is on offer straight away", () => {
 
   session = applyChoice(session, "select-offer", exam).session;
 
-  assert.equal(session.record.state.activePedagogicalLayer, "exam-patterns");
+  assert.equal(activePedagogicalLayer(session.record.state), "exam-patterns");
   assert.notEqual(session.offers.length, before, "the offer list still describes the old depth");
   for (const offer of session.offers) {
     const layer = offer.opportunity.pedagogicalLayer;
@@ -519,13 +520,88 @@ test("asking to see a representation shows the representation, not everything ne
 test("a learner can say how they want to approach an idea", () => {
   // Depth used to be a side effect of which offer someone happened to take.
   let session = startSession("concept.function");
-  assert.equal(session.record.state.activePedagogicalLayer, undefined);
+  assert.equal(activePedagogicalLayer(session.record.state), undefined);
 
   session = chooseDepth(session, "concept.function", "mechanics");
-  assert.equal(session.record.state.activePedagogicalLayer, "mechanics");
+  assert.equal(activePedagogicalLayer(session.record.state), "mechanics");
 
   session = chooseDepth(session, "concept.function", "intuition");
-  assert.equal(session.record.state.activePedagogicalLayer, "intuition", "a learner could not go back");
+  assert.equal(activePedagogicalLayer(session.record.state), "intuition", "a learner could not go back");
+});
+
+test("a depth chosen for one idea is not applied to another", () => {
+  // Found in the field. A learner chose a depth on Function Notation, opened
+  // Domain and Range -- a concept they had never looked at -- and found it
+  // already filtered to that depth. Its intuition material and its practice
+  // were hidden behind a choice nobody had made about it. The state held one
+  // layer for the whole learner, so every later concept inherited it (A2).
+  const first = chooseDepth(startSession("concept.function"), "concept.function", "exam-patterns");
+  assert.equal(activePedagogicalLayer(first.record.state), "exam-patterns");
+
+  const second = startSession("concept.domain-range", first.record);
+
+  assert.equal(
+    activePedagogicalLayer(second.record.state),
+    undefined,
+    "a depth chosen for one concept was carried into another",
+  );
+  assert.ok(
+    second.offers.some((offer) => offer.opportunity.pedagogicalLayer === "intuition"),
+    "the new concept opened with its intuition material already filtered out",
+  );
+});
+
+test("a depth a learner chose is still there when they come back to it", () => {
+  const chosen = chooseDepth(startSession("concept.function"), "concept.function", "mechanics");
+  const elsewhere = startSession("concept.domain-range", chosen.record);
+  const back = startSession("concept.function", elsewhere.record);
+
+  assert.equal(activePedagogicalLayer(back.record.state), "mechanics");
+});
+
+test("depths chosen for different ideas do not overwrite each other", () => {
+  const first = chooseDepth(startSession("concept.function"), "concept.function", "mechanics");
+  const second = chooseDepth(
+    startSession("concept.domain-range", first.record),
+    "concept.domain-range",
+    "intuition",
+  );
+
+  assert.equal(activePedagogicalLayer(second.record.state), "intuition");
+  assert.equal(pedagogicalLayerFor(second.record.state, "concept.function"), "mechanics");
+  assert.equal(pedagogicalLayerFor(second.record.state, "concept.domain-range"), "intuition");
+});
+
+test("depths are rebuilt from a learner's own history, not stored alongside it", () => {
+  const first = chooseDepth(startSession("concept.function"), "concept.function", "mechanics");
+  const second = chooseDepth(
+    startSession("concept.domain-range", first.record),
+    "concept.domain-range",
+    "exam-patterns",
+  );
+
+  const loaded = decodeRecord(encodeRecord(second.record));
+  assert.equal(loaded.kind, "loaded");
+  if (loaded.kind !== "loaded") return;
+
+  // The stored form carries no state at all; both depths come back out of the
+  // commitments that recorded them.
+  assert.equal(pedagogicalLayerFor(loaded.record.state, "concept.function"), "mechanics");
+  assert.equal(pedagogicalLayerFor(loaded.record.state, "concept.domain-range"), "exam-patterns");
+});
+
+test("a record written before depth had a concept is refused, not guessed at", () => {
+  // A v1 record's layer changes name no concept. Rather than carry migration
+  // code for it, an unrecognised version is refused, named, and left untouched
+  // -- which keeps the record migratable by anyone who later decides it is
+  // worth it, and keeps a learner from being silently started over (A7).
+  const stored = JSON.parse(encodeRecord(startSession("concept.function").record));
+  stored.format = "math-lumina.learner-record.v1";
+
+  const loaded = decodeRecord(JSON.stringify(stored));
+
+  assert.equal(loaded.kind, "unreadable");
+  if (loaded.kind === "unreadable") assert.match(loaded.reason, /v1/);
 });
 
 test("choosing a depth changes what is offered, without choosing anything for them", () => {

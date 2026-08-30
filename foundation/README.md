@@ -98,6 +98,14 @@ The point of this foundation is that its load-bearing rules are **types and test
 | Stopping is not recorded as accepting a learning path | A6 | same — proven by its own mutation check | **live** |
 | A new opportunity kind cannot be added unclassified | A2 | `never` assertion in `opportunityAcceptanceEffect`, plus a compile-time coverage check in `test/learner-agency.test.ts` | **live** |
 | No pedagogical depth is chosen on the learner's behalf | A2 | `startSession` pins no layer; every concept opens with something on offer | **live** |
+| A depth belongs to the concept it was chosen for | A2 | `PedagogicalLayerChoice`, `src/domain/learner-record.ts` | **live** |
+| Opening an idea for the first time inherits no depth from another | A2 | `commandPedagogicalLayer` resolves against the concept the command is about — proven: the old fallback fails `test/decisioning.test.ts` | **live** |
+| A depth a learner chose is still there when they come back to it | A2, A6 | `pedagogicalLayerByConcept`, rebuilt by replay — proven by mutation | **live** |
+| The depth in force is derived, never stored beside the choices it comes from | A6 | `activePedagogicalLayer` — a current depth cannot disagree with the per-concept choices | **live** |
+| A delta cannot record a depth for a concept it is not moving the learner to | A2, A6 | `learnerStateDelta` — proven by mutation | **live** |
+| A learner cannot hold two depths for one concept | A6 | `currentLearnerState` — proven by mutation | **live** |
+| A record in an unrecognised format is refused, named, and left untouched | A7, O2 | `decodeRecord` — proven: leaving the version unchanged past a shape change fails the test | **live** |
+| A fragment spread into a state delta is still checked | A7 | `LearnerStateDeltaInput` with `satisfies` — spreading otherwise skips excess-property checking, and a renamed field is dropped in silence | **live** |
 | A learner with nothing on offer is told their exits | A7 | `cli/learn.ts` | **live** |
 | Offers always describe where the learner is now | A2, A6 | `refreshed`, `cli/session.ts` — proven: removing it fails two tests | **live** |
 | A learner is never shown an option the engine would then refuse | A2 | `test/cli-session.test.ts` walks every offer after a move | **live** |

@@ -9,6 +9,7 @@ import {
   CurrentLearnerState,
   LearnerEvidence,
   LearnerRecord,
+  pedagogicalLayerFor,
 } from "../domain/learner-record.js";
 import {
   Concept,
@@ -142,14 +143,26 @@ function commandConceptId(
   }
 }
 
+/**
+ * The depth to read this command at: the one the command names, or the one the
+ * learner chose for the concept this command is about.
+ *
+ * `conceptId` is the concept the command resolved to, not whichever concept the
+ * learner happened to have open. Falling back to a single layer held on the
+ * learner was the defect: a depth chosen once was applied to every concept
+ * afterwards, so a concept the learner had never opened was filtered to a depth
+ * they had never chosen for it -- hiding its intuition material and its
+ * practice behind a decision the system made on their behalf (A2).
+ */
 function commandPedagogicalLayer(
   command: InteractionCommand,
   state: CurrentLearnerState,
+  conceptId: StableId,
 ): PedagogicalLayer | undefined {
-  if (command.kind === "explore-concept") {
-    return command.pedagogicalLayer ?? state.activePedagogicalLayer;
+  if (command.kind === "explore-concept" && command.pedagogicalLayer !== undefined) {
+    return command.pedagogicalLayer;
   }
-  return state.activePedagogicalLayer;
+  return pedagogicalLayerFor(state, conceptId);
 }
 
 function commandSubmittedEvidence(command: InteractionCommand): LearnerEvidence | undefined {
@@ -314,7 +327,7 @@ export function assembleLearningContext(input: ContextAssemblyInput): ContextAss
   if (declaredEvidenceConflicts.some((conflict) => conflict.evidenceIds.some((id) => !availableEvidenceIds.has(id)))) {
     throw new DomainValidationError("A declared evidence conflict must reference evidence available in the interaction context.");
   }
-  const selectedPedagogicalLayer = commandPedagogicalLayer(input.command, input.learnerRecord.state);
+  const selectedPedagogicalLayer = commandPedagogicalLayer(input.command, input.learnerRecord.state, conceptId);
   const guidance = selectedPedagogicalLayer === undefined
     ? input.pedagogicalGuidance
     : input.pedagogicalGuidance.filter((item) => item.layer === selectedPedagogicalLayer);
