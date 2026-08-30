@@ -23,8 +23,8 @@ It says something narrower and more uncomfortable:
 > time.
 
 The suite was not thin. When the worst defect in this list was live, **126
-tests were green.** Today there are 222, and the honest position is that a
-223rd class of defect is probably live right now and will be found the same
+tests were green.** Today there are 224, and the honest position is that a
+225th class of defect is probably live right now and will be found the same
 way.
 
 ---
@@ -224,6 +224,33 @@ was *too* strict, and its first run rejected content that was perfectly fine.
 That one is the cheap failure. A guard that is wrong tells you immediately; a
 guard that is vacuous never tells you anything.
 
+### 18. Asking for a depth moved the learner to a different concept
+
+*`A depth chip is about the idea you are looking at`*
+
+Taking a bridge offer moves the learner to the concept it bridges to. Both
+surfaces went on holding the concept the session had opened on, and passed it
+back to the engine on the learner's next action.
+
+Three of the four entry points quietly ignored that stale argument and used the
+learner's current concept. The fourth, `chooseDepth`, honoured it — so clicking
+a depth chip sent the concept they had left, and the engine obligingly **moved
+them back to it.**
+
+Four clicks from a cold start: open a concept, take the bridge, click a chip.
+The learner asked how to approach an idea and was moved to a different idea.
+That is entry 1's harm class again, arriving through the surface rather than
+the engine, in a system whose whole first article is about not doing this.
+
+The defect was not the stale argument. It was that **four functions taking the
+same parameter disagreed about what it meant**, so a caller that was correct for
+three was silently wrong for the fourth. All four now behave identically.
+
+**Honest caveat: found by reading, not by use** — while the founder was going
+through the system and reporting no issues. Which is the entry's real lesson:
+the founder is the one person who cannot run this test, because they know which
+chip to click and why.
+
 ---
 
 ## What review did catch
@@ -279,10 +306,10 @@ put the distinction somewhere that fails the build.
 - **No stranger has used it.** Every session in this ledger was the founder's
   own, or CI's. The next entry in this list will come from the first person who
   is not either, and that gate is deliberately still open.
-- **Nothing here checks that the mathematics is correct.** 222 tests prove that
+- **Nothing here checks that the mathematics is correct.** 224 tests prove that
   content is reachable, shown, and unmodified. Not one of them knows whether the
   content is true. See [`src/seed/AUTHORSHIP.md`](src/seed/AUTHORSHIP.md).
-- **The count is not the argument.** 222 green tests is exactly the state the
+- **The count is not the argument.** 224 green tests is exactly the state the
   project was in when it was answering "stop" by starting.
 
 ---

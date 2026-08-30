@@ -942,3 +942,76 @@ test("a learner with nothing kept can still hand over an honest empty account", 
   assert.match(shared, /Nothing is kept about you yet/);
   assert.match(shared, /does not assess/);
 });
+
+// ---------------------------------------------------------------------------
+// A surface that has fallen behind the engine
+//
+// Taking a bridge or a prerequisite offer moves the learner to another concept.
+// Both surfaces went on holding the concept the session opened on, and passed
+// it back in on the learner's next action. Three of the four entry points
+// quietly ignored it; the fourth honoured it, and moved the learner backwards.
+// ---------------------------------------------------------------------------
+
+/** A session that has followed an offer into a different concept. */
+function movedSession() {
+  const opened = startSession("concept.function");
+  const index = opened.offers.findIndex((offer) =>
+    offer.opportunity.relatedConceptId !== undefined &&
+    offer.opportunity.relatedConceptId !== "concept.function",
+  );
+  assert.ok(index >= 0, "no offer leads anywhere else, so this cannot be tested");
+
+  const session = applyChoice(opened, "select-offer", index).session;
+  assert.notEqual(
+    session.record.state.activeConceptId,
+    "concept.function",
+    "the engine did not move the learner, so the rest of this proves nothing",
+  );
+  return session;
+}
+
+test("asking for a depth never moves a learner somewhere", () => {
+  // Four clicks from a cold start: open a concept, take the bridge, click a
+  // depth chip. The page sent the concept the learner had left, and
+  // `exploreConceptCommand` obligingly took them back to it. They asked how to
+  // approach an idea and were moved to a different idea -- an explicit request
+  // answered with something else, which is the harm this project exists for.
+  const session = movedSession();
+  const here = session.record.state.activeConceptId;
+
+  const after = chooseDepth(session, "concept.function", "exam-patterns");
+
+  assert.equal(after.record.state.activeConceptId, here, "choosing a depth moved the learner");
+  assert.equal(pedagogicalLayerFor(after.record.state, here ?? ""), "exam-patterns");
+  assert.equal(
+    pedagogicalLayerFor(after.record.state, "concept.function"),
+    undefined,
+    "the depth was recorded against the concept the learner had already left",
+  );
+});
+
+test("everything a learner supplies is filed where they actually are", () => {
+  // The defect was not the stale argument, it was that the four entry points
+  // disagreed about what to do with one. Three took the learner's current
+  // concept and treated the argument as a fallback; `chooseDepth` obeyed it.
+  // Whichever rule is right, one rule has to hold for all four, or a caller
+  // that is correct for three is wrong for the fourth and nothing says so.
+  const stale = "concept.function";
+  let session = movedSession();
+  const here = session.record.state.activeConceptId;
+  assert.ok(here);
+
+  session = applyReflection(session, "this is where I actually am", stale).session;
+  session = applyConfidence(session, "Not sure", stale).session;
+  session = chooseDepth(session, stale, "mechanics");
+
+  const filed = session.record.evidence
+    .filter((item) => item.kind === "reflection" || item.kind === "confidence-report")
+    .map((item) => item.conceptId);
+
+  assert.ok(filed.length >= 2, "the evidence was not recorded at all");
+  for (const conceptId of filed) {
+    assert.equal(conceptId, here, "a learner's own words were filed under a concept they had left");
+  }
+  assert.equal(pedagogicalLayerFor(session.record.state, here), "mechanics");
+});

@@ -363,8 +363,23 @@ export function applyChoice(
  * Depth is already learner state and `move-toward-layer` is already an
  * opportunity kind, but nothing let a learner simply say how they wanted to
  * approach an idea -- depth was only ever a side effect of which offer they
- * happened to take. The choice is recorded against this concept, and applies to
- * no other.
+ * happened to take. The choice is recorded against the concept the learner is
+ * in, and applies to no other.
+ *
+ * `conceptId` is a fallback for a session with nothing open, not an
+ * instruction. It used to be honoured outright, and this function was then the
+ * only one of the four here that did so -- `applyReflection`, `applyPractice`
+ * and `applyConfidence` all take the learner's current concept and treat the
+ * argument as a default. That inconsistency was the defect, not the argument.
+ *
+ * What it cost: a learner who took a bridge offer was moved by the engine to
+ * the concept it bridged to, while the page went on holding the concept they
+ * started in. Clicking a depth chip then sent the concept they had left, and
+ * `exploreConceptCommand` moved them back to it. They asked for a depth and
+ * were moved somewhere -- the harm class this project is organised against,
+ * arriving through the surface rather than the engine. Four clicks from a cold
+ * start, and no test could see it, because both surfaces were passing an
+ * argument that was legal, well-typed, and stale.
  */
 export function chooseDepth(
   session: Session,
@@ -377,7 +392,7 @@ export function chooseDepth(
       ...ids(session, "depth"),
       learnerId: LEARNER_ID,
       issuedAt: now(),
-      conceptId,
+      conceptId: session.record.state.activeConceptId ?? conceptId,
       pedagogicalLayer: layer,
     }),
   ).session;

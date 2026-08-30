@@ -299,6 +299,11 @@ function choose(choiceKind: LearnerChoiceKind, index: number): void {
   const taken = session.offers[index];
   const result = applyChoice(session, choiceKind, index);
   view.session = result.session;
+  // The engine decides where the learner is; this only reflects it. Taking a
+  // bridge or a prerequisite offer moves them to another concept, and the page
+  // used to go on showing the title, the description, the material and the
+  // depth chips of the concept they had left.
+  view.conceptId = result.session.record.state.activeConceptId ?? view.conceptId;
 
   switch (result.outcome.kind) {
     case "moved":
