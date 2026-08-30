@@ -5,6 +5,7 @@ import {
   opportunityAcceptanceEffect,
   submitConfidenceReportCommand,
   submitLearnerChoiceCommand,
+  submitPracticeAttemptCommand,
   submitReflectionCommand,
   trustedActorContext,
 } from "../src/contracts/core-contracts.js";
@@ -23,8 +24,9 @@ import {
   learnerChoice,
   learnerRecord,
   learnerReflection,
+  practiceAttempt,
 } from "../src/domain/learner-record.js";
-import { PedagogicalLayer } from "../src/domain/mathematical-knowledge.js";
+import { ExperienceEvidenceType, PedagogicalLayer } from "../src/domain/mathematical-knowledge.js";
 import { canonicalPedagogicalGuidance } from "../src/domain/pedagogical-model.js";
 import { isoTimestamp } from "../src/domain/primitives.js";
 import { functionsSeedKnowledge } from "../src/seed/functions-seed.js";
@@ -80,6 +82,7 @@ export type Outcome =
   | { readonly kind: "left-to-you" }
   | { readonly kind: "written-down" }
   | { readonly kind: "confidence-recorded" }
+  | { readonly kind: "practice-recorded" }
   | { readonly kind: "no-such-offer" };
 
 function now() {
@@ -220,6 +223,49 @@ export function choicesMade(session: Session): number {
   return session.record.evidence.filter((item) => item.kind === "learner-choice").length;
 }
 
+/** Questions the learner has answered. Answered, not marked -- see `applyPractice`. */
+export function practiceAttemptsMade(session: Session): number {
+  return session.record.evidence.filter((item) => item.kind === "practice-attempt").length;
+}
+
+/**
+ * Whether this surface can collect a kind of evidence a learning experience
+ * says it expects.
+ *
+ * An experience declaring `expectedEvidenceTypes` is a promise that a learner
+ * can do that thing. Three practice experiences made that promise while no
+ * surface could take an answer, so a learner was shown a question and given no
+ * way to respond to it -- offerable, but not answerable. The catalogue could
+ * not see the gap, because nothing connected what content declares to what a
+ * surface implements.
+ *
+ * Exhaustive, so a new evidence type has to be classified before the corpus is
+ * allowed to promise it. `test/mathematical-knowledge.test.ts` refuses any
+ * published experience that expects something marked `not-collected`.
+ */
+export function evidenceTypeCollection(
+  type: ExperienceEvidenceType,
+): "collected" | "not-collected" {
+  switch (type) {
+    case "reflection":
+      return "collected"; // applyReflection
+    case "practice-attempt":
+      return "collected"; // applyPractice
+    case "confidence-report":
+      return "collected"; // applyConfidence
+    case "learner-choice":
+      return "collected"; // applyChoice
+    case "interaction-evidence":
+      // Nothing produces it, and no experience in the corpus asks for it. Saying
+      // so here is what keeps that true.
+      return "not-collected";
+    default: {
+      const unclassified: never = type;
+      throw new Error(`Experience evidence type is not classified for collection: ${String(unclassified)}`);
+    }
+  }
+}
+
 /**
  * Applies a learner's choice about an offer.
  *
@@ -346,6 +392,43 @@ export function applyConfidence(
     }),
   );
   return { session: next.session, outcome: { kind: "confidence-recorded" } };
+}
+
+/**
+ * Records a learner's answer to a question they were offered.
+ *
+ * No `observedOutcome` is attached, and that absence is deliberate and load
+ * bearing: `ObservedPracticeOutcome` is the assessment-boundary statement, and
+ * its absence is what says the attempt is not assessed. Lumina does not decide
+ * whether an answer is right. O4 -- whether the system may conclude anything
+ * about what a learner understands -- is open, and writing a verdict here would
+ * close it by accident, in code, without anyone choosing to.
+ *
+ * The answer is the learner's own words and is kept exactly as typed.
+ */
+export function applyPractice(
+  session: Session,
+  response: string,
+  experienceId: string,
+  conceptId: string,
+): { readonly session: Session; readonly outcome: Outcome } {
+  const next = advance(
+    session,
+    submitPracticeAttemptCommand({
+      ...ids(session, "practice"),
+      learnerId: LEARNER_ID,
+      issuedAt: now(),
+      practiceAttempt: practiceAttempt({
+        id: `evidence.practice.${session.token}.${session.step + 1}`,
+        learnerId: LEARNER_ID,
+        conceptId: session.record.state.activeConceptId ?? conceptId,
+        learningExperienceId: experienceId,
+        learnerResponse: response,
+        submittedAt: now(),
+      }),
+    }),
+  );
+  return { session: next.session, outcome: { kind: "practice-recorded" } };
 }
 
 /** Records something the learner wrote. It is theirs; nothing is inferred from it. */

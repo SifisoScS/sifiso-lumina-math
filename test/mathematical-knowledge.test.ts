@@ -9,6 +9,7 @@ import {
   knowledgeAsset,
   learningExperience,
 } from "../src/index.js";
+import { evidenceTypeCollection } from "../cli/session.js";
 
 test("minimal Functions seed knowledge resolves as a consistent versioned catalog", () => {
   assert.equal(functionsSeedKnowledge.domains.length, 1);
@@ -123,5 +124,23 @@ test("every knowledge asset is used by at least one experience", () => {
   const used = new Set(functionsSeedKnowledge.experiences.flatMap((e) => e.knowledgeAssetIds));
   for (const asset of functionsSeedKnowledge.assets) {
     assert.ok(used.has(asset.id), `${asset.id} is written but no experience shows it to anyone`);
+  }
+});
+
+test("a learner can actually supply every kind of evidence the corpus asks for", () => {
+  // An experience declaring `expectedEvidenceTypes` is a promise that a learner
+  // can do that thing. Three practice experiences made that promise while no
+  // surface could take an answer: a learner was shown a question and given
+  // nowhere to put a response. Offerable is not the same as answerable, and
+  // nothing connected what the corpus declares to what a surface implements.
+  for (const experience of functionsSeedKnowledge.experiences) {
+    if (experience.status !== "published") continue;
+    for (const type of experience.expectedEvidenceTypes) {
+      assert.equal(
+        evidenceTypeCollection(type),
+        "collected",
+        `${experience.id} expects ${type}, which no surface can collect`,
+      );
+    }
   }
 });

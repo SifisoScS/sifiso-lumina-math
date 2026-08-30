@@ -7,8 +7,10 @@ import { conceptSummary, describeOffers, materialFor } from "./describe.js";
 import { DEFAULT_RECORD_PATH, forgetRecord, loadRecord, recordExists, saveRecord } from "./store.js";
 import {
   applyChoice,
+  applyPractice,
   applyReflection,
   choicesMade,
+  practiceAttemptsMade,
   reflectionsWritten,
   Session,
   startSession,
@@ -54,6 +56,7 @@ function showState(session: Session): void {
     stdout.write(`    Depth:    ${depth}\n`);
   }
   stdout.write(`    Written down: ${reflectionsWritten(session)}\n`);
+  stdout.write(`    Answered:     ${practiceAttemptsMade(session)}\n`);
   stdout.write(`    Choices made: ${choicesMade(session)}\n\n`);
 }
 
@@ -83,6 +86,32 @@ async function writeSomething(
   stdout.write("  Written down - your words, kept exactly as you typed them.\n");
   stdout.write("  The system may form its own reading of them. That reading is\n");
   stdout.write("  kept separate, and is never shown as something you said.\n");
+  return next;
+}
+
+/**
+ * The answer flow, reached by taking a question offer.
+ *
+ * Nothing marks the answer. It is kept as the learner's own words, and the
+ * absence of an observed outcome on the attempt is what says it was not
+ * assessed -- see `applyPractice`. Saying so out loud matters here, because a
+ * person who types an answer into a box reasonably expects to be told whether
+ * it was right, and being quietly not-marked would be its own small dishonesty.
+ */
+async function answerSomething(
+  rl: ReturnType<typeof createInterface>,
+  session: Session,
+  experienceId: string,
+  conceptId: string,
+): Promise<Session> {
+  stdout.write("  Nothing here marks your answer. It is kept as you wrote it.\n");
+  const text = (await rl.question("  Your answer: ")).trim();
+  if (text.length === 0) {
+    stdout.write("  Nothing recorded. The question stays open.\n");
+    return session;
+  }
+  const next = applyPractice(session, text, experienceId, conceptId).session;
+  stdout.write("  Kept, word for word. Nothing concluded from it.\n");
   return next;
 }
 
@@ -267,6 +296,15 @@ async function main(): Promise<void> {
       // Listing it again and waiting would be an odd answer to that.
       if (offerTaken.opportunity.kind === "reflect") {
         session = await writeSomething(rl, session, chosen.id);
+        saveRecord(session.record);
+      }
+
+      // The same courtesy for a question. Three practice experiences were being
+      // offered while no surface could take an answer, so a learner was shown a
+      // question and left with nowhere to put a response.
+      const practised = offerTaken.opportunity.learningExperienceId;
+      if (offerTaken.opportunity.kind === "practise" && practised !== undefined) {
+        session = await answerSomething(rl, session, practised, chosen.id);
         saveRecord(session.record);
       }
     }

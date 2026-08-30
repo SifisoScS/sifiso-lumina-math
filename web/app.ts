@@ -5,9 +5,11 @@ import { conceptSummary, describeOpportunity, materialFor } from "../cli/describ
 import {
   applyChoice,
   applyConfidence,
+  applyPractice,
   applyReflection,
   chooseDepth,
   choicesMade,
+  practiceAttemptsMade,
   reflectionsWritten,
   Session,
   startSession,
@@ -46,6 +48,8 @@ interface View {
   material: readonly string[];
   note: string;
   reading: string | undefined;
+  /** The question the learner has open, if they took one. */
+  practising: string | undefined;
 }
 
 const view: View = {
@@ -54,6 +58,7 @@ const view: View = {
   material: [],
   note: "",
   reading: undefined,
+  practising: undefined,
 };
 
 // ---------------------------------------------------------------------------
@@ -184,6 +189,7 @@ function renderState(): void {
     ["Idea", conceptTitle(state.activeConceptId)],
     ["Depth", activePedagogicalLayer(state) ?? "not set"],
     ["Written down", String(reflectionsWritten(session))],
+    ["Answered", String(practiceAttemptsMade(session))],
     ["Choices made", String(choicesMade(session))],
   ];
   for (const [label, value] of rows) {
@@ -218,6 +224,7 @@ function render(): void {
     renderMaterial();
     renderState();
     renderReading();
+    mount("practice-panel").hidden = view.practising === undefined;
   }
   renderNote();
   mount("forget").hidden = !recordExists();
@@ -242,6 +249,7 @@ function open(conceptId: string): void {
   view.session = startSession(conceptId, stored.kind === "loaded" ? stored.record : undefined);
   view.material = [];
   view.reading = undefined;
+  view.practising = undefined;
   view.note = stored.kind === "loaded" ? "Picking up where you left off." : "";
   persist();
   render();
@@ -279,6 +287,12 @@ function choose(choiceKind: LearnerChoiceKind, index: number): void {
 
   const showsMaterial = result.outcome.kind === "moved" || result.outcome.kind === "already-there";
   view.material = showsMaterial && taken !== undefined ? materialFor(taken.opportunity, catalogue) : [];
+
+  // A question with nowhere to put an answer is material a learner cannot
+  // actually engage with. The box appears only for a question they took.
+  view.practising = showsMaterial && taken?.opportunity.kind === "practise"
+    ? taken.opportunity.learningExperienceId
+    : undefined;
   persist();
   render();
 }
@@ -305,6 +319,22 @@ function write(): void {
   render();
 }
 
+function answer(): void {
+  const box = document.getElementById("practice") as HTMLTextAreaElement | null;
+  const session = view.session;
+  const experienceId = view.practising;
+  if (box === null || session === undefined || experienceId === undefined) return;
+  const response = box.value.trim();
+  if (response.length === 0) return;
+
+  view.session = applyPractice(session, response, experienceId, view.conceptId ?? "").session;
+  box.value = "";
+  view.practising = undefined;
+  view.note = "Kept, word for word. Nothing here marked it and nothing concluded from it.";
+  persist();
+  render();
+}
+
 function renderConfidence(): void {
   const bar = clear(mount("confidence"));
   for (const value of CONFIDENCE) {
@@ -327,6 +357,7 @@ function forget(): void {
   view.conceptId = undefined;
   view.material = [];
   view.reading = undefined;
+  view.practising = undefined;
   view.note = existed
     ? "Deleted. Nothing about you is kept in this browser any more."
     : "There was nothing kept to delete.";
@@ -339,11 +370,13 @@ export function start(): void {
   renderConcepts();
   renderConfidence();
   mount("write").addEventListener("click", write);
+  mount("answer").addEventListener("click", answer);
   mount("leave").addEventListener("click", () => {
     view.session = undefined;
     view.conceptId = undefined;
     view.material = [];
     view.reading = undefined;
+    view.practising = undefined;
     view.note = recordExists() ? "Kept in this browser. It will be here next time." : "Nothing is kept.";
     render();
   });

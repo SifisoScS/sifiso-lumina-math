@@ -8,9 +8,11 @@ import { activePedagogicalLayer, pedagogicalLayerFor } from "../src/domain/learn
 import {
   applyChoice,
   applyConfidence,
+  applyPractice,
   applyReflection,
   chooseDepth,
   choicesMade,
+  practiceAttemptsMade,
   reflectionsWritten,
   startSession,
 } from "../cli/session.js";
@@ -651,4 +653,45 @@ test("a confidence report survives being written down and read back", () => {
   if (decoded.kind !== "loaded") return;
   const reported = decoded.record.evidence.find((item) => item.kind === "confidence-report");
   assert.ok(reported);
+});
+
+test("a learner can answer a question, and nothing marks the answer", () => {
+  let session = startSession("concept.function");
+  const index = session.offers.findIndex((offer) => offer.opportunity.kind === "practise");
+  assert.ok(index >= 0, "no question was on offer to answer");
+  const experienceId = session.offers[index]?.opportunity.learningExperienceId;
+  assert.ok(experienceId);
+
+  session = applyChoice(session, "select-offer", index).session;
+  const result = applyPractice(session, "f(3) = 7, because the rule doubles and adds one.", experienceId, "concept.function");
+  session = result.session;
+
+  assert.equal(result.outcome.kind, "practice-recorded");
+  assert.equal(practiceAttemptsMade(session), 1);
+  assert.equal(reflectionsWritten(session), 0, "an answer was counted as something the learner wrote about themselves");
+
+  const attempt = session.record.evidence.find((item) => item.kind === "practice-attempt");
+  assert.ok(attempt);
+  if (attempt.kind !== "practice-attempt") return;
+  assert.equal(attempt.learnerResponse, "f(3) = 7, because the rule doubles and adds one.");
+  assert.equal(attempt.learningExperienceId, experienceId);
+
+  // The absence is the assertion. `ObservedPracticeOutcome` is the assessment
+  // boundary statement, and its absence is what says the attempt was not
+  // assessed. O4 stays open, and nothing here quietly closes it.
+  assert.equal(attempt.observedOutcome, undefined, "the engine formed a verdict on a learner's answer");
+});
+
+test("an empty answer is not recorded as one", () => {
+  let session = startSession("concept.function");
+  const index = session.offers.findIndex((offer) => offer.opportunity.kind === "practise");
+  const experienceId = session.offers[index]?.opportunity.learningExperienceId;
+  assert.ok(experienceId);
+  session = applyChoice(session, "select-offer", index).session;
+
+  assert.throws(
+    () => applyPractice(session, "   ", experienceId, "concept.function"),
+    /Practice learner response/,
+  );
+  assert.equal(practiceAttemptsMade(session), 0);
 });
