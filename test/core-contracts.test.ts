@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import { readdirSync, readFileSync } from "node:fs";
+import { join, relative } from "node:path";
 import test from "node:test";
 
 import {
@@ -123,4 +125,63 @@ test("trusted actors and delivery capabilities remain implementation-neutral bou
   const profile = deliveryCapabilityProfile(["spoken-output", "typed-input"]);
   assert.equal(actor.learnerScope[0], "learner.ada");
   assert.deepEqual(profile.capabilities, ["spoken-output", "typed-input"]);
+});
+
+// ---------------------------------------------------------------------------
+// The line A1 says is a line
+// ---------------------------------------------------------------------------
+
+test("AssessmentBoundary is implemented by nothing and wired to nothing", () => {
+  // A1 v1.1, closing O4: Math Lumina does not conclude that a learner has
+  // understood, mastered, is ready for, or is capable of anything. The article
+  // says `AssessmentBoundary` staying an unimplemented contract is where the
+  // line is, rather than a gap to be tidied up later.
+  //
+  // Nothing enforced that. The port could have been implemented and called in
+  // an ordinary change, every other test would have stayed green, and the
+  // article would have quietly become false -- which is the failure this
+  // project treats as worse than an admitted gap.
+  //
+  // Reading the source is the only way to check *absence*. A test that imports
+  // things can prove what exists; it cannot prove that nothing anywhere calls
+  // a method.
+  const root = join(import.meta.dirname, "..");
+  const declaredIn = join("src", "contracts", "assessment-boundary.js");
+  const reExportedIn = join("src", "index.ts");
+
+  const sources: string[] = [];
+  const walk = (dir: string) => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const full = join(dir, entry.name);
+      if (entry.isDirectory()) {
+        if (entry.name === "node_modules") continue;
+        walk(full);
+      } else if (entry.name.endsWith(".ts")) {
+        sources.push(full);
+      }
+    }
+  };
+  for (const dir of ["src", "cli", "web"]) walk(join(root, dir));
+  assert.ok(sources.length > 20, "the source scan found almost nothing, so it is proving nothing");
+
+  for (const file of sources) {
+    const here = relative(root, file);
+    if (here === join("src", "contracts", "assessment-boundary.ts")) continue;
+
+    const text = readFileSync(file, "utf8");
+    assert.ok(
+      !text.includes("observePracticeOutcome"),
+      `${here} calls the assessment port, which A1 says nothing may do`,
+    );
+    // A re-export is not a wiring. `src/index.ts` publishes the contract so a
+    // future authorised implementation has something to implement.
+    if (here === reExportedIn) {
+      assert.ok(text.includes(declaredIn.split("\\").join("/")) || text.includes("assessment-boundary.js"));
+      continue;
+    }
+    assert.ok(
+      !text.includes("AssessmentBoundary"),
+      `${here} refers to AssessmentBoundary; the contract is meant to be unimplemented and unwired`,
+    );
+  }
 });

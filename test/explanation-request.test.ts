@@ -6,7 +6,7 @@ import {
   currentLearnerState,
   decisionProvenance,
   explanationTask,
-  functionsSeedKnowledge,
+  luminaCurriculum,
   provenanceReference,
   reasoningProposal,
   ReasoningPort,
@@ -28,9 +28,10 @@ import { timestamp } from "./fixtures.js";
  */
 
 const catalogue = {
-  concepts: functionsSeedKnowledge.concepts,
-  assets: functionsSeedKnowledge.assets,
-  experiences: functionsSeedKnowledge.experiences,
+  topics: luminaCurriculum.topics,
+  concepts: luminaCurriculum.concepts,
+  assets: luminaCurriculum.assets,
+  experiences: luminaCurriculum.experiences,
 };
 
 const state = currentLearnerState({

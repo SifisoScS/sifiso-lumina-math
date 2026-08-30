@@ -4,20 +4,46 @@
 >
 > The engine constructs grounded learning decisions from qualified context, versioned knowledge, pedagogy, policy, learner evidence, and declared delivery capabilities. It deliberately separates a recommendation from learner consent, learning evidence from interpretation, and interpretation from authoritative learner state.
 
+## Start here
+
+**[FOUND-BY-USE.md](FOUND-BY-USE.md)** — every defect that mattered in this
+project was found by someone using it, not by anyone reading it. That file is
+the ledger, including the one that answered a learner's "stop" by starting them,
+live in the engine while 126 tests passed around it.
+
+It is the most useful thing here for anyone who will never open the product.
+
 ## Status
 
-Math Lumina is currently an **engine-first, interface-agnostic TypeScript kernel**. Phase 2 implementation is complete through Slices 1–5, and Phase 3 has recorded architectural governance decisions through **D9**. The repository deliberately contains **no UI, browser logic, API transport, database, persistence layer, CMS, assessment service, AI provider, prompt system, or infrastructure runtime**.
+Math Lumina is a **headless deterministic learning engine** with two thin
+surfaces over it. The engine holds every rule; the surfaces hold none.
 
-| Area | Status | Notes |
-|---|---|---|
-| Phase 2 Slice 1 — Domain Kernel | Complete | Canonical domains, contracts, validation, and provenance foundations. |
-| Phase 2 Slice 2 — Learning Decisioning Kernel | Complete | Deterministic decision construction, opportunities, offers, and safe non-material outcomes. |
-| Phase 2 Slice 3 — Learner State Evolution & Event Loop | Complete | Immutable evidence/events, authorized commitments, idempotency inputs, and deterministic replay. |
-| Phase 2 Slice 4 — Knowledge & Pedagogy Engine | Complete | Bounded knowledge resolution, relationships, pedagogy, versioning, and Functions seed graph. |
-| Phase 2 Slice 5 — Learning Experience & Delivery Contract | Complete | Semantic experience/delivery compatibility, completion boundaries, and constrained unavailable-delivery behavior. |
-| Phase 3 — Authority & Governance | In decision process | D1–D9 are locked architectural decisions; later decisions and all future implementation remain subject to explicit approval. |
+| | |
+|---|---|
+| **Governing order** | [`foundation/`](foundation/) — articles A1–A8, adopted 2026-08-29 by [ADOPTION.md](foundation/ADOPTION.md) |
+| **Enforcement** | 118 rules with a test or build gate behind them, 6 marked `by review` because nothing enforces them — see the [map](foundation/README.md) |
+| **Tests** | 222 in `pnpm check`, plus 7 live provider tests kept outside it so no ordinary run costs money or touches a network |
+| **Corpus** | 2 topics, 12 concepts, 27 relationships, 122 assets, 76 learning experiences |
+| **Surfaces** | `pnpm learn` (terminal) and `pnpm ui` (browser, `127.0.0.1`) — both run the same engine |
+| **Deployed** | <https://sifisoscs.github.io/sifiso-lumina-math/> — a static page, no server, no account, build-verified to contain no network primitive |
+| **Open questions** | O1–O3, O5, O6 open; O4 and O7–O9 closed as A8 amendments — see [OPEN.md](foundation/OPEN.md) |
 
-The last Phase 2 implementation baseline is [`977fb33`](https://github.com/SifisoScS/sifiso-lumina-math/commit/977fb3302c3ba4a1be8faea53d02bd672dd7d957), which completed Slice 5 with 54 passing headless tests.
+### What changed from the earlier description
+
+Two things in this README were true for a long time and are not true now, and
+saying so is cheaper than letting the front door mislead:
+
+- **A UI exists.** Two, in fact. The engine is still headless — neither surface
+  makes a decision, and `cli/` and `web/` contain presentation only.
+- **A real model is connected.** `anthropicReasoningPort` sits behind
+  `ReasoningPort` and is live-verified against Claude Opus 5. It proposes; it
+  authorises nothing; no learner-owned material can reach it, because
+  `ConceptContent` has no field it could travel in.
+
+The **D1–D55 constitutional corpus is superseded.** It is preserved untouched in
+[`governance/historical/`](governance/historical/) as source material and
+confers no authority. Anything below that refers to D-numbered decisions is
+describing history, not the governing order.
 
 ## Design purpose
 
@@ -202,7 +228,14 @@ An assessment observation is authoritative only as a narrow, provenance-bound st
 
 ### AI reasoning
 
-The existing `ReasoningPort` is a provider-neutral proposal boundary only. No AI model, provider call, prompt system, or tool orchestration exists in this project.
+`ReasoningPort` is a provider-neutral proposal boundary. A real provider now sits behind it — `anthropicReasoningPort`, live-verified against Claude Opus 5 — and the boundary is what makes that safe rather than the absence of a model.
+
+What holds the line is structural, not procedural:
+
+- **`AuthorizedAction` cannot be minted outside `src/governance/authorization.ts`.** An unexported brand symbol makes constructing one elsewhere a compile error, and a module-private `WeakSet` catches a forgery cast through `as`. 19 hostile attack kinds across 23 tests, including the ones that cannot be refused — documented as inert rather than papered over.
+- **No learner-owned material can reach a provider.** Not by policy: `ConceptContent` has no field it could travel in, and `explanationTask` has no parameter for learner evidence.
+- **A model's words reach a learner only as a labelled explanation** that commits nothing and changes no state (A5 v1.5).
+- **Live provider tests live in `live/`, outside `pnpm check`,** so no ordinary test run makes a network call or spends money.
 
 | AI may propose in a future governed phase | AI may not authoritatively determine |
 |---|---|
@@ -210,23 +243,33 @@ The existing `ReasoningPort` is a provider-neutral proposal boundary only. No AI
 
 An unavailable or invalid proposal must leave deterministic engine behavior safe and unchanged.
 
-## Phase 3 authority decisions
+## Governance
 
-The project uses explicit human approval gates before authority expands. The following recorded decisions guide future implementation but do not themselves add runtime behavior.
+The governing order is [`foundation/`](foundation/): eight articles, adopted by
+a human act recorded in [ADOPTION.md](foundation/ADOPTION.md), amended only
+through A8.
 
-| Decision | Locked principle |
-|---|---|
-| **D1 — Learner Choice Semantics** | Only explicit learner choice, specifically `select-offer`, may authorize commitment to an offered learning path. |
-| **D2 — Learning-State Authority** | The engine is evidence-centred: observations, derived interpretations, and authoritative state remain distinct. |
-| **D3 — Curriculum Identity & Authority** | Curriculum authority governs educational structure, not mathematical truth or learner consent. |
-| **D4 — Academic Level & Progression** | Academic level is context, not mathematical truth; progression is a qualified governed claim, not an automatic consequence. |
-| **D5 — Content Authority** | Scoped human authority authorizes content; constitutional validation establishes admissibility; delegated publication activates admissible versions; the engine executes only active authorized content. |
-| **D6 — Knowledge Relationships** | Relationships are typed, authority-scoped, versioned semantic claims; only explicitly authorized relationship types may inform a decisioning purpose. |
-| **D7 — Experience Lifecycle** | Experience definitions, offers, instances, lifecycle observations, assessment, evidence, and state are separate; lifecycle facts do not establish learning. |
-| **D8 — Assessment & Evidence Authority** | Assessment observations are qualified, provenance-bound, scope-limited claims; evidence does not automatically become learner-state truth. |
-| **D9 — Decisioning & Policy Authority** | Decisioning deterministically executes constitutionally admissible authorized policy over qualified, versioned inputs; it is explainable, non-consensual, and non-mutating. |
+| | Article | In one line |
+|---|---|---|
+| **A1** | Purpose | What Lumina is for, and who it serves |
+| **A2** | Learner Agency | Choice is never inferred; declining is a real answer |
+| **A3** | Authority | Who may decide what, and where the first authority comes from |
+| **A4** | The Authority Seam | Capability is not authority; the line nothing crosses by being convincing |
+| **A5** | AI Boundary | AI is the intelligence inside the system, never its sovereign |
+| **A6** | Accountability | Every consequential action traces to a cause a person can inspect |
+| **A7** | Fail-Closed | Do less when uncertain — and every hold must name its exit |
+| **A8** | Amendment | How this order changes, preserves itself, and ends cleanly |
 
-Future phases must not reinterpret these decisions implicitly. Policy governance, durable history, version migration, AI authority, and delivery/accessibility governance require further explicit decisions before implementation.
+Governance here is **executable**. [`foundation/README.md`](foundation/README.md)
+carries a map of every rule beside the test or build gate that fails when it is
+broken, and marks the ones nothing enforces as `by review` rather than counting
+them as enforced. A row claiming enforcement it does not have is treated as
+worse than an admitted gap.
+
+The previous order — 36 prose specifications, D1–D55 — could not lawfully
+authorise anything: D1–D19 were lost, there was no amendment rule, and nothing
+was checked by anything. It is preserved in
+[`governance/historical/`](governance/historical/) and **confers nothing**.
 
 ## Repository structure
 
@@ -255,12 +298,29 @@ src/
 │   ├── learner-record.ts            # Evidence, interpretations, commitments, events, state
 │   ├── pedagogical-model.ts         # Layered pedagogical guidance
 │   └── policy-governance.ts         # Safeguards and governance extension points
+├── governance/
+│   ├── authorization.ts             # AuthorizedAction — mintable here and nowhere else
+│   └── proposal-policy.ts           # Policies that gate proposals deterministically
+├── providers/
+│   ├── anthropic-reasoning-port.ts  # A real model behind ReasoningPort
+│   └── reasoning-prompt.ts          # The prompt, and what it may not contain
 ├── seed/
-│   └── functions-seed.ts            # Versioned Functions knowledge/pedagogy seed graph
+│   ├── topic-seed.ts                # One topic's content, before assembly
+│   ├── functions-seed.ts            # Functions — 8 concepts
+│   ├── sequences-seed.ts            # Patterns and sequences — 4 concepts
+│   ├── curriculum.ts                # The one catalogue, and the edges between topics
+│   └── AUTHORSHIP.md                # Who drafted the corpus, and who is answerable
 └── index.ts                          # Standalone public export surface
 
-test/                                 # Headless Node/tsx contract and behavior tests
+cli/                                  # Terminal surface — presentation only, no decisions
+web/                                  # Browser surface — same engine, build-verified offline
+test/                                 # Headless contract and behaviour tests (222)
+test/hostile/                         # Attacks on the authority seam
+live/                                 # Provider tests, deliberately outside `pnpm check`
+foundation/                           # A1–A8, the adoption record, and the enforcement map
+governance/historical/                # D1–D55, superseded, conferring nothing
 demo/                                 # Deterministic, semantic demonstration scenarios
+FOUND-BY-USE.md                       # The defect ledger — start here
 SLICE-1-REPORT.md ... SLICE-5-REPORT.md
 ```
 
@@ -304,17 +364,31 @@ import {
 
 Consumers should use the types/contracts as semantic interfaces. They must not assume a UI object, transport request, persistence model, real AI provider, assessment service, or operational content-management system exists.
 
-## Verification history
+## Verification
 
-| Slice | Verification result | Demonstration |
-|---|---|---|
-| Slice 1 | `pnpm check` passed — 20/20 tests. | Domain-kernel validation. |
-| Slice 2 | `pnpm check` passed — 33/33 tests. | Deterministic headless decision scenario. |
-| Slice 3 | `pnpm check` passed — 40/40 tests. | State evolution and deterministic replay. |
-| Slice 4 | `pnpm check` passed — 47/47 tests. | Knowledge and pedagogy resolution. |
-| Slice 5 | `pnpm check` passed — 54/54 tests. | Compatible and incompatible semantic delivery contexts. |
+```bash
+pnpm check          # strict typecheck, then the full suite — 222 tests
+pnpm learn          # the terminal surface
+pnpm ui             # the browser surface, at 127.0.0.1
+pnpm build:pages    # build, stage, and re-verify the deployable artefact
+```
 
-The detailed scope, changes, tests, deviations, and open decisions for the implemented slices are recorded in the repository’s [`SLICE-1-REPORT.md`](./SLICE-1-REPORT.md) through [`SLICE-5-REPORT.md`](./SLICE-5-REPORT.md).
+Two disciplines are worth stating because they decide what the numbers mean:
+
+**Every guarantee is proven by breaking it.** A test is not accepted until the
+code it defends has been deliberately broken and *that specific test* has been
+watched failing. A test that passes for the wrong reason is worse than no test,
+and this project has caught itself writing one.
+
+**The web artefact is gated, not just built.** `web/verify.mjs` fails the build
+if the bundle ever gains `fetch(`, `XMLHttpRequest`, `WebSocket`,
+`sendBeacon`, a dynamic `import(`, or anything `anthropic` — and if the page
+itself gains any external URL, font, or iframe. The guarantee has to hold on the
+artefact that reaches a learner, so publishing refuses if it changes.
+
+The slice reports ([`SLICE-1-REPORT.md`](./SLICE-1-REPORT.md) through
+[`SLICE-5-REPORT.md`](./SLICE-5-REPORT.md)) record the original Phase 2
+implementation history and its test counts at the time.
 
 ## Explicit non-goals and deferred work
 
@@ -322,12 +396,12 @@ The following are intentionally absent and must not be inferred from the current
 
 | Deferred or prohibited area | Reason |
 |---|---|
-| UI, React, Base44, browser/device detection, screen flows | The engine is interface-agnostic and semantic, not presentation-driven. |
+| Browser/device detection, screen flows, framework coupling *inside the engine* | The engine is interface-agnostic and semantic. Two surfaces exist in `cli/` and `web/`; neither makes a decision, and the engine cannot see them. |
 | API transport, webhooks, queues, event bus, distributed execution | Runtime/infrastructure concerns remain outside the deterministic kernel. |
 | Database, graph database, persistence, audit store | Retention, correction, sequencing, tenancy, retrieval, and deletion governance remain separate decisions. |
 | CMS, content editor, curriculum authoring/publishing workflow | Content authority, validation, publication, lifecycle, and version governance are conceptual boundaries awaiting implementation approval. |
 | Assessment service, evaluator, rubric, scoring, free-text correctness inference | Assessment remains an external replaceable observation boundary. |
-| Real AI, prompts, provider selection, tool orchestration | AI remains an optional non-authoritative proposal boundary pending further governance. |
+| AI as an authority over anything | A real provider now sits behind `ReasoningPort`. It proposes and authorises nothing: `AuthorizedAction` cannot be minted outside `src/governance/authorization.ts`, and no learner-owned material has a field to travel in. |
 | Mastery/readiness scoring, learner diagnosis, promotion, certification, grading | These claims require distinct authority, evidence sufficiency, policy, correction, and audit decisions. |
 | Automatic prerequisite blocking, automatic progression, silent alternative substitution | These would violate learner choice, relationship, and delivery safeguards. |
 

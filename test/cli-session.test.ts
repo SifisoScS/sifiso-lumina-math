@@ -1,8 +1,15 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { evaluateStateMutationPolicy, functionsSeedKnowledge } from "../src/index.js";
-import { describeHistory, describeOffers, describeOpportunity, materialFor } from "../cli/describe.js";
+import { evaluateStateMutationPolicy, luminaCurriculum, topic } from "../src/index.js";
+import {
+  conceptsByTopic,
+  describeForSharing,
+  describeHistory,
+  describeOffers,
+  describeOpportunity,
+  materialFor,
+} from "../cli/describe.js";
 import { decodeRecord, encodeRecord } from "../cli/record-format.js";
 import { activePedagogicalLayer, pedagogicalLayerFor } from "../src/domain/learner-record.js";
 import {
@@ -28,9 +35,10 @@ import {
  */
 
 const catalogue = {
-  concepts: functionsSeedKnowledge.concepts,
-  assets: functionsSeedKnowledge.assets,
-  experiences: functionsSeedKnowledge.experiences,
+  topics: luminaCurriculum.topics,
+  concepts: luminaCurriculum.concepts,
+  assets: luminaCurriculum.assets,
+  experiences: luminaCurriculum.experiences,
 };
 
 test("a session opens on the concept the learner picked, and offers them something", () => {
@@ -222,7 +230,7 @@ test("every concept a learner can pick opens with something on offer", () => {
   // learner asked for. Domain and Range has no material at that layer, so
   // picking it led straight to an empty screen -- a depth chosen on someone's
   // behalf, silently excluding the only thing there was to show them.
-  for (const concept of functionsSeedKnowledge.concepts) {
+  for (const concept of luminaCurriculum.concepts) {
     const session = startSession(concept.id);
     assert.ok(
       session.offers.length > 0,
@@ -358,7 +366,7 @@ test("choosing to see a representation actually shows it", () => {
 });
 
 test("every offer that names material can show it", () => {
-  for (const concept of functionsSeedKnowledge.concepts) {
+  for (const concept of luminaCurriculum.concepts) {
     for (const offer of startSession(concept.id).offers) {
       const names = offer.opportunity.knowledgeAssetId !== undefined ||
         offer.opportunity.learningExperienceId !== undefined ||
@@ -396,7 +404,7 @@ test("nothing shown to a learner is invented", () => {
     permitted.add(concept.conceptualDescription);
   }
 
-  for (const concept of functionsSeedKnowledge.concepts) {
+  for (const concept of luminaCurriculum.concepts) {
     for (const offer of startSession(concept.id).offers) {
       for (const line of materialFor(offer.opportunity, catalogue)) {
         assert.ok(permitted.has(line), `a learner would be shown text no asset contains: ${line}`);
@@ -805,4 +813,132 @@ test("the engine's readings are shown apart from the learner's words", () => {
 test("a learner with nothing kept is told that, not shown an empty list", () => {
   const shown = describeHistory(startSession("concept.function").record, catalogue).join("\n");
   assert.match(shown, /Nothing is kept about you yet/);
+});
+
+// ---------------------------------------------------------------------------
+// Finding your way around a corpus that has grown
+// ---------------------------------------------------------------------------
+
+test("a learner can see which subject each idea belongs to", () => {
+  // A flat list read fine at five concepts and stopped reading fine at twelve.
+  const groups = conceptsByTopic(catalogue);
+
+  assert.ok(groups.length >= 2, "every idea was filed under one topic");
+  assert.deepEqual(
+    groups.flatMap((group) => group.concepts.map((concept) => concept.id)).sort(),
+    catalogue.concepts.map((concept) => concept.id).slice().sort(),
+    "grouping lost or invented a concept",
+  );
+  for (const group of groups) {
+    for (const concept of group.concepts) {
+      assert.equal(concept.topicId, group.topic.id, `${concept.id} is listed under the wrong topic`);
+    }
+  }
+});
+
+test("grouping refuses a concept whose topic is missing rather than hiding it", () => {
+  // The failure worth guarding is the silent one. Grouping what it can and
+  // skipping the rest would leave a concept written, published, counted, and
+  // unreachable -- with the picker looking entirely normal.
+  const orphaned = {
+    ...catalogue,
+    topics: catalogue.topics.filter((topic) => topic.id !== catalogue.concepts[0]?.topicId),
+  };
+
+  assert.throws(() => conceptsByTopic(orphaned), /unreachable/);
+});
+
+test("a topic with nothing in it is not offered as an empty heading", () => {
+  const withSpare = {
+    ...catalogue,
+    topics: [
+      ...catalogue.topics,
+      topic({
+        id: "topic.not-written-yet",
+        domainId: "mathematics.school-foundations",
+        title: "Nothing here yet",
+        description: "A topic declared before any concept was written for it.",
+        version: "math-lumina.seed.v1",
+      }),
+    ],
+  };
+
+  const titles = conceptsByTopic(withSpare).map((group) => group.topic.title);
+  assert.ok(!titles.includes("Nothing here yet"), "a learner was shown a heading with nothing under it");
+});
+
+// ---------------------------------------------------------------------------
+// Handing your record to someone else
+//
+// O4 closed shut: Lumina serves learners, and teachers, parents, and
+// institutions see only what a learner chooses to show them. That is only true
+// if a learner can show it, so these are the tests the amendment rests on.
+// ---------------------------------------------------------------------------
+
+function sharedSession() {
+  let session = startSession("concept.function");
+  session = applyReflection(session, "I can do the algebra but I don't know what it means.", "concept.function").session;
+  session = applyConfidence(session, "Not sure", "concept.function").session;
+  const index = session.offers.findIndex((offer) => offer.opportunity.kind === "practise");
+  const experienceId = session.offers[index]?.opportunity.learningExperienceId;
+  if (experienceId !== undefined) {
+    session = applyChoice(session, "select-offer", index).session;
+    session = applyPractice(session, "f(x) = 2x, so f(5) = 10", experienceId, "concept.function").session;
+  }
+  return session;
+}
+
+test("what a learner hands over is exactly what they can already see", () => {
+  // The copy meant for a teacher is the one that would get tidied, and a
+  // learner would then hand over something they had not read. Building the
+  // shared account from the same lines the learner sees is what stops that,
+  // and this is the test that keeps the two from being written separately.
+  const session = sharedSession();
+  const shared = describeForSharing(session.record, catalogue);
+
+  for (const line of describeHistory(session.record, catalogue)) {
+    assert.ok(
+      shared.includes(line),
+      `the shared copy left out a line the learner can see: ${line}`,
+    );
+  }
+});
+
+test("a shared record says, in itself, that nothing was marked", () => {
+  // The likely misuse is not a leak. It is a teacher reading an unassessed
+  // answer as a wrong one, so the document has to say what it is to whoever
+  // opens it, without depending on the learner explaining it.
+  const shared = describeForSharing(sharedSession().record, catalogue).join("\n");
+
+  assert.match(shared, /is a mark, a grade, a level, or a judgement of/);
+  assert.match(shared, /does not assess/);
+  assert.match(shared, /Shared by the learner/);
+  assert.match(shared, /The system did not send it/);
+});
+
+test("a learner's own words reach the other person unchanged", () => {
+  const words = "I can do the algebra but I don't know what it means.";
+  const shared = describeForSharing(sharedSession().record, catalogue).join("\n");
+
+  assert.ok(shared.includes(words), "the learner's own sentence did not survive being shared");
+  assert.ok(shared.includes("f(x) = 2x, so f(5) = 10"), "the answer the learner gave was not shared");
+});
+
+test("sharing writes nothing and changes nothing", () => {
+  // Sharing is an act of the learner's, not an event in their history. If it
+  // wrote anything, the record would carry a trace of who a learner showed it
+  // to, which is a fact about a second party that O2 has not answered.
+  const session = sharedSession();
+  const before = JSON.stringify(session.record);
+
+  describeForSharing(session.record, catalogue);
+
+  assert.equal(JSON.stringify(session.record), before, "sharing altered the record");
+});
+
+test("a learner with nothing kept can still hand over an honest empty account", () => {
+  const shared = describeForSharing(startSession("concept.function").record, catalogue).join("\n");
+
+  assert.match(shared, /Nothing is kept about you yet/);
+  assert.match(shared, /does not assess/);
 });

@@ -10,7 +10,7 @@ Eight articles governing the Math Lumina learning engine.
 
 | | |
 |---|---|
-| **Articles** | A1–A8 · A4 v1.4 · A5 v1.5 · A6 v1.2 · A7 v1.1 · rest v1.0 |
+| **Articles** | A1–A8 · A1 v1.1 · A4 v1.4 · A5 v1.5 · A6 v1.2 · A7 v1.1 · rest v1.0 |
 | **Adopted** | Yes — [ADOPTION.md](ADOPTION.md), 2026-08-29 |
 | **In force** | **Yes** |
 | **Founder** | Sifiso Cyprian Shezi — [RECOGNITION.md](RECOGNITION.md) R1 |
@@ -156,6 +156,16 @@ The point of this foundation is that its load-bearing rules are **types and test
 | A commitment never claims a change that was not made | A6, O8 | `effectiveStateDelta`, `src/domain/learner-record.ts` | **live** |
 | Taking up an offer that moves nothing is still recorded | A2, A6, O8 | `learning-path-accepted` with no `stateCommitmentId` | **live** |
 | A commitment means state changed, with no exceptions to check | A4, A6 | no non-mutating commitment kind exists — the proposal to add one was declined | **live** |
+| No part of the curriculum is cut off from the rest | A1 | `test/mathematical-knowledge.test.ts` — proven: removing the cross-topic edges strands a topic while the per-concept check still passes | **live** |
+| Every concept has material of its own at every depth | A1, A2 | `test/mathematical-knowledge.test.ts` — proven: retargeting one exam-patterns experience fails it | **live** |
+| A bridge experience carries material from the other side, and only from somewhere the graph bridges to | A1 | `test/mathematical-knowledge.test.ts` — proven: a bridge showing only its own side fails it | **live** |
+| A concept whose topic is missing is refused, never silently dropped from the picker | A1, A7 | `conceptsByTopic`, `cli/describe.ts` — proven: skipping instead of throwing fails it | **live** |
+| A learner is never shown a topic heading with nothing under it | A1 | `conceptsByTopic`, `cli/describe.ts` — proven: dropping the empty-group filter fails it | **live** |
+| Corpus content is AI-drafted and human-committed, and nothing here checks the mathematics | A5, A6 | `src/seed/AUTHORSHIP.md` — an unsigned record is the honest state | **by review** |
+| The assessment port is implemented by nothing and wired to nothing | A1, O4 | `test/core-contracts.test.ts` reads the source tree — proven: naming `AssessmentBoundary` outside its own module fails it | **live** |
+| What a learner hands to someone else is exactly what they can already see | A1, A2, O4 | `describeForSharing`, `cli/describe.ts` — built from `describeHistory`; proven: truncating it fails | **live** |
+| A shared record states, in itself, that nothing was marked | A1, A6, O4 | `describeForSharing` — proven: removing the framing fails two tests | **live** |
+| Sharing a record writes nothing and changes nothing | A6, O2, O4 | `describeForSharing` is pure; asserted directly | **live** |
 
 Every row is built. **live** means a test or a build gate fails when the row is broken. **by review** means the enforcement is a sentence a learner reads or a rule about how something looks, which no test defends — a person has to, and saying which is which is the same discipline as marking a row pending rather than quietly counting it.
 

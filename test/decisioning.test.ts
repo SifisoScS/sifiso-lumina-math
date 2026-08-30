@@ -7,7 +7,7 @@ import {
   declaredEvidenceConflict,
   deliveryCapabilityProfile,
   executeDeterministicLearningInteraction,
-  functionsSeedKnowledge,
+  luminaCurriculum,
   candidateLearningOpportunity,
   learningDecision,
   learningOffer,
@@ -68,7 +68,7 @@ function execute(command: Parameters<typeof executeDeterministicLearningInteract
     actor: options?.actor ?? actor,
     deliveryCapabilities: capabilities,
     learnerRecord: options?.learnerRecord ?? recordWithState(),
-    knowledgeCatalog: functionsSeedKnowledge,
+    knowledgeCatalog: luminaCurriculum,
     pedagogicalGuidance: canonicalPedagogicalGuidance,
     ...(options?.activeOffers === undefined ? {} : { activeOffers: options.activeOffers }),
     ...(options?.declaredEvidenceConflicts === undefined ? {} : { declaredEvidenceConflicts: options.declaredEvidenceConflicts }),
@@ -471,7 +471,7 @@ test("no concept is offered the same opportunity twice", () => {
   //
   // Asserted over every concept in the catalogue and both layers, so the next
   // path that converges is caught here rather than in front of a person.
-  for (const concept of functionsSeedKnowledge.concepts) {
+  for (const concept of luminaCurriculum.concepts) {
     for (const layer of ["intuition", "mechanics", "exam-patterns"] as const) {
       const execution = execute(exploreConceptCommand({
         id: `command.distinct.${concept.id}.${layer}`,

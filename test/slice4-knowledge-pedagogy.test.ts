@@ -7,7 +7,7 @@ import {
   currentLearnerState,
   deliveryCapabilityProfile,
   executeDeterministicLearningInteraction,
-  functionsSeedKnowledge,
+  luminaCurriculum,
   isoTimestamp,
   knowledgeAsset,
   knowledgeCatalog,
@@ -33,7 +33,7 @@ function record() {
   return learnerRecord({ learnerId: state.learnerId, evidence: [], events: [], interpretations: [], state, commitments: [] });
 }
 
-function execute(command: Parameters<typeof executeDeterministicLearningInteraction>[0]["command"], catalog = functionsSeedKnowledge) {
+function execute(command: Parameters<typeof executeDeterministicLearningInteraction>[0]["command"], catalog = luminaCurriculum) {
   return executeDeterministicLearningInteraction({
     command,
     actor,
@@ -46,8 +46,8 @@ function execute(command: Parameters<typeof executeDeterministicLearningInteract
 }
 
 test("Slice 4 knowledge graph uses stable identity, explicit approved semantics, and a deliberately bounded local resolver", () => {
-  const functionContext = resolveKnowledgeContext({ catalog: functionsSeedKnowledge, conceptId: "concept.function" as never });
-  const domainRangeContext = resolveKnowledgeContext({ catalog: functionsSeedKnowledge, conceptId: "concept.domain-range" as never });
+  const functionContext = resolveKnowledgeContext({ catalog: luminaCurriculum, conceptId: "concept.function" as never });
+  const domainRangeContext = resolveKnowledgeContext({ catalog: luminaCurriculum, conceptId: "concept.domain-range" as never });
   assert.notEqual(functionContext, undefined);
   assert.notEqual(domainRangeContext, undefined);
   if (functionContext === undefined || domainRangeContext === undefined) throw new Error("Published seed concepts must resolve.");
@@ -65,14 +65,14 @@ test("Slice 4 knowledge graph uses stable identity, explicit approved semantics,
 });
 
 test("multiple independently addressable representation forms and layer-compatible experiences resolve without UI coupling", () => {
-  const all = resolveKnowledgeContext({ catalog: functionsSeedKnowledge, conceptId: "concept.function" as never });
+  const all = resolveKnowledgeContext({ catalog: luminaCurriculum, conceptId: "concept.function" as never });
   const intuition = resolveKnowledgeContext({
-    catalog: functionsSeedKnowledge,
+    catalog: luminaCurriculum,
     conceptId: "concept.function" as never,
     pedagogicalLayer: "intuition",
   });
   const mechanics = resolveKnowledgeContext({
-    catalog: functionsSeedKnowledge,
+    catalog: luminaCurriculum,
     conceptId: "concept.function" as never,
     pedagogicalLayer: "mechanics",
   });
@@ -92,9 +92,9 @@ test("multiple independently addressable representation forms and layer-compatib
 });
 
 test("misconception knowledge is available only through explicit supported context and is never inferred from a raw practice response", () => {
-  const unsupported = resolveKnowledgeContext({ catalog: functionsSeedKnowledge, conceptId: "concept.function" as never });
+  const unsupported = resolveKnowledgeContext({ catalog: luminaCurriculum, conceptId: "concept.function" as never });
   const supported = resolveKnowledgeContext({
-    catalog: functionsSeedKnowledge,
+    catalog: luminaCurriculum,
     conceptId: "concept.function" as never,
     supportedMisconceptionAssetIds: ["asset.function.input-output-misconception" as never],
   });
@@ -142,7 +142,7 @@ test("material decisions cite resolved knowledge and version context while safe 
     actor,
     deliveryCapabilities: capabilities,
     learnerRecord: record(),
-    knowledgeCatalog: functionsSeedKnowledge,
+    knowledgeCatalog: luminaCurriculum,
     pedagogicalGuidance: canonicalPedagogicalGuidance,
     evaluatedAt: timestamp,
   });
@@ -192,8 +192,8 @@ test("a later knowledge version creates a new decision context without rewriting
     version: "math-lumina.seed.v2",
   });
   const revisedCatalog = knowledgeCatalog({
-    ...functionsSeedKnowledge,
-    concepts: functionsSeedKnowledge.concepts.map((candidate) => candidate.id === revisedConcept.id ? revisedConcept : candidate),
+    ...luminaCurriculum,
+    concepts: luminaCurriculum.concepts.map((candidate) => candidate.id === revisedConcept.id ? revisedConcept : candidate),
   });
   const revised = execute(requestLearningGuidanceCommand({
     id: "command.slice4.version.revised",

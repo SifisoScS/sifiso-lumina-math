@@ -4,7 +4,7 @@ import {
   deliveryCapabilityProfile,
   executeDeterministicLearningInteraction,
   exploreConceptCommand,
-  functionsSeedKnowledge,
+  luminaCurriculum,
   isoTimestamp,
   learnerRecord,
   trustedActorContext,
@@ -37,7 +37,7 @@ const result = executeDeterministicLearningInteraction({
     state: currentLearnerState({ learnerId, engagementFocus: "unobserved" }),
     commitments: [],
   }),
-  knowledgeCatalog: functionsSeedKnowledge,
+  knowledgeCatalog: luminaCurriculum,
   pedagogicalGuidance: canonicalPedagogicalGuidance,
   evaluatedAt,
 });

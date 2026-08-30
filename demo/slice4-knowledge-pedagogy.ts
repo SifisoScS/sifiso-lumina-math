@@ -3,7 +3,7 @@ import {
   currentLearnerState,
   deliveryCapabilityProfile,
   executeDeterministicLearningInteraction,
-  functionsSeedKnowledge,
+  luminaCurriculum,
   isoTimestamp,
   learnerRecord,
   learnerReflection,
@@ -49,7 +49,7 @@ const command = requestLearningGuidanceCommand({
   conceptId: "concept.function",
 });
 const knowledge = resolveKnowledgeContext({
-  catalog: functionsSeedKnowledge,
+  catalog: luminaCurriculum,
   conceptId: "concept.function" as never,
   pedagogicalLayer: "intuition",
 });
@@ -61,7 +61,7 @@ const execution = executeDeterministicLearningInteraction({
   actor,
   deliveryCapabilities,
   learnerRecord: learnerContext,
-  knowledgeCatalog: functionsSeedKnowledge,
+  knowledgeCatalog: luminaCurriculum,
   pedagogicalGuidance: canonicalPedagogicalGuidance,
   evaluatedAt: timestamp,
 });

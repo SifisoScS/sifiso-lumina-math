@@ -5,7 +5,7 @@ import {
   conceptContent,
   conceptContentForTask,
   explanationPrompt,
-  functionsSeedKnowledge,
+  luminaCurriculum,
   learnerReflection,
   reasoningTask,
 } from "../src/index.js";
@@ -20,7 +20,7 @@ import { timestamp } from "./fixtures.js";
  * learner text into a prompt, these tests fail before anything is sent.
  */
 
-const concepts = functionsSeedKnowledge.concepts;
+const concepts = luminaCurriculum.concepts;
 
 /** A learner's own words. Nothing in the prompt path should ever carry these. */
 const reflection = learnerReflection({

@@ -29,7 +29,7 @@ import {
 import { ExperienceEvidenceType, PedagogicalLayer } from "../src/domain/mathematical-knowledge.js";
 import { canonicalPedagogicalGuidance } from "../src/domain/pedagogical-model.js";
 import { isoTimestamp } from "../src/domain/primitives.js";
-import { functionsSeedKnowledge } from "../src/seed/functions-seed.js";
+import { luminaCurriculum } from "../src/seed/curriculum.js";
 
 /**
  * The session, with no terminal in it.
@@ -156,7 +156,7 @@ function refreshed(session: Session, before: CurrentLearnerState): Session {
     actor,
     deliveryCapabilities: capabilities,
     learnerRecord: session.record,
-    knowledgeCatalog: functionsSeedKnowledge,
+    knowledgeCatalog: luminaCurriculum,
     pedagogicalGuidance: canonicalPedagogicalGuidance,
     activeOffers: session.offers,
     evaluatedAt: now(),
@@ -174,7 +174,7 @@ function advance(
     actor,
     deliveryCapabilities: capabilities,
     learnerRecord: session.record,
-    knowledgeCatalog: functionsSeedKnowledge,
+    knowledgeCatalog: luminaCurriculum,
     pedagogicalGuidance: canonicalPedagogicalGuidance,
     activeOffers: session.offers,
     evaluatedAt: now(),

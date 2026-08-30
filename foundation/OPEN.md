@@ -50,16 +50,6 @@ What the system does when something a learner writes suggests distress or risk. 
 
 ---
 
-## O4 — Assessment, mastery, readiness, progression
-
-Whether the system may conclude that a learner understands something, is ready for something, or has progressed — and on what evidence.
-
-**Why open:** every such claim is a claim *about a person*, and the threshold question is genuinely hard. The previous corpus circled it for many specifications without settling it.
-
-**Current behaviour:** `AssessmentBoundary` exists as a replaceable port and is unimplemented and unwired. The engine makes no mastery, readiness, or grading claim.
-
----
-
 ## O5 — Prerequisites and access
 
 Whether any prerequisite may restrict access to content, or whether all content stays reachable and prerequisites are advisory only.
@@ -105,6 +95,30 @@ The register recorded the difficulty honestly — claims of authority are open-e
 **A standing constraint on Phase 5b.** Because the screen is a floor, [A5](A5-ai-boundary.md) now requires that any surface showing machine-originated text shows it as machine-originated and beside the learner's own record rather than in place of it. A learner who can see what is recorded can check any claim about it — that is what makes an unscreened claim survivable. No surface shows model text today, so this is listed as **pending** in the enforcement map rather than live, and it binds the first surface that does.
 
 **Enforced by:** `test/reasoning-port.test.ts` and `test/hostile-boundary.test.ts`. Proven by mutation in both directions: unwiring the screen fails the two refusal tests, and adding a word the corpus actually uses fails the two false-positive tests.
+
+---
+
+### O4 — Assessment, mastery, readiness, progression · **closed 2026-08-30**
+
+**Was:** whether the system may conclude that a learner understands something, is ready for something, or has progressed — and on what evidence. Open since adoption, because every such claim is a claim *about a person* and the threshold question is genuinely hard. The previous corpus circled it for many specifications without settling it.
+
+The pressure to close it *open* was real and is worth stating: three of [A1](A1-purpose.md)'s four constituencies — teachers, parents, institutions — need the system to say something about a learner, and O4 forbade exactly that.
+
+**Closed by:** the Founder, choosing to close it shut against a bounded-assessment alternative and its stated costs. Drafted and implemented by Claude (Opus 5).
+
+**Self-review declared under A8:** the same author wrote O4's original text, framed both options, marked one as recommended, implemented the recommendation, and wrote this record of it. The Founder chose. Nothing else in that sequence is independent — including the claim that the learner-only answer became stronger after Phase 9, which is an argument made by the author of Phase 9 for the option that author recommended.
+
+**How it was closed.** Math Lumina serves learners. Teachers, parents, and institutions are served *through* the learner and never *about* them. A1 is amended to v1.1 to say so, and to say what the system may never conclude.
+
+The reason this is an answer rather than a refusal is Phase 9. Before it, "the learner can show you their record" was a sentence with nothing behind it: `originalText` was stored and displayed by nothing, so a learner could not read their own words, let alone hand them over. Now they can read all of it, and `describeForSharing` lays the same lines out to give to someone — framed, in the document itself, as unmarked and unassessed, because the likely misuse is not a leak but a teacher reading an unassessed answer as a wrong one.
+
+**What it costs, and who pays it.** An institution that needs a system-authored record of a learner is not served. A teacher who needs a mastery report will not get one. That is the answer to their need and not an omission from it. This was put before the decision and accepted.
+
+**What stays open.** Everything about a second party still belongs to [O2](#o2--privacy-retention-deletion-jurisdiction). A learner handing their record to a teacher creates a copy the learner does not control, and O2's narrowing explicitly does not cover it. The affordance produces text and puts it on the learner's clipboard or their terminal; where it goes next is outside this system, and outside what has been answered.
+
+**What this does not do.** It does not make a mastery claim impossible to add later — nothing can. It makes adding one an A8 amendment to A1 with a named author, rather than a feature that arrives inside a pull request. `AssessmentBoundary` stays a contract with no implementation and nothing wired to it, which is now a constitutional position rather than a gap.
+
+**Enforced by:** `describeForSharing`, `cli/describe.ts`, and `test/cli-session.test.ts`. Proven by mutation: truncating the shared account fails the test that it omits nothing, and removing the framing fails the test that it says nothing was marked.
 
 ---
 

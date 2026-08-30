@@ -1,8 +1,10 @@
-import { functionsSeedKnowledge } from "../src/seed/functions-seed.js";
+import { luminaCurriculum } from "../src/seed/curriculum.js";
 import { PedagogicalLayer } from "../src/domain/mathematical-knowledge.js";
 import { LearnerChoiceKind, activePedagogicalLayer } from "../src/domain/learner-record.js";
 import {
+  conceptsByTopic,
   conceptSummary,
+  describeForSharing,
   describeHistory,
   describeOpportunity,
   materialFor,
@@ -34,9 +36,10 @@ import { forgetRecord, loadRecord, recordExists, saveRecord } from "./store.js";
  */
 
 const catalogue = {
-  concepts: functionsSeedKnowledge.concepts,
-  assets: functionsSeedKnowledge.assets,
-  experiences: functionsSeedKnowledge.experiences,
+  topics: luminaCurriculum.topics,
+  concepts: luminaCurriculum.concepts,
+  assets: luminaCurriculum.assets,
+  experiences: luminaCurriculum.experiences,
 };
 
 const LAYERS: readonly { readonly id: PedagogicalLayer; readonly label: string; readonly hint: string }[] = [
@@ -104,12 +107,21 @@ function conceptTitle(id: string | undefined): string {
 
 function renderConcepts(): void {
   const list = clear(mount("concepts"));
-  for (const concept of catalogue.concepts) {
-    const card = el("button", "concept-card");
-    card.appendChild(el("strong", undefined, concept.title));
-    card.appendChild(el("p", undefined, concept.conceptualDescription));
-    card.addEventListener("click", () => open(concept.id));
-    list.appendChild(card);
+  for (const group of conceptsByTopic(catalogue)) {
+    const heading = el("div", "topic-heading");
+    heading.appendChild(el("h2", undefined, group.topic.title));
+    heading.appendChild(el("p", undefined, group.topic.description));
+    list.appendChild(heading);
+
+    const cards = el("div", "concepts-grid");
+    for (const concept of group.concepts) {
+      const card = el("button", "concept-card");
+      card.appendChild(el("strong", undefined, concept.title));
+      card.appendChild(el("p", undefined, concept.conceptualDescription));
+      card.addEventListener("click", () => open(concept.id));
+      cards.appendChild(card);
+    }
+    list.appendChild(cards);
   }
 }
 
@@ -406,6 +418,28 @@ export function start(): void {
   mount("history-close").addEventListener("click", () => {
     view.reviewing = false;
     render();
+  });
+  mount("history-share").addEventListener("click", () => {
+    // The clipboard and nowhere else. There is no upload here and no link to
+    // generate: what the learner does with the text after this is theirs, and
+    // the page has no way of finding out.
+    const record = view.session?.record;
+    if (record === undefined) {
+      view.note = "There is nothing kept about you yet, so there is nothing to copy.";
+      render();
+      return;
+    }
+    const text = describeForSharing(record, catalogue).join("\n");
+    void navigator.clipboard.writeText(text).then(
+      () => {
+        view.note = "Copied. Paste it wherever you like — it went to your clipboard and nowhere else.";
+        render();
+      },
+      () => {
+        view.note = "This browser would not let the page copy for you. Select the text above and copy it yourself.";
+        render();
+      },
+    );
   });
   mount("leave").addEventListener("click", () => {
     view.session = undefined;

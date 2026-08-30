@@ -9,7 +9,7 @@ import {
   deliveryCapabilityProfile,
   evaluateGovernance,
   executeDeterministicLearningInteraction,
-  functionsSeedKnowledge,
+  luminaCurriculum,
   learnerReflection,
   learnerRecord,
   provenanceReference,
@@ -75,7 +75,7 @@ function contextFor(learnerId: string, evidenceSuffix: string) {
     actor: actorFor(learnerId),
     deliveryCapabilities: capabilities,
     learnerRecord: recordFor(learnerId, reflection),
-    knowledgeCatalog: functionsSeedKnowledge,
+    knowledgeCatalog: luminaCurriculum,
     pedagogicalGuidance: canonicalPedagogicalGuidance,
     evaluatedAt: timestamp,
   });

@@ -6,7 +6,7 @@ import {
   anthropicReasoningPort,
   currentLearnerState,
   evaluateGovernance,
-  functionsSeedKnowledge,
+  luminaCurriculum,
   isMintedAuthorization,
   reasoningProviderEnabled,
   reasoningTask,
@@ -59,7 +59,7 @@ const task = reasoningTask({
 
 function port() {
   return anthropicReasoningPort({
-    catalogue: functionsSeedKnowledge.concepts,
+    catalogue: luminaCurriculum.concepts,
     maxSummaryCharacters: envelope!.maxSummaryCharacters,
   });
 }
@@ -171,9 +171,10 @@ test("a real model's explanation reaches a learner, labelled and beside their re
     activeConceptId: "concept.function",
   });
   const shown = describeExplanation(outcome, state, {
-    concepts: functionsSeedKnowledge.concepts,
-    assets: functionsSeedKnowledge.assets,
-    experiences: functionsSeedKnowledge.experiences,
+    topics: luminaCurriculum.topics,
+  concepts: luminaCurriculum.concepts,
+    assets: luminaCurriculum.assets,
+    experiences: luminaCurriculum.experiences,
   });
 
   console.log(`\n${shown.map((line) => `  ${line}`).join("\n")}\n`);

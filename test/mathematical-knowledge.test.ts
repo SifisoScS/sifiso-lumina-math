@@ -4,31 +4,39 @@ import test from "node:test";
 import {
   canonicalPedagogicalGuidance,
   conceptRelationship,
+  ConceptRelationshipKind,
   DomainValidationError,
-  functionsSeedKnowledge,
+  luminaCurriculum,
   knowledgeAsset,
+  LearningExperience,
   learningExperience,
 } from "../src/index.js";
 import { evidenceTypeCollection } from "../cli/session.js";
 
-test("Functions seed knowledge resolves as a consistent versioned catalog", () => {
-  assert.equal(functionsSeedKnowledge.domains.length, 1);
-  assert.equal(functionsSeedKnowledge.topics.length, 1);
+test("the curriculum resolves as a consistent versioned catalogue", () => {
+  // One domain is a scope decision rather than a quantity, so it is asserted
+  // exactly: a second mathematics domain would be a change worth stopping for.
+  assert.equal(luminaCurriculum.domains.length, 1);
 
-  // Floors, not exact figures. An exact count turns every addition to the
-  // corpus into a failing test, which teaches whoever is writing content that
-  // the guards are an obstacle rather than a help -- and the guards worth
-  // having are the ones about whether the content reaches a learner, not the
-  // ones about how much of it there is.
-  assert.ok(functionsSeedKnowledge.concepts.length >= 3);
-  assert.ok(functionsSeedKnowledge.relationships.length >= 4);
-  assert.ok(functionsSeedKnowledge.assets.length >= 33);
-  assert.ok(functionsSeedKnowledge.experiences.length >= 17);
+  // Everything below is a floor, not an exact figure. An exact count turns
+  // every addition to the corpus into a failing test, which teaches whoever is
+  // writing content that the guards are an obstacle rather than a help -- and
+  // the guards worth having are the ones about whether the content reaches a
+  // learner, not the ones about how much of it there is.
+  //
+  // More than one topic is the floor that matters here. A learner who finishes
+  // one topic has to have somewhere to go, and a single topic can be completed
+  // in a sitting or two.
+  assert.ok(luminaCurriculum.topics.length >= 2);
+  assert.ok(luminaCurriculum.concepts.length >= 10);
+  assert.ok(luminaCurriculum.relationships.length >= 18);
+  assert.ok(luminaCurriculum.assets.length >= 100);
+  assert.ok(luminaCurriculum.experiences.length >= 60);
 
   // Looked up by kind rather than by position, so reordering the corpus is not
   // a failure and adding to it does not shift what is being asserted.
   const semantics = new Map(
-    functionsSeedKnowledge.relationships.map((relationship) => [relationship.kind, relationship.semanticKind]),
+    luminaCurriculum.relationships.map((relationship) => [relationship.kind, relationship.semanticKind]),
   );
   assert.equal(semantics.get("prerequisite"), "prerequisite-of");
   assert.equal(semantics.get("related"), "related-to");
@@ -46,7 +54,7 @@ test("every experience intent a layer can offer has content behind it", () => {
   const offerable = new Set(
     canonicalPedagogicalGuidance.flatMap((guidance) => guidance.suitableExperienceIntents),
   );
-  const written = new Set(functionsSeedKnowledge.experiences.map((experience) => experience.intent));
+  const written = new Set(luminaCurriculum.experiences.map((experience) => experience.intent));
 
   for (const intent of offerable) {
     assert.ok(
@@ -56,12 +64,151 @@ test("every experience intent a layer can offer has content behind it", () => {
   }
 });
 
+test("no part of the curriculum is cut off from the rest of it", () => {
+  // The per-concept check below cannot see an island. Two topics can each be
+  // connected inside themselves and never touch, and every concept in both
+  // still passes: a learner who started in one would simply never discover that
+  // the other existed, and nothing in the corpus would say so.
+  //
+  // This is what makes the cross-topic relationships load-bearing rather than
+  // decorative. Delete them and this fails; the per-concept check does not.
+  const neighbours = new Map<string, string[]>();
+  for (const item of luminaCurriculum.concepts) {
+    neighbours.set(item.id, []);
+  }
+  for (const relationship of luminaCurriculum.relationships) {
+    neighbours.get(relationship.sourceConceptId)?.push(relationship.targetConceptId);
+    neighbours.get(relationship.targetConceptId)?.push(relationship.sourceConceptId);
+  }
+
+  const start = luminaCurriculum.concepts[0];
+  assert.ok(start, "the curriculum has no concepts at all");
+  const reached = new Set<string>([start.id]);
+  const queue: string[] = [start.id];
+  while (queue.length > 0) {
+    const current = queue.shift();
+    if (current === undefined) break;
+    for (const next of neighbours.get(current) ?? []) {
+      if (reached.has(next)) continue;
+      reached.add(next);
+      queue.push(next);
+    }
+  }
+
+  const stranded = luminaCurriculum.concepts
+    .filter((item) => !reached.has(item.id))
+    .map((item) => item.title);
+  assert.deepEqual(stranded, [], `unreachable from ${start.title}: ${stranded.join(", ")}`);
+});
+
+test("every concept has material of its own at every depth", () => {
+  // Phase 10 is about a learner returning across sessions, and the reason to
+  // return to a concept already read is to meet it at a different depth. A
+  // depth with nothing of its own is a depth that gives a returning learner
+  // back what they have already seen.
+  //
+  // The first version of this test asked only whether *something* was offerable
+  // at each layer, and a deliberate break did not fail it: every concept has a
+  // reflection experience declared at all three layers, so the answer was
+  // always yes and the test proved nothing. Hence the second condition below --
+  // at each layer there must be something offerable *there* that is not
+  // offerable everywhere.
+  //
+  // Note also what this checks that "carries material at more than one layer"
+  // does not: an asset supporting a layer is content sitting in the corpus,
+  // while an experience offerable at that layer is content a learner can
+  // actually be handed. The corpus had assets at layers nothing could offer.
+  const offerableLayers = (experience: LearningExperience) =>
+    canonicalPedagogicalGuidance
+      .filter((guidance) =>
+        experience.pedagogicalLayers.includes(guidance.layer) &&
+        guidance.suitableExperienceIntents.includes(experience.intent),
+      )
+      .map((guidance) => guidance.layer);
+
+  for (const item of luminaCurriculum.concepts) {
+    const here = luminaCurriculum.experiences.filter((experience) =>
+      experience.targetConceptIds.includes(item.id),
+    );
+    for (const guidance of canonicalPedagogicalGuidance) {
+      const specific = here.filter((experience) => {
+        const layers = offerableLayers(experience);
+        return layers.includes(guidance.layer) && layers.length < canonicalPedagogicalGuidance.length;
+      });
+      assert.ok(
+        specific.length > 0,
+        `${item.title} has nothing of its own at the ${guidance.layer} layer, ` +
+          "so a learner returning at that depth meets what they already read",
+      );
+    }
+  }
+});
+
+test("a bridge experience actually crosses to somewhere", () => {
+  // An experience with intent "concept-bridge" promises a learner that one idea
+  // leads to another. Showing only material from where they already are keeps
+  // the promise in the title and nowhere else, and the type system is happy
+  // either way -- `concept-bridge` is a string, and a bridge to nowhere is
+  // spelled exactly like a bridge.
+  //
+  // So: it must carry material from a concept it does not target, at least one
+  // of those concepts must be somewhere the graph says it bridges to, and every
+  // one of them must at least be connected to where the learner is standing.
+  //
+  // The middle clause and the last clause are separate on purpose, and the
+  // first run of this test is why. Demanding a bridge edge to *every* far-side
+  // concept failed a bridge that also carries one sentence about number
+  // patterns -- which arithmetic sequences have as a prerequisite, so it is
+  // material the learner has already met rather than a stray crossing. The
+  // check was wrong there, and it is still the check that stops a bridge
+  // reaching a concept nothing connects it to.
+  const edges = (kinds: readonly ConceptRelationshipKind[]) =>
+    new Set(
+      luminaCurriculum.relationships
+        .filter((relationship) => kinds.includes(relationship.kind))
+        .flatMap((relationship) => [
+          `${relationship.sourceConceptId}->${relationship.targetConceptId}`,
+          `${relationship.targetConceptId}->${relationship.sourceConceptId}`,
+        ]),
+    );
+  const bridged = edges(["concept-bridge"]);
+  const connected = edges(["concept-bridge", "prerequisite", "related"]);
+
+  for (const experience of luminaCurriculum.experiences) {
+    if (experience.intent !== "concept-bridge") continue;
+    const here = [...new Set<string>(experience.targetConceptIds)];
+    const farSide = [
+      ...new Set(
+        luminaCurriculum.assets
+          .filter((asset) => experience.knowledgeAssetIds.includes(asset.id))
+          .flatMap((asset) => asset.conceptIds)
+          .filter((conceptId) => !here.includes(conceptId)),
+      ),
+    ];
+
+    assert.ok(
+      farSide.length > 0,
+      `${experience.id} is a bridge that shows nothing from the other side`,
+    );
+    assert.ok(
+      farSide.some((there) => here.some((from) => bridged.has(`${from}->${there}`))),
+      `${experience.id} reaches ${farSide.join(", ")}, none of which ${here.join("/")} bridges to`,
+    );
+    for (const there of farSide) {
+      assert.ok(
+        here.some((from) => connected.has(`${from}->${there}`)),
+        `${experience.id} carries material from ${there}, which is unconnected to ${here.join("/")}`,
+      );
+    }
+  }
+});
+
 test("every concept a learner can reach has somewhere to go from it", () => {
   // A concept with no relationship is a dead end: nothing bridges to it, no
   // prerequisite points at it, and a learner who opens it can only leave the
   // way they came.
-  for (const concept of functionsSeedKnowledge.concepts) {
-    const connected = functionsSeedKnowledge.relationships.some((relationship) =>
+  for (const concept of luminaCurriculum.concepts) {
+    const connected = luminaCurriculum.relationships.some((relationship) =>
       relationship.sourceConceptId === concept.id || relationship.targetConceptId === concept.id,
     );
     assert.ok(connected, `${concept.title} is not connected to anything else in the graph`);
@@ -94,7 +241,7 @@ test("knowledge assets preserve non-judgmental misconception semantics and layer
   });
   assert.deepEqual(asset.supportedLayers, ["intuition", "mechanics"]);
   assert.equal(asset.kind, "misconception");
-  const representation = functionsSeedKnowledge.assets.find((candidate) => candidate.id === "asset.function.table-representation");
+  const representation = luminaCurriculum.assets.find((candidate) => candidate.id === "asset.function.table-representation");
   assert.equal(representation?.representationForm, "numerical");
 });
 
@@ -125,7 +272,7 @@ test("every published experience can actually be offered to a learner", () => {
   // offered a single question to try, in any concept, and nothing said so --
   // the catalogue validated, the experience existed, and it was simply
   // unreachable. A corpus can be wrong in ways a type cannot catch.
-  for (const experience of functionsSeedKnowledge.experiences) {
+  for (const experience of luminaCurriculum.experiences) {
     const reachable = canonicalPedagogicalGuidance.some((guidance) =>
       experience.pedagogicalLayers.includes(guidance.layer) &&
       guidance.suitableExperienceIntents.includes(experience.intent),
@@ -141,9 +288,9 @@ test("every published experience can actually be offered to a learner", () => {
 test("every concept carries material at more than one pedagogical layer", () => {
   // Two of the three concepts had a single asset each. A learner picking one
   // saw one sentence and ran out.
-  for (const concept of functionsSeedKnowledge.concepts) {
+  for (const concept of luminaCurriculum.concepts) {
     const layers = new Set(
-      functionsSeedKnowledge.assets
+      luminaCurriculum.assets
         .filter((asset) => asset.conceptIds.includes(concept.id))
         .flatMap((asset) => asset.supportedLayers),
     );
@@ -155,8 +302,8 @@ test("every concept carries material at more than one pedagogical layer", () => 
 });
 
 test("every concept can be practised, not only read", () => {
-  for (const concept of functionsSeedKnowledge.concepts) {
-    const practisable = functionsSeedKnowledge.experiences.some((experience) =>
+  for (const concept of luminaCurriculum.concepts) {
+    const practisable = luminaCurriculum.experiences.some((experience) =>
       experience.targetConceptIds.includes(concept.id) &&
       experience.expectedEvidenceTypes.includes("practice-attempt"),
     );
@@ -165,8 +312,8 @@ test("every concept can be practised, not only read", () => {
 });
 
 test("every knowledge asset is used by at least one experience", () => {
-  const used = new Set(functionsSeedKnowledge.experiences.flatMap((e) => e.knowledgeAssetIds));
-  for (const asset of functionsSeedKnowledge.assets) {
+  const used = new Set(luminaCurriculum.experiences.flatMap((e) => e.knowledgeAssetIds));
+  for (const asset of luminaCurriculum.assets) {
     assert.ok(used.has(asset.id), `${asset.id} is written but no experience shows it to anyone`);
   }
 });
@@ -177,7 +324,7 @@ test("a learner can actually supply every kind of evidence the corpus asks for",
   // surface could take an answer: a learner was shown a question and given
   // nowhere to put a response. Offerable is not the same as answerable, and
   // nothing connected what the corpus declares to what a surface implements.
-  for (const experience of functionsSeedKnowledge.experiences) {
+  for (const experience of luminaCurriculum.experiences) {
     if (experience.status !== "published") continue;
     for (const type of experience.expectedEvidenceTypes) {
       assert.equal(

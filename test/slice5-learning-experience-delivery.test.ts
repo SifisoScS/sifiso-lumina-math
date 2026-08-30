@@ -8,7 +8,7 @@ import {
   evaluateExperienceCompletion,
   executeDeterministicLearningInteraction,
   filterExperiencesForDelivery,
-  functionsSeedKnowledge,
+  luminaCurriculum,
   isoTimestamp,
   knowledgeCatalog,
   learnerRecord,
@@ -39,7 +39,7 @@ function decisionFor(input: {
   readonly layer: "intuition" | "mechanics" | "exam-patterns";
   readonly capabilities: readonly ("displayed-text" | "displayed-notation" | "typed-input")[];
   readonly commandId: string;
-  readonly catalog?: typeof functionsSeedKnowledge;
+  readonly catalog?: typeof luminaCurriculum;
 }) {
   return executeDeterministicLearningInteraction({
     command: requestLearningGuidanceCommand({
@@ -52,14 +52,14 @@ function decisionFor(input: {
     actor,
     deliveryCapabilities: deliveryCapabilityProfile(input.capabilities),
     learnerRecord: record(input.layer),
-    knowledgeCatalog: input.catalog ?? functionsSeedKnowledge,
+    knowledgeCatalog: input.catalog ?? luminaCurriculum,
     pedagogicalGuidance: canonicalPedagogicalGuidance,
     evaluatedAt: timestamp,
   });
 }
 
 test("LearningExperience declares stable identity, version, interaction requirements, expected evidence, and completion semantics", () => {
-  const practice = functionsSeedKnowledge.experiences.find((experience) => experience.id === "experience.function.practice-input-output");
+  const practice = luminaCurriculum.experiences.find((experience) => experience.id === "experience.function.practice-input-output");
   assert.notEqual(practice, undefined);
   assert.equal(practice?.version, "math-lumina.seed.v1");
   assert.deepEqual(practice?.learnerInteractionRequirements, ["practice-input"]);
@@ -72,7 +72,7 @@ test("LearningExperience declares stable identity, version, interaction requirem
 });
 
 test("Delivery capability declarations filter compatible experiences without client or device detection", () => {
-  const mechanics = functionsSeedKnowledge.experiences.filter((experience) => experience.id === "experience.function.mechanics-notation");
+  const mechanics = luminaCurriculum.experiences.filter((experience) => experience.id === "experience.function.mechanics-notation");
   const compatible = filterExperiencesForDelivery(mechanics, deliveryCapabilityProfile(["displayed-text", "displayed-notation"]));
   const incompatible = filterExperiencesForDelivery(mechanics, deliveryCapabilityProfile(["displayed-text"]));
   assert.equal(compatible.compatible.length, 1);
@@ -119,7 +119,7 @@ test("an incompatible delivery context cannot silently downgrade an experience a
 });
 
 test("experience completion distinguishes delivered material from evidence-bearing completion and never fabricates learner evidence", () => {
-  const practice = functionsSeedKnowledge.experiences.find((experience) => experience.id === "experience.function.practice-input-output");
+  const practice = luminaCurriculum.experiences.find((experience) => experience.id === "experience.function.practice-input-output");
   if (practice === undefined) throw new Error("Expected practice seed experience.");
   const available = filterExperiencesForDelivery([practice], deliveryCapabilityProfile(["displayed-text", "typed-input"])).compatible[0];
   const unavailable = filterExperiencesForDelivery([practice], deliveryCapabilityProfile(["displayed-text"])).incompatible[0];
@@ -146,7 +146,7 @@ test("newer LearningExperience versions create new provenance without silently r
     capabilities: ["displayed-text", "displayed-notation"],
     commandId: "command.slice5.version.original",
   });
-  const priorExperience = functionsSeedKnowledge.experiences.find((experience) => experience.id === "experience.function.mechanics-notation");
+  const priorExperience = luminaCurriculum.experiences.find((experience) => experience.id === "experience.function.mechanics-notation");
   if (priorExperience === undefined) throw new Error("Expected mechanics seed experience.");
   const revisedExperience = learningExperience({
     id: priorExperience.id,
@@ -165,8 +165,8 @@ test("newer LearningExperience versions create new provenance without silently r
     version: "math-lumina.seed.v2",
   });
   const revisedCatalog = knowledgeCatalog({
-    ...functionsSeedKnowledge,
-    experiences: functionsSeedKnowledge.experiences.map((experience) =>
+    ...luminaCurriculum,
+    experiences: luminaCurriculum.experiences.map((experience) =>
       experience.id === revisedExperience.id ? revisedExperience : experience),
   });
   const revised = decisionFor({

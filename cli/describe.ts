@@ -6,6 +6,7 @@ import {
   Concept,
   KnowledgeAsset,
   LearningExperience,
+  Topic,
 } from "../src/domain/mathematical-knowledge.js";
 import {
   activePedagogicalLayer,
@@ -29,9 +30,53 @@ import { ExplanationOutcome } from "../src/decisioning/explanation-request.js";
  */
 
 export interface Catalogue {
+  readonly topics: readonly Topic[];
   readonly concepts: readonly Concept[];
   readonly assets: readonly KnowledgeAsset[];
   readonly experiences: readonly LearningExperience[];
+}
+
+export interface ConceptGroup {
+  readonly topic: Topic;
+  readonly concepts: readonly Concept[];
+}
+
+/**
+ * The concepts a learner can pick from, under the topic each one belongs to.
+ *
+ * Both surfaces listed concepts flat, which read fine at five and stopped
+ * reading fine at twelve: a learner met "Rules That Turn" directly above
+ * "Patterns Whose Growth Itself Grows" with nothing saying these are two
+ * different subjects. Growing the corpus is what broke it, so the fix belongs
+ * to the same phase.
+ *
+ * It refuses a concept whose topic the catalogue does not hold, rather than
+ * grouping what it can and moving on. Skipping would be the quiet version of
+ * the worst defect available here -- a concept written, published, and
+ * unreachable, with every count still looking right. A7: stop, and say so.
+ *
+ * Catalogue order is preserved inside each group and topics come out in the
+ * order the catalogue lists them, so what a learner sees is decided by the
+ * corpus rather than by this function.
+ */
+export function conceptsByTopic(catalogue: Catalogue): readonly ConceptGroup[] {
+  const known = new Set(catalogue.topics.map((item) => item.id));
+  const orphans = catalogue.concepts.filter((item) => !known.has(item.topicId));
+  if (orphans.length > 0) {
+    throw new Error(
+      "These concepts belong to a topic this catalogue does not hold, so listing them " +
+        `by topic would leave them unreachable: ${orphans.map((item) => item.id).join(", ")}`,
+    );
+  }
+
+  return Object.freeze(
+    catalogue.topics
+      .map((topic) => ({
+        topic,
+        concepts: catalogue.concepts.filter((item) => item.topicId === topic.id),
+      }))
+      .filter((group) => group.concepts.length > 0),
+  );
 }
 
 function conceptTitle(catalogue: Catalogue, id: string | undefined): string {
@@ -273,6 +318,47 @@ export function describeHistory(record: LearnerRecord, catalogue: Catalogue): re
   lines.push(`That is all of it: ${String(record.evidence.length)} things you did, ` +
     `${String(record.interpretations.length)} readings of them. Nothing else is held.`);
   return Object.freeze(lines);
+}
+
+/**
+ * The learner's record, framed so they can hand it to someone.
+ *
+ * O4 closed shut: Lumina serves learners, and teachers, parents, and
+ * institutions see only what a learner chooses to show them. That sentence is
+ * only true if a learner has a way to show it, so this is the affordance the
+ * amendment rests on rather than a convenience added beside it.
+ *
+ * It is built from `describeHistory` and not beside it. Two renderings of one
+ * record would drift, and the direction they would drift in is obvious: the
+ * copy meant for a teacher would get tidied, and a learner would hand over
+ * something they had not read. Sharing what is on the screen, exactly, is the
+ * only version of this that stays honest.
+ *
+ * The framing does the rest of the work. Anyone reading this is being told, in
+ * the document itself, that nothing here was marked and that the readings are
+ * the system's and revisable -- because the likely misuse is not a leak, it is
+ * a teacher treating an unassessed answer as a wrong one.
+ *
+ * It goes nowhere. This returns text; the learner decides where it lands.
+ */
+export function describeForSharing(record: LearnerRecord, catalogue: Catalogue): readonly string[] {
+  return Object.freeze([
+    "A learner's own record from Math Lumina",
+    "",
+    "Shared by the learner, from their own device. The system did not send it.",
+    "",
+    "Nothing in this document is a mark, a grade, a level, or a judgement of",
+    "ability. Math Lumina does not assess and was not asked to. Answers below",
+    "were written by the learner and nothing checked them.",
+    "",
+    "---",
+    "",
+    ...describeHistory(record, catalogue),
+    "",
+    "---",
+    "",
+    "That is everything the system holds. There is no other copy and no account.",
+  ]);
 }
 
 export function conceptSummary(concept: Concept): string {

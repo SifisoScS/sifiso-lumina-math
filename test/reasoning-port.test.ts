@@ -4,7 +4,7 @@ import test from "node:test";
 import {
   decisionProvenance,
   evaluateSelfAuthorityClaim,
-  functionsSeedKnowledge,
+  luminaCurriculum,
   provenanceReference,
   reasoningProposal,
   reasoningTask,
@@ -88,10 +88,10 @@ test("no material a learner is actually shown is refused by the authority screen
   // reason - the first appears in the definition of a function and of a domain,
   // and the second is ordinary mathematical English.
   const shown: readonly string[] = [
-    ...functionsSeedKnowledge.concepts.flatMap((item) => [item.title, item.conceptualDescription]),
-    ...functionsSeedKnowledge.assets.flatMap((item) => [item.title, item.content]),
-    ...functionsSeedKnowledge.experiences.map((item) => item.title),
-    ...functionsSeedKnowledge.relationships.map((item) => item.rationale),
+    ...luminaCurriculum.concepts.flatMap((item) => [item.title, item.conceptualDescription]),
+    ...luminaCurriculum.assets.flatMap((item) => [item.title, item.content]),
+    ...luminaCurriculum.experiences.map((item) => item.title),
+    ...luminaCurriculum.relationships.map((item) => item.rationale),
   ];
   assert.ok(shown.length > 100, "the corpus sample is too small to be evidence of anything");
 

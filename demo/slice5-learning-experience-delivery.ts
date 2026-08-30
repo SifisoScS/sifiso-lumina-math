@@ -3,7 +3,7 @@ import {
   currentLearnerState,
   deliveryCapabilityProfile,
   executeDeterministicLearningInteraction,
-  functionsSeedKnowledge,
+  luminaCurriculum,
   isoTimestamp,
   learnerRecord,
   requestLearningGuidanceCommand,
@@ -47,7 +47,7 @@ function evaluateScenario(
     actor,
     deliveryCapabilities: deliveryCapabilityProfile(capabilities),
     learnerRecord: record,
-    knowledgeCatalog: functionsSeedKnowledge,
+    knowledgeCatalog: luminaCurriculum,
     pedagogicalGuidance: canonicalPedagogicalGuidance,
     evaluatedAt: timestamp,
   });

@@ -1,15 +1,18 @@
 import { createInterface } from "node:readline/promises";
 import { stdin, stdout } from "node:process";
 
+import { Concept } from "../src/domain/mathematical-knowledge.js";
 import { LearnerChoiceKind, activePedagogicalLayer } from "../src/domain/learner-record.js";
 import { isoTimestamp } from "../src/domain/primitives.js";
 import { requestExplanation } from "../src/decisioning/explanation-request.js";
 import { anthropicReasoningPort, reasoningProviderEnabled } from "../src/providers/anthropic-reasoning-port.js";
 import { resolveApprovedEnvelope, aiProposalAcceptancePolicy } from "../src/governance/proposal-policy.js";
-import { functionsSeedKnowledge } from "../src/seed/functions-seed.js";
+import { luminaCurriculum } from "../src/seed/curriculum.js";
 import {
+  conceptsByTopic,
   conceptSummary,
   describeExplanation,
+  describeForSharing,
   describeHistory,
   describeOffers,
   materialFor,
@@ -38,9 +41,10 @@ import {
  */
 
 const catalogue = {
-  concepts: functionsSeedKnowledge.concepts,
-  assets: functionsSeedKnowledge.assets,
-  experiences: functionsSeedKnowledge.experiences,
+  topics: luminaCurriculum.topics,
+  concepts: luminaCurriculum.concepts,
+  assets: luminaCurriculum.assets,
+  experiences: luminaCurriculum.experiences,
 };
 
 const HELP = `
@@ -52,6 +56,7 @@ const HELP = `
   x      ask a model to put this idea another way
   s      show where you are
   h      read back everything kept about you
+  share  the same thing, laid out to hand to someone else
   forget delete everything kept about you, permanently
   ?      this help
   q      quit
@@ -158,7 +163,7 @@ function reasoningPort() {
   const envelope = resolveApprovedEnvelope(aiProposalAcceptancePolicy.id);
   if (envelope === undefined) return undefined;
   return anthropicReasoningPort({
-    catalogue: functionsSeedKnowledge.concepts,
+    catalogue: luminaCurriculum.concepts,
     maxSummaryCharacters: envelope.maxSummaryCharacters,
   });
 }
@@ -218,12 +223,22 @@ async function main(): Promise<void> {
   }
 
   stdout.write("\n  Where would you like to start?\n");
-  catalogue.concepts.forEach((concept, index) => {
-    stdout.write(`    ${index + 1}. ${concept.title}\n`);
-  });
+  // Numbered straight through, so a learner types one number and never has to
+  // work out which list a number belongs to. `ordered` is what was printed, in
+  // the order it was printed, which is why the pick is taken from it rather
+  // than from the catalogue: the two agreeing by coincidence is not a thing to
+  // rely on when the corpus grows again.
+  const ordered: Concept[] = [];
+  for (const group of conceptsByTopic(catalogue)) {
+    stdout.write(`\n  ${group.topic.title}\n`);
+    for (const concept of group.concepts) {
+      ordered.push(concept);
+      stdout.write(`    ${ordered.length}. ${concept.title}\n`);
+    }
+  }
 
   const pick = await rl.question("\n  Number: ");
-  const chosen = catalogue.concepts[Number(pick.trim()) - 1];
+  const chosen = ordered[Number(pick.trim()) - 1];
   if (chosen === undefined) {
     stdout.write("\n  Did not recognise that. Stopping here.\n\n");
     rl.close();
@@ -250,6 +265,19 @@ async function main(): Promise<void> {
     }
     if (answer === "?") { stdout.write(HELP); continue; }
     if (answer === "s") { showState(session); continue; }
+
+    if (answer === "share") {
+      // Printed, not written to a file. A file this session created without
+      // being asked is a copy of a learner's record that they did not put
+      // anywhere, which is the thing O2's narrowing turns on.
+      stdout.write("\n  Copy everything between the lines.\n\n");
+      stdout.write(`  ${"-".repeat(60)}\n`);
+      for (const line of describeForSharing(session.record, catalogue)) {
+        stdout.write(`  ${line}\n`);
+      }
+      stdout.write(`  ${"-".repeat(60)}\n\n`);
+      continue;
+    }
 
     if (answer === "h") {
       // Their own words, back. Not a summary of them, and not a count of them.
