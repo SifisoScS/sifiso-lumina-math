@@ -66,7 +66,14 @@ The point of this foundation is that its load-bearing rules are **types and test
 | Learner-facing text claiming the system's own standing is refused | A5, O7 | `evaluateSelfAuthorityClaim` — refused at `validateReasoningProposal`, before governance; proven by mutation | **live** |
 | No material a learner is actually shown is refused by that screen | A1, A5 | `test/reasoning-port.test.ts` — the corpus is the false-positive set; proven: banning a word the corpus uses fails it | **live** |
 | The screen's limit is held open adversarially rather than described | A5, A7 | `implied-authority` — a reworded claim is admitted, and a test asserts that it is | **live** |
-| Machine text is shown as machine text, beside the record it cannot change | A5, A6 | **not built.** No surface shows model text; A5 binds the first that does (Phase 5b) | **pending** |
+| Machine text is shown as machine text, beside the record it cannot change | A5, A6 | `describeExplanation`, `cli/describe.ts` — proven by mutation, in both halves: dropping the label fails, dropping the record fails | **live** |
+| A model's words reach a learner only when the learner asks for them | A2, A5 | `cli/learn.ts` — the `x` command and nothing else requests reasoning; no offer, no prompt, no automatic call | **live** |
+| A learner is told whether a model is connected before they consent | A2, A6 | `cli/learn.ts` says which, in the opening text, before the first question | **live** |
+| An explanation task has no evidence scope, and no parameter to give it one | A2, A5 | `explanationTask` — proven: giving it a scope fails two tests; a `@ts-expect-error` holds the absent parameter absent | **live** |
+| An explanation citing anything a learner wrote is refused | A2, A5 | `test/explanation-request.test.ts` — the Phase 4 adversary pointed at this path | **live** |
+| A refused explanation is not shown with a caveat attached | A7 | `requestExplanation` returns no summary on refusal — proven by mutation | **live** |
+| The deterministic engine stays deterministic | A4, A5 | `EngineDiagnostics.reasoningInvolved` is still the literal `false`; reasoning is a sibling of the engine, not a stage inside it | **live** |
+| A real model's output survives all of the above | A5 | `live/anthropic-conformance.test.ts` — 7 tests against Claude Opus 5, outside `pnpm check` so no test run costs money | **live** |
 | A proposal may not claim a downstream stage as its basis | A4, A5 | `admissibleProvenanceKinds`, `src/governance/proposal-policy.ts` | **live** |
 | Out-of-scope evidence cannot be smuggled via provenance | A4, A6 | `evaluateGovernance` | **live** |
 | Claimed confidence buys no privilege | A4 | `test/hostile-boundary.test.ts` | **live** |
@@ -140,9 +147,9 @@ The point of this foundation is that its load-bearing rules are **types and test
 | Taking up an offer that moves nothing is still recorded | A2, A6, O8 | `learning-path-accepted` with no `stateCommitmentId` | **live** |
 | A commitment means state changed, with no exceptions to check | A4, A6 | no non-mutating commitment kind exists — the proposal to add one was declined | **live** |
 
-Every row marked **live** is built and has a test that fails when it is broken. The one row marked **pending** is a requirement A5 imposes on work not yet done, and it is listed rather than omitted so that the work cannot quietly skip it — a row claiming enforcement it does not have would be worse than an admitted gap, and so would a requirement nobody wrote down.
+Every row is built and has a test that fails when it is broken.
 
-Where a claim is not enforceable — a model's calibration cannot be checked from outside it, and an authority claim can always be reworded — the article says so rather than implying a guarantee it cannot give.
+Where a claim is not enforceable — a model's calibration cannot be checked from outside it, an authority claim can always be reworded, and nothing enforces that an explanation is pitched at the right reader — the article says so rather than implying a guarantee it cannot give.
 
 ---
 

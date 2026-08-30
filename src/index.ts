@@ -17,6 +17,7 @@ export * from "./decisioning/decision-construction.js";
 export * from "./decisioning/state-transitions.js";
 export * from "./decisioning/engine.js";
 export * from "./decisioning/replay.js";
+export * from "./decisioning/explanation-request.js";
 export * from "./decisioning/learner-record-evolution.js";
 export * from "./governance/authorization.js";
 export * from "./governance/proposal-policy.js";

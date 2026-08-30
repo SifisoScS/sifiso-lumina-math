@@ -2,8 +2,12 @@ import { createInterface } from "node:readline/promises";
 import { stdin, stdout } from "node:process";
 
 import { LearnerChoiceKind, activePedagogicalLayer } from "../src/domain/learner-record.js";
+import { isoTimestamp } from "../src/domain/primitives.js";
+import { requestExplanation } from "../src/decisioning/explanation-request.js";
+import { anthropicReasoningPort, reasoningProviderEnabled } from "../src/providers/anthropic-reasoning-port.js";
+import { resolveApprovedEnvelope, aiProposalAcceptancePolicy } from "../src/governance/proposal-policy.js";
 import { functionsSeedKnowledge } from "../src/seed/functions-seed.js";
-import { conceptSummary, describeOffers, materialFor } from "./describe.js";
+import { conceptSummary, describeExplanation, describeOffers, materialFor } from "./describe.js";
 import { DEFAULT_RECORD_PATH, forgetRecord, loadRecord, recordExists, saveRecord } from "./store.js";
 import {
   applyChoice,
@@ -39,6 +43,7 @@ const HELP = `
   f 2    put option 2 off for now
   p      pause
   w      write down what you are thinking
+  x      ask a model to put this idea another way
   s      show where you are
   forget delete everything kept about you, permanently
   ?      this help
@@ -133,8 +138,34 @@ function showOffers(session: Session): void {
   stdout.write("\n");
 }
 
+/**
+ * The provider, if the operator turned one on. Phase 5b.
+ *
+ * Absent is the default and is not an error: without it the terminal is exactly
+ * what it was, deterministic end to end. The credential is read from the
+ * environment, never from anything in `src/`, and never from a learner.
+ */
+function reasoningPort() {
+  if (!reasoningProviderEnabled()) return undefined;
+  const envelope = resolveApprovedEnvelope(aiProposalAcceptancePolicy.id);
+  if (envelope === undefined) return undefined;
+  return anthropicReasoningPort({
+    catalogue: functionsSeedKnowledge.concepts,
+    maxSummaryCharacters: envelope.maxSummaryCharacters,
+  });
+}
+
 async function main(): Promise<void> {
   const rl = createInterface({ input: stdin, output: stdout });
+
+  // Optional, and only here: a convenience so credentials need not be exported
+  // by hand. Nothing in src/ reads a file like this.
+  try {
+    process.loadEnvFile(".env");
+  } catch {
+    // No .env. The normal case.
+  }
+  const port = reasoningPort();
 
   stdout.write("\n  Math Lumina\n  ───────────\n");
   stdout.write("  What you write here is kept on this computer, in\n");
@@ -143,6 +174,17 @@ async function main(): Promise<void> {
   stdout.write("  can read it. Type forget at any time and the file is deleted.\n\n");
   stdout.write("  You decide what happens. If you decline something it does not\n");
   stdout.write("  happen — you will not be quietly moved along.\n\n");
+
+  // A learner should be told whether a machine is in the room before they say
+  // yes to anything, not discover it from a menu entry later.
+  if (port === undefined) {
+    stdout.write("  No model is connected. Everything you will be shown was\n");
+    stdout.write("  written by a person and read from a catalogue.\n\n");
+  } else {
+    stdout.write("  A model is connected. It can put an idea another way when you\n");
+    stdout.write("  ask for that, with x, and at no other time. What it writes is\n");
+    stdout.write("  labelled, is not kept, and changes nothing about you.\n\n");
+  }
 
   // Read before anything is asked, so a learner who cannot be resumed is told
   // before they start rather than after they have done work.
@@ -205,6 +247,23 @@ async function main(): Promise<void> {
       session = await writeSomething(rl, session, chosen.id);
       saveRecord(session.record);
       showOffers(session);
+      continue;
+    }
+
+    if (answer === "x") {
+      const outcome = await requestExplanation({
+        port,
+        taskId: `task.cli.explain.${Date.now().toString(36)}`,
+        conceptId: session.record.state.activeConceptId ?? chosen.id,
+        requestedAt: isoTimestamp(new Date().toISOString()),
+      });
+      stdout.write("\n");
+      for (const line of describeExplanation(outcome, session.record.state, catalogue)) {
+        stdout.write(`  ${line}\n`);
+      }
+      stdout.write("\n");
+      // Deliberately no save. Nothing happened to the learner's record, so
+      // writing one would be the record claiming a change that was not made.
       continue;
     }
 

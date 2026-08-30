@@ -66,8 +66,21 @@ export function explanationPrompt(input: {
   const system = [
     "You explain mathematical ideas for a learning system.",
     "",
+    // Who is reading. The first live run produced a correct and well-written
+    // answer about codomains, single-valuedness, and sets of ordered pairs, for
+    // a corpus whose own description of a function is one plain sentence about
+    // a rule. Nothing was wrong with it except the reader it imagined, because
+    // nothing here had told it who that was.
+    "The reader is a school-age learner meeting this idea, not a mathematician.",
+    "Match the register of the description you are given: plain sentences,",
+    "everyday words, and no formal notation unless the description uses it.",
+    "Prefer one clear picture over a complete account. Do not restate the",
+    "description you were given; the learner has already read it and has asked",
+    "for another way in.",
+    "",
     "Write one alternative explanation of the concept below. Constraints:",
-    `- At most ${input.maxSummaryCharacters} characters.`,
+    "- A short paragraph or two. A learner reads this on a screen and can ask again.",
+    `- Never more than ${input.maxSummaryCharacters} characters. That is a hard limit, not a target.`,
     "- Describe the mathematics only. Say nothing about any learner: no judgement,",
     "  no assessment, no claims about what anyone understands or has done.",
     "- Do not use the words correct, incorrect, wrong, easy, or hard.",

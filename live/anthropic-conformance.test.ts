@@ -4,13 +4,16 @@ import test from "node:test";
 import {
   aiProposalAcceptancePolicy,
   anthropicReasoningPort,
+  currentLearnerState,
   evaluateGovernance,
   functionsSeedKnowledge,
   isMintedAuthorization,
   reasoningProviderEnabled,
   reasoningTask,
+  requestExplanation,
   resolveApprovedEnvelope,
 } from "../src/index.js";
+import { describeExplanation } from "../cli/describe.js";
 
 /**
  * Phase 5 live conformance. Runs a real model through the real seam.
@@ -140,4 +143,61 @@ test("a task kind that is not admitted is never sent to the provider", { skip },
 
   // Returns without a network call: the adapter refuses before spending anything.
   assert.equal(await port().propose(misconception), undefined);
+});
+
+// ---------------------------------------------------------------------------
+// Phase 5b - the whole path, from a learner asking to a learner reading
+// ---------------------------------------------------------------------------
+
+test("a real model's explanation reaches a learner, labelled and beside their record", { skip }, async () => {
+  const outcome = await requestExplanation({
+    port: port(),
+    taskId: "task.live.explain.001",
+    conceptId: "concept.function",
+    requestedAt: new Date().toISOString() as never,
+  });
+
+  if (outcome.kind !== "explained") {
+    assert.fail(`the live path did not produce an explanation: ${JSON.stringify(outcome)}`);
+  }
+
+  // Attribution comes off the minted token, never off anything the model wrote.
+  assert.equal(outcome.policyId, aiProposalAcceptancePolicy.id);
+  assert.equal(outcome.policyVersion, aiProposalAcceptancePolicy.version);
+
+  const state = currentLearnerState({
+    learnerId: "learner.live",
+    engagementFocus: "active-focus",
+    activeConceptId: "concept.function",
+  });
+  const shown = describeExplanation(outcome, state, {
+    concepts: functionsSeedKnowledge.concepts,
+    assets: functionsSeedKnowledge.assets,
+    experiences: functionsSeedKnowledge.experiences,
+  });
+
+  console.log(`\n${shown.map((line) => `  ${line}`).join("\n")}\n`);
+
+  // A5 v1.5, checked against text nobody wrote by hand.
+  assert.match(shown[0] ?? "", /model/i);
+  assert.ok(shown.join("\n").includes(outcome.summary));
+  assert.ok(shown.join("\n").includes("Where you are"));
+});
+
+test("a real model is never handed anything a learner wrote", { skip }, async () => {
+  // Checked against the path the terminal actually calls, rather than asserted
+  // about a constructor in isolation.
+  let seen: { readonly permittedEvidenceIds: readonly string[] } | undefined;
+  await requestExplanation({
+    port: {
+      async propose(task) {
+        seen = task;
+        return undefined;
+      },
+    },
+    taskId: "task.live.explain.002",
+    conceptId: "concept.function",
+    requestedAt: new Date().toISOString() as never,
+  });
+  assert.deepEqual(seen?.permittedEvidenceIds, []);
 });

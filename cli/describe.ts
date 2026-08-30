@@ -7,6 +7,8 @@ import {
   KnowledgeAsset,
   LearningExperience,
 } from "../src/domain/mathematical-knowledge.js";
+import { activePedagogicalLayer, CurrentLearnerState } from "../src/domain/learner-record.js";
+import { ExplanationOutcome } from "../src/decisioning/explanation-request.js";
 
 /**
  * Presentation. Deliberately outside the engine.
@@ -156,4 +158,67 @@ export function materialFor(
 
 export function conceptSummary(concept: Concept): string {
   return `${concept.title}\n\n${concept.conceptualDescription}`;
+}
+
+/**
+ * Showing a learner something a model wrote.
+ *
+ * A5 requires that machine-originated text be shown *as* machine-originated,
+ * and beside the learner's own record rather than in place of it. The record
+ * lines are part of what this returns for exactly that reason: the guarantee
+ * that survives an unscreened authority claim is not that the words were
+ * caught, but that the person reading them can see nothing changed.
+ *
+ * O7's screen refuses text that says it has authority. It catches stated
+ * claims and not implied ones, so this is the half of the answer that does not
+ * depend on recognising the wording.
+ */
+export function describeExplanation(
+  outcome: ExplanationOutcome,
+  state: CurrentLearnerState,
+  catalogue: Catalogue,
+): readonly string[] {
+  switch (outcome.kind) {
+    case "unavailable":
+      return Object.freeze([
+        "No model is connected, so there is nothing to ask.",
+        "Everything you have been shown so far was written by a person and read from the catalogue.",
+      ]);
+
+    case "no-proposal":
+      return Object.freeze([
+        "Asked, and nothing usable came back. Nothing has changed.",
+      ]);
+
+    case "refused":
+      // The summary is deliberately absent. A refusal that still shows the text
+      // with a caveat attached is not a refusal.
+      return Object.freeze([
+        "A model offered something and it was refused before you saw it.",
+        ...outcome.reasons.map((reason) => `  ${reason}`),
+        "Nothing has changed, and nothing was kept.",
+      ]);
+
+    case "explained":
+      return Object.freeze([
+        "Written by a model, not by Lumina.",
+        "It decides nothing. Nothing about where you are has changed, and none of it was kept.",
+        "",
+        outcome.summary,
+        "",
+        `How sure it says it is: ${outcome.uncertaintyLevel} — ${outcome.uncertaintyRationale}`,
+        `Admitted under policy ${outcome.policyId}, version ${outcome.policyVersion}.`,
+        "",
+        "Where you are, unchanged by the above:",
+        `  Focus:  ${state.engagementFocus}`,
+        `  Idea:   ${conceptTitle(catalogue, state.activeConceptId)}`,
+        `  Depth:  ${activePedagogicalLayer(state) ?? "not set"}`,
+        `  Kept:   ${state.evidenceIds.length} things you did, ${state.interpretationIds.length} readings of them`,
+      ]);
+
+    default: {
+      const unhandled: never = outcome;
+      throw new Error(`Explanation outcome is not classified for display: ${JSON.stringify(unhandled)}`);
+    }
+  }
 }
