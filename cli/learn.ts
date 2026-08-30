@@ -16,6 +16,7 @@ import {
   describeHistory,
   describeOffers,
   materialFor,
+  questionFor,
 } from "./describe.js";
 import { DEFAULT_RECORD_PATH, forgetRecord, loadRecord, recordExists, saveRecord } from "./store.js";
 import {
@@ -121,7 +122,16 @@ async function answerSomething(
   session: Session,
   experienceId: string,
   conceptId: string,
+  question: string | undefined,
 ): Promise<Session> {
+  // The question, immediately above the prompt. It used to be absent entirely:
+  // a learner chose "Try a question", read a worked example, and was asked for
+  // an answer to something nobody had asked.
+  if (question === undefined) {
+    stdout.write("  There is no question here to answer, so nothing is being asked.\n");
+    return session;
+  }
+  stdout.write(`\n  ${question}\n\n`);
   stdout.write("  Nothing here marks your answer. It is kept as you wrote it.\n");
   const text = (await rl.question("  Your answer: ")).trim();
   if (text.length === 0) {
@@ -409,7 +419,13 @@ async function main(): Promise<void> {
       // question and left with nowhere to put a response.
       const practised = offerTaken.opportunity.learningExperienceId;
       if (offerTaken.opportunity.kind === "practise" && practised !== undefined) {
-        session = await answerSomething(rl, session, practised, chosen.id);
+        session = await answerSomething(
+          rl,
+          session,
+          practised,
+          chosen.id,
+          questionFor(offerTaken.opportunity, catalogue),
+        );
         saveRecord(session.record);
       }
     }

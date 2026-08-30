@@ -8,6 +8,7 @@ import {
   describeHistory,
   describeOpportunity,
   materialFor,
+  questionFor,
 } from "../cli/describe.js";
 import {
   applyChoice,
@@ -58,6 +59,8 @@ interface View {
   reading: string | undefined;
   /** The question the learner has open, if they took one. */
   practising: string | undefined;
+  /** What that question actually asks. Nothing prompts without one. */
+  question: string | undefined;
   /** Whether the learner is reading their own record back. */
   reviewing: boolean;
 }
@@ -69,6 +72,7 @@ const view: View = {
   note: "",
   reading: undefined,
   practising: undefined,
+  question: undefined,
   reviewing: false,
 };
 
@@ -262,7 +266,11 @@ function render(): void {
     renderMaterial();
     renderState();
     renderReading();
-    mount("practice-panel").hidden = view.practising === undefined;
+    // The question, in the panel that takes the answer. Without it a learner
+    // read a worked example and was handed an empty box.
+    const asked = view.practising === undefined ? undefined : view.question;
+    mount("practice-question").textContent = asked ?? "";
+    mount("practice-panel").hidden = view.practising === undefined || asked === undefined;
   }
   renderNote();
   mount("forget").hidden = !recordExists();
@@ -288,6 +296,7 @@ function open(conceptId: string): void {
   view.material = [];
   view.reading = undefined;
   view.practising = undefined;
+  view.question = undefined;
   view.note = stored.kind === "loaded" ? "Picking up where you left off." : "";
   persist();
   render();
@@ -336,6 +345,9 @@ function choose(choiceKind: LearnerChoiceKind, index: number): void {
   view.practising = showsMaterial && taken?.opportunity.kind === "practise"
     ? taken.opportunity.learningExperienceId
     : undefined;
+  view.question = view.practising === undefined || taken === undefined
+    ? undefined
+    : questionFor(taken.opportunity, catalogue);
   persist();
   render();
 }
@@ -373,6 +385,7 @@ function answer(): void {
   view.session = applyPractice(session, response, experienceId, view.conceptId ?? "").session;
   box.value = "";
   view.practising = undefined;
+  view.question = undefined;
   view.note = "Kept, word for word. Nothing here marked it and nothing concluded from it.";
   persist();
   render();
@@ -402,6 +415,7 @@ function forget(): void {
   view.material = [];
   view.reading = undefined;
   view.practising = undefined;
+  view.question = undefined;
   view.note = existed
     ? "Deleted. Nothing about you is kept in this browser any more."
     : "There was nothing kept to delete.";
@@ -452,6 +466,8 @@ export function start(): void {
     view.material = [];
     view.reading = undefined;
     view.practising = undefined;
+    view.question = undefined;
+  view.question = undefined;
     view.note = recordExists() ? "Kept in this browser. It will be here next time." : "Nothing is kept.";
     render();
   });

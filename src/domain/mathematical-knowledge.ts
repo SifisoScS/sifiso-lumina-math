@@ -48,6 +48,20 @@ export type MathematicalRepresentationForm =
 export type KnowledgeAssetKind =
   | "representation"
   | "example"
+  /**
+   * Material that asks the learner something.
+   *
+   * Added because it was missing, and its absence was invisible: twenty-four
+   * experiences declared `expectedEvidenceTypes: ["practice-attempt"]`, both
+   * surfaces collected an answer, every guard passed, and no asset anywhere in
+   * the corpus posed a question. A learner taking "Try a question" was shown a
+   * worked example and then asked for an answer to something nobody had asked.
+   *
+   * Explaining and asking are different acts, and until now the vocabulary
+   * could not tell them apart, so the corpus could not be wrong about it in a
+   * way anything could detect.
+   */
+  | "question"
   | "non-example"
   | "procedure"
   | "misconception"

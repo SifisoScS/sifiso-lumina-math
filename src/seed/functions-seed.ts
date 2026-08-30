@@ -1034,6 +1034,159 @@ export const functionsTopicSeed: TopicSeed = {
       supportedLayers: ["exam-patterns"],
       version: "math-lumina.seed.v1",
     }),
+
+    // -----------------------------------------------------------------------
+    // Questions
+    //
+    // Every experience that asks a learner for an answer needs one. Before
+    // these existed, twenty-four of them collected an answer to a question
+    // nobody had asked -- the surface showed a worked example and then a
+    // prompt. Found by walking a real session in the terminal.
+    // -----------------------------------------------------------------------
+    knowledgeAsset({
+      id: "asset.function.question-trace-a-rule",
+      kind: "question",
+      title: "Question: follow a rule through",
+      content: "For the rule f(x) = 2x + 1, what does the input 5 produce? Write the steps you took, not only the answer.",
+      conceptIds: ["concept.function"],
+      supportedLayers: ["mechanics"],
+      version: "math-lumina.seed.v1",
+    }),
+    knowledgeAsset({
+      id: "asset.function.question-is-it-a-function",
+      kind: "question",
+      title: "Question: is this relation a function?",
+      content: "A relation pairs the input 2 with both 5 and 9, and pairs every other input with exactly one output. Is it a function? Say what settles it.",
+      conceptIds: ["concept.function"],
+      supportedLayers: ["exam-patterns"],
+      version: "math-lumina.seed.v1",
+    }),
+    knowledgeAsset({
+      id: "asset.domain-range.question-state-both",
+      kind: "question",
+      title: "Question: state the domain and the range",
+      content: "A graph is drawn from x = -3 across to x = 4, and the y-values it reaches run from 0 up to 9. State the domain and state the range.",
+      conceptIds: ["concept.domain-range"],
+      supportedLayers: ["exam-patterns"],
+      version: "math-lumina.seed.v1",
+    }),
+    knowledgeAsset({
+      id: "asset.domain-range.question-which-input-is-barred",
+      kind: "question",
+      title: "Question: which input is not allowed?",
+      content: "For f(x) = 1 / (x - 2), there is one input the rule cannot accept. Which one, why, and what is the domain?",
+      conceptIds: ["concept.domain-range"],
+      supportedLayers: ["mechanics"],
+      version: "math-lumina.seed.v1",
+    }),
+    knowledgeAsset({
+      id: "asset.inverse-function.question-undo-a-rule",
+      kind: "question",
+      title: "Question: undo a rule",
+      content: "For f(x) = 3x - 6, find the rule that undoes it. Check your answer by putting 4 through f and then through your rule.",
+      conceptIds: ["concept.inverse-function"],
+      supportedLayers: ["mechanics"],
+      version: "math-lumina.seed.v1",
+    }),
+    knowledgeAsset({
+      id: "asset.inverse-function.question-why-no-inverse",
+      kind: "question",
+      title: "Question: why this one has no inverse",
+      content: "f(x) = x^2, for every real x, has no inverse. Explain why in terms of inputs and outputs, then give a domain on which it would have one.",
+      conceptIds: ["concept.inverse-function"],
+      supportedLayers: ["exam-patterns"],
+      version: "math-lumina.seed.v1",
+    }),
+    knowledgeAsset({
+      id: "asset.function-graph.question-read-two-values",
+      kind: "question",
+      title: "Question: read two values off a graph",
+      content: "A graph passes through the points (0, 4) and (3, 10). What output does the input 0 give, and which input gives the output 10?",
+      conceptIds: ["concept.function-graph"],
+      supportedLayers: ["mechanics"],
+      version: "math-lumina.seed.v1",
+    }),
+    knowledgeAsset({
+      id: "asset.function-graph.question-label-the-points",
+      kind: "question",
+      title: "Question: label the points a marker looks for",
+      content: "A curve crosses the x-axis at -1 and at 5, and crosses the y-axis at -5. Write down the three coordinates you would label on a sketch.",
+      conceptIds: ["concept.function-graph"],
+      supportedLayers: ["exam-patterns"],
+      version: "math-lumina.seed.v1",
+    }),
+    knowledgeAsset({
+      id: "asset.composite-function.question-one-then-the-other",
+      kind: "question",
+      title: "Question: one rule, then the other",
+      content: "f(x) = x + 3 and g(x) = 2x. Work out g(f(4)), showing the value that comes out of f before it goes into g.",
+      conceptIds: ["concept.composite-function"],
+      supportedLayers: ["mechanics"],
+      version: "math-lumina.seed.v1",
+    }),
+    knowledgeAsset({
+      id: "asset.composite-function.question-does-order-matter",
+      kind: "question",
+      title: "Question: does the order matter here?",
+      content: "With f(x) = x + 3 and g(x) = 2x, work out f(g(4)) and g(f(4)). They are not equal — say what causes the difference.",
+      conceptIds: ["concept.composite-function"],
+      supportedLayers: ["exam-patterns"],
+      version: "math-lumina.seed.v1",
+    }),
+    knowledgeAsset({
+      id: "asset.linear-function.question-rule-from-two-points",
+      kind: "question",
+      title: "Question: find the rule from two points",
+      content: "A straight line passes through (1, 5) and (4, 14). Find its equation, then check it against the point you did not use to find c.",
+      conceptIds: ["concept.linear-function"],
+      supportedLayers: ["mechanics"],
+      version: "math-lumina.seed.v1",
+    }),
+    knowledgeAsset({
+      id: "asset.linear-function.question-gradient-and-intercepts",
+      kind: "question",
+      title: "Question: gradient and both intercepts",
+      content: "For y = 2x - 8, state the gradient, the y-intercept, and the x-intercept. Say which value you set to zero to find each intercept.",
+      conceptIds: ["concept.linear-function"],
+      supportedLayers: ["exam-patterns"],
+      version: "math-lumina.seed.v1",
+    }),
+    knowledgeAsset({
+      id: "asset.quadratic-function.question-find-the-turning-point",
+      kind: "question",
+      title: "Question: find the turning point",
+      content: "Find the turning point of y = x^2 - 4x + 1, and say whether it is the lowest or the highest value the rule produces.",
+      conceptIds: ["concept.quadratic-function"],
+      supportedLayers: ["mechanics"],
+      version: "math-lumina.seed.v1",
+    }),
+    knowledgeAsset({
+      id: "asset.quadratic-function.question-everything-for-a-sketch",
+      kind: "question",
+      title: "Question: everything a sketch needs",
+      content: "For y = x^2 - 2x - 3, give the y-intercept, both x-intercepts, and the turning point — the four things a sketch has to show.",
+      conceptIds: ["concept.quadratic-function"],
+      supportedLayers: ["exam-patterns"],
+      version: "math-lumina.seed.v1",
+    }),
+    knowledgeAsset({
+      id: "asset.function-transformation.question-describe-the-move",
+      kind: "question",
+      title: "Question: describe the move",
+      content: "Describe in words the move from y = x^2 to y = (x - 5)^2 + 2. Name the direction and the amount along each axis separately.",
+      conceptIds: ["concept.function-transformation"],
+      supportedLayers: ["mechanics"],
+      version: "math-lumina.seed.v1",
+    }),
+    knowledgeAsset({
+      id: "asset.function-transformation.question-write-the-moved-rule",
+      kind: "question",
+      title: "Question: write the rule for the moved graph",
+      content: "The graph of y = x^2 is moved 3 to the left and 4 down. Write the rule for where it now sits.",
+      conceptIds: ["concept.function-transformation"],
+      supportedLayers: ["exam-patterns"],
+      version: "math-lumina.seed.v1",
+    }),
   ],
   experiences: [
     learningExperience({
@@ -1073,7 +1226,7 @@ export const functionsTopicSeed: TopicSeed = {
       title: "Practise tracing an input-output rule",
       intent: "practice",
       targetConceptIds: ["concept.function"],
-      knowledgeAssetIds: ["asset.function.input-output-example"],
+      knowledgeAssetIds: ["asset.function.input-output-example", "asset.function.question-trace-a-rule"],
       // `practice` is suitable at `mechanics` and `exam-patterns`, never at
       // `intuition`. Declared at `intuition`, this experience was filtered out
       // of every decision and no learner was ever offered a question to try.
@@ -1112,6 +1265,7 @@ export const functionsTopicSeed: TopicSeed = {
         "asset.function.identifying-function-exam-pattern",
         "asset.function.graph-representation",
         "asset.function.one-input-two-outputs-non-example",
+              "asset.function.question-is-it-a-function",
       ],
       pedagogicalLayers: ["exam-patterns"],
       deliveryRequirements: ["displayed-text", "displayed-notation"],
@@ -1141,6 +1295,7 @@ export const functionsTopicSeed: TopicSeed = {
       knowledgeAssetIds: [
         "asset.function.domain-range-exam-pattern",
         "asset.domain-range.graph-representation",
+              "asset.domain-range.question-state-both",
       ],
       pedagogicalLayers: ["exam-patterns"],
       deliveryRequirements: ["displayed-text", "displayed-notation"],
@@ -1224,6 +1379,7 @@ export const functionsTopicSeed: TopicSeed = {
       knowledgeAssetIds: [
         "asset.domain-range.square-root-example",
         "asset.domain-range.division-non-example",
+              "asset.domain-range.question-which-input-is-barred",
       ],
       pedagogicalLayers: ["mechanics"],
       deliveryRequirements: ["displayed-text", "displayed-notation", "typed-input"],
@@ -1291,6 +1447,7 @@ export const functionsTopicSeed: TopicSeed = {
       knowledgeAssetIds: [
         "asset.inverse-function.doubling-halving-example",
         "asset.inverse-function.finding-inverse-procedure",
+              "asset.inverse-function.question-undo-a-rule",
       ],
       pedagogicalLayers: ["mechanics"],
       deliveryRequirements: ["displayed-text", "displayed-notation", "typed-input"],
@@ -1307,6 +1464,7 @@ export const functionsTopicSeed: TopicSeed = {
       knowledgeAssetIds: [
         "asset.inverse-function.exam-pattern",
         "asset.inverse-function.reflection-line-representation",
+              "asset.inverse-function.question-why-no-inverse",
       ],
       pedagogicalLayers: ["exam-patterns"],
       deliveryRequirements: ["displayed-text", "displayed-notation"],
@@ -1438,6 +1596,7 @@ export const functionsTopicSeed: TopicSeed = {
       knowledgeAssetIds: [
         "asset.function-graph.reading-a-point-representation",
         "asset.function-graph.domain-from-graph-representation",
+              "asset.function-graph.question-read-two-values",
       ],
       pedagogicalLayers: ["mechanics"],
       deliveryRequirements: ["displayed-text", "displayed-notation", "typed-input"],
@@ -1455,6 +1614,7 @@ export const functionsTopicSeed: TopicSeed = {
         "asset.function-graph.reading-values-exam-pattern",
         "asset.function-graph.domain-from-graph-representation",
         "asset.function-graph.vertical-line-procedure",
+              "asset.function-graph.question-label-the-points",
       ],
       pedagogicalLayers: ["exam-patterns"],
       deliveryRequirements: ["displayed-text", "displayed-notation", "typed-input"],
@@ -1537,6 +1697,7 @@ export const functionsTopicSeed: TopicSeed = {
       knowledgeAssetIds: [
         "asset.composite-function.evaluating-procedure",
         "asset.composite-function.order-matters-example",
+              "asset.composite-function.question-one-then-the-other",
       ],
       pedagogicalLayers: ["mechanics"],
       deliveryRequirements: ["displayed-text", "displayed-notation", "typed-input"],
@@ -1553,6 +1714,7 @@ export const functionsTopicSeed: TopicSeed = {
       knowledgeAssetIds: [
         "asset.composite-function.exam-pattern",
         "asset.composite-function.notation-representation",
+              "asset.composite-function.question-does-order-matter",
       ],
       pedagogicalLayers: ["exam-patterns"],
       deliveryRequirements: ["displayed-text", "displayed-notation", "typed-input"],
@@ -1638,6 +1800,7 @@ export const functionsTopicSeed: TopicSeed = {
       knowledgeAssetIds: [
         "asset.linear-function.finding-rule-procedure",
         "asset.linear-function.gradient-example",
+              "asset.linear-function.question-rule-from-two-points",
       ],
       pedagogicalLayers: ["mechanics"],
       deliveryRequirements: ["displayed-text", "typed-input"],
@@ -1655,6 +1818,7 @@ export const functionsTopicSeed: TopicSeed = {
         "asset.linear-function.exam-pattern",
         "asset.linear-function.two-points-representation",
         "asset.linear-function.data-bundle-application",
+              "asset.linear-function.question-gradient-and-intercepts",
       ],
       pedagogicalLayers: ["exam-patterns"],
       deliveryRequirements: ["displayed-text", "typed-input"],
@@ -1740,6 +1904,7 @@ export const functionsTopicSeed: TopicSeed = {
       knowledgeAssetIds: [
         "asset.quadratic-function.turning-point-procedure",
         "asset.quadratic-function.turning-point-example",
+              "asset.quadratic-function.question-find-the-turning-point",
       ],
       pedagogicalLayers: ["mechanics"],
       deliveryRequirements: ["displayed-text", "typed-input"],
@@ -1757,6 +1922,7 @@ export const functionsTopicSeed: TopicSeed = {
         "asset.quadratic-function.exam-pattern",
         "asset.quadratic-function.parabola-representation",
         "asset.quadratic-function.negative-a-misconception",
+              "asset.quadratic-function.question-everything-for-a-sketch",
       ],
       pedagogicalLayers: ["exam-patterns"],
       deliveryRequirements: ["displayed-text", "typed-input"],
@@ -1862,6 +2028,7 @@ export const functionsTopicSeed: TopicSeed = {
       knowledgeAssetIds: [
         "asset.function-transformation.applying-shift-procedure",
         "asset.function-transformation.horizontal-sign-misconception",
+              "asset.function-transformation.question-describe-the-move",
       ],
       pedagogicalLayers: ["mechanics"],
       deliveryRequirements: ["displayed-text", "typed-input"],
@@ -1879,6 +2046,7 @@ export const functionsTopicSeed: TopicSeed = {
         "asset.function-transformation.exam-pattern",
         "asset.function-transformation.map-application",
         "asset.function-transformation.vertical-shift-representation",
+              "asset.function-transformation.question-write-the-moved-rule",
       ],
       pedagogicalLayers: ["exam-patterns"],
       deliveryRequirements: ["displayed-text", "typed-input"],

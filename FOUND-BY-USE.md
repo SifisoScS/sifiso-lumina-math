@@ -23,8 +23,8 @@ It says something narrower and more uncomfortable:
 > time.
 
 The suite was not thin. When the worst defect in this list was live, **126
-tests were green.** Today there are 225, and the honest position is that a
-226th class of defect is probably live right now and will be found the same
+tests were green.** Today there are 227, and the honest position is that a
+228th class of defect is probably live right now and will be found the same
 way.
 
 ---
@@ -299,6 +299,34 @@ kinds name no destination, and the type says nothing. Depth belongs to a
 concept, and the type said it belonged to a learner. Every fix is the same move:
 put the distinction somewhere that fails the build.
 
+### 19. “Try a question” never asked one
+
+*`A question a learner is asked has to exist`*
+
+Twenty-four experiences declared `expectedEvidenceTypes: ["practice-attempt"]`.
+Both surfaces collected an answer. Every guard in the suite passed. **No asset
+in the corpus posed a question** — not one ended in a question mark, because
+there was no asset kind that could hold one.
+
+A learner choosing “Try a question” was shown a worked example — which gave the
+method away — and then an answer prompt. They typed `7`. Nothing had been asked.
+
+This is the deepest instance of the recurring shape in this file. `practice`
+said what the *surface* should collect and never what the *learner* should be
+asked, and `KnowledgeAssetKind` had no member for asking, so the corpus could
+not be wrong about it in any way a type or a test could detect. It had been that
+way since the first practice experience existed.
+
+Closed by adding the missing kind, writing all 24 questions, showing them last —
+a question read before its supporting material is asked too early — and two
+guards. Of which the second proved nothing on its first run, *again*: the corpus
+lists its questions last already, so ordering passed whether or not anything
+sorted. It is now built from a synthetic experience with the question declared
+first.
+
+**Found by walking a real session in the terminal** — the surface no test can
+drive — after 226 tests, a fuzz walker, and two readers had all reported clean.
+
 ---
 
 ## Standing in for the stranger
@@ -345,10 +373,10 @@ intention, and no amount of this replaces one.
 - **No stranger has used it.** Every session in this ledger was the founder's
   own, or CI's, or a walker's. The next entry in this list will come from the first person who
   is not either, and that gate is deliberately still open.
-- **Nothing here checks that the mathematics is correct.** 225 tests prove that
+- **Nothing here checks that the mathematics is correct.** 227 tests prove that
   content is reachable, shown, and unmodified. Not one of them knows whether the
   content is true. See [`src/seed/AUTHORSHIP.md`](src/seed/AUTHORSHIP.md).
-- **The count is not the argument.** 225 green tests is exactly the state the
+- **The count is not the argument.** 227 green tests is exactly the state the
   project was in when it was answering "stop" by starting.
 
 ---

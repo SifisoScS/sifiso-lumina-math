@@ -166,6 +166,8 @@ The point of this foundation is that its load-bearing rules are **types and test
 | What a learner hands to someone else is exactly what they can already see | A1, A2, O4 | `describeForSharing`, `cli/describe.ts` — built from `describeHistory`; proven: truncating it fails | **live** |
 | A shared record states, in itself, that nothing was marked | A1, A6, O4 | `describeForSharing` — proven: removing the framing fails two tests | **live** |
 | Sharing a record writes nothing and changes nothing | A6, O2, O4 | `describeForSharing` is pure; asserted directly | **live** |
+| An experience that takes an answer poses a question | A1, A2 | `test/mathematical-knowledge.test.ts` — proven: removing one question fails it | **live** |
+| A question is the last thing a learner reads before answering | A1 | `materialFor`, `cli/describe.ts` — proven with a synthetic experience declaring its question first | **live** |
 | No ordering of ordinary learner actions breaks an invariant | A2, A6 | `test/learner-walk.test.ts` — seeded walks over the session layer, including return visits; proven: restoring defect 18 fails at seed 1, restoring defect 15 fails the return-visit checks | **live** |
 | Asking for a depth never moves a learner somewhere | A1, A2 | `chooseDepth` uses the learner's current concept, as its three siblings already did — proven: honouring the caller's argument fails two tests | **live** |
 

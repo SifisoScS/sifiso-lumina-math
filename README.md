@@ -21,9 +21,9 @@ surfaces over it. The engine holds every rule; the surfaces hold none.
 | | |
 |---|---|
 | **Governing order** | [`foundation/`](foundation/) — articles A1–A8, adopted 2026-08-29 by [ADOPTION.md](foundation/ADOPTION.md) |
-| **Enforcement** | 120 rules with a test or build gate behind them, 6 marked `by review` because nothing enforces them — see the [map](foundation/README.md) |
-| **Tests** | 225 in `pnpm check`, plus 7 live provider tests kept outside it so no ordinary run costs money or touches a network |
-| **Corpus** | 2 topics, 12 concepts, 27 relationships, 122 assets, 76 learning experiences |
+| **Enforcement** | 122 rules with a test or build gate behind them, 6 marked `by review` because nothing enforces them — see the [map](foundation/README.md) |
+| **Tests** | 227 in `pnpm check`, plus 7 live provider tests kept outside it so no ordinary run costs money or touches a network |
+| **Corpus** | 2 topics, 12 concepts, 27 relationships, 146 assets, 76 learning experiences |
 | **Surfaces** | `pnpm learn` (terminal) and `pnpm ui` (browser, `127.0.0.1`) — both run the same engine |
 | **Deployed** | <https://sifisoscs.github.io/sifiso-lumina-math/> — a static page, no server, no account, build-verified to contain no network primitive |
 | **Open questions** | O1–O3, O5, O6 open; O4 and O7–O9 closed as A8 amendments — see [OPEN.md](foundation/OPEN.md) |
@@ -314,7 +314,7 @@ src/
 
 cli/                                  # Terminal surface — presentation only, no decisions
 web/                                  # Browser surface — same engine, build-verified offline
-test/                                 # Headless contract and behaviour tests (225)
+test/                                 # Headless contract and behaviour tests (227)
 test/hostile/                         # Attacks on the authority seam
 live/                                 # Provider tests, deliberately outside `pnpm check`
 foundation/                           # A1–A8, the adoption record, and the enforcement map
@@ -367,7 +367,7 @@ Consumers should use the types/contracts as semantic interfaces. They must not a
 ## Verification
 
 ```bash
-pnpm check          # strict typecheck, then the full suite — 225 tests
+pnpm check          # strict typecheck, then the full suite — 227 tests
 pnpm learn          # the terminal surface
 pnpm ui             # the browser surface, at 127.0.0.1
 pnpm build:pages    # build, stage, and re-verify the deployable artefact

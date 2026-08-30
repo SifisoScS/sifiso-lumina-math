@@ -84,6 +84,39 @@ function conceptTitle(catalogue: Catalogue, id: string | undefined): string {
   return catalogue.concepts.find((concept) => concept.id === id)?.title ?? id;
 }
 
+function assetKind(catalogue: Catalogue, id: string): string | undefined {
+  return catalogue.assets.find((asset) => asset.id === id)?.kind;
+}
+
+/**
+ * What a learner is actually being asked, for a surface that is about to take
+ * an answer.
+ *
+ * Twenty-four experiences declared they expected a `practice-attempt`, both
+ * surfaces collected one, every guard passed, and no asset in the corpus posed
+ * a question. A learner who chose "Try a question" was shown a worked example
+ * and then an answer prompt, and typed a number in reply to nothing. Found by
+ * walking a real session in the terminal, which is the only place it was
+ * visible: at no layer below the surface is there anything to notice.
+ *
+ * Returns `undefined` when the experience asks nothing, so a surface can
+ * decline to prompt rather than prompt into silence.
+ */
+export function questionFor(
+  opportunity: CandidateLearningOpportunity,
+  catalogue: Catalogue,
+): string | undefined {
+  const experience = opportunity.learningExperienceId === undefined
+    ? undefined
+    : catalogue.experiences.find((candidate) => candidate.id === opportunity.learningExperienceId);
+
+  for (const assetId of experience?.knowledgeAssetIds ?? []) {
+    const asset = catalogue.assets.find((candidate) => candidate.id === assetId);
+    if (asset?.kind === "question" && asset.status === "published") return asset.content;
+  }
+  return undefined;
+}
+
 function assetTitle(catalogue: Catalogue, id: string | undefined): string | undefined {
   if (id === undefined) return undefined;
   return catalogue.assets.find((asset) => asset.id === id)?.title;
@@ -195,7 +228,13 @@ export function materialFor(
     const experience = opportunity.learningExperienceId === undefined
       ? undefined
       : catalogue.experiences.find((candidate) => candidate.id === opportunity.learningExperienceId);
-    for (const assetId of experience?.knowledgeAssetIds ?? []) show(assetId);
+    // Questions last. A question read before the material that supports it is
+    // a question asked too early, and the thing a learner needs immediately
+    // above the answer box is the thing they are being asked.
+    const ordered = [...(experience?.knowledgeAssetIds ?? [])].sort((left, right) =>
+      Number(assetKind(catalogue, left) === "question") - Number(assetKind(catalogue, right) === "question"),
+    );
+    for (const assetId of ordered) show(assetId);
   }
 
   // A prerequisite or bridge leads somewhere else. Say where, in its own words.

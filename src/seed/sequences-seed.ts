@@ -505,6 +505,87 @@ export const sequencesTopicSeed: TopicSeed = {
       supportedLayers: ["intuition"],
       version: "math-lumina.seed.v1",
     }),
+
+    // -----------------------------------------------------------------------
+    // Questions
+    //
+    // Every experience that asks a learner for an answer needs one. Before
+    // these existed, twenty-four of them collected an answer to a question
+    // nobody had asked -- the surface showed a worked example and then a
+    // prompt. Found by walking a real session in the terminal.
+    // -----------------------------------------------------------------------
+    knowledgeAsset({
+      id: "asset.number-pattern.question-next-two-and-why",
+      kind: "question",
+      title: "Question: continue the pattern, and say why",
+      content: "For 4, 7, 10, 13, write the next two terms and say what decides them. The reason matters more here than the numbers.",
+      conceptIds: ["concept.number-pattern"],
+      supportedLayers: ["mechanics"],
+      version: "math-lumina.seed.v1",
+    }),
+    knowledgeAsset({
+      id: "asset.number-pattern.question-next-two-and-rule",
+      kind: "question",
+      title: "Question: the next two terms and the rule",
+      content: "A pattern goes 2, 9, 16, 23. Write the next two terms, then state the rule in words as a marker would want it.",
+      conceptIds: ["concept.number-pattern"],
+      supportedLayers: ["exam-patterns"],
+      version: "math-lumina.seed.v1",
+    }),
+    knowledgeAsset({
+      id: "asset.arithmetic-sequence.question-term-far-along",
+      kind: "question",
+      title: "Question: a term far along",
+      content: "For 5, 9, 13, ... find a rule for Tn, then use it to find T30 without listing anything in between.",
+      conceptIds: ["concept.arithmetic-sequence"],
+      supportedLayers: ["mechanics"],
+      version: "math-lumina.seed.v1",
+    }),
+    knowledgeAsset({
+      id: "asset.arithmetic-sequence.question-which-position",
+      kind: "question",
+      title: "Question: which position holds this term?",
+      content: "For 3, 10, 17, ... which position holds the term 129? Show the equation you solved to get there.",
+      conceptIds: ["concept.arithmetic-sequence"],
+      supportedLayers: ["exam-patterns"],
+      version: "math-lumina.seed.v1",
+    }),
+    knowledgeAsset({
+      id: "asset.quadratic-sequence.question-two-rows-of-gaps",
+      kind: "question",
+      title: "Question: two rows of gaps",
+      content: "For 2, 6, 12, 20, write out the first differences and then the second differences, and say what a is.",
+      conceptIds: ["concept.quadratic-sequence"],
+      supportedLayers: ["mechanics"],
+      version: "math-lumina.seed.v1",
+    }),
+    knowledgeAsset({
+      id: "asset.quadratic-sequence.question-general-term-then-far",
+      kind: "question",
+      title: "Question: the general term, then a term far along",
+      content: "For 2, 6, 12, 20, find Tn, then use it to find T10. Check your rule against a term you were given before you go on.",
+      conceptIds: ["concept.quadratic-sequence"],
+      supportedLayers: ["exam-patterns"],
+      version: "math-lumina.seed.v1",
+    }),
+    knowledgeAsset({
+      id: "asset.sequence-as-function.question-is-50-a-term",
+      kind: "question",
+      title: "Question: is this number in the sequence?",
+      content: "Tn = 4n - 1. Is 50 a term of this sequence? Show how you decided, and say what your value of n means.",
+      conceptIds: ["concept.sequence-as-function"],
+      supportedLayers: ["mechanics"],
+      version: "math-lumina.seed.v1",
+    }),
+    knowledgeAsset({
+      id: "asset.sequence-as-function.question-position-and-membership",
+      kind: "question",
+      title: "Question: solve for the position, twice",
+      content: "A sequence is f(n) = 6n + 2. Which position holds 92? And is 100 in the sequence at all? Say what the second answer turns on.",
+      conceptIds: ["concept.sequence-as-function"],
+      supportedLayers: ["exam-patterns"],
+      version: "math-lumina.seed.v1",
+    }),
   ],
   experiences: [
     // -----------------------------------------------------------------------
@@ -582,6 +663,7 @@ export const sequencesTopicSeed: TopicSeed = {
       knowledgeAssetIds: [
         "asset.number-pattern.next-term-example",
         "asset.number-pattern.finding-gaps-procedure",
+              "asset.number-pattern.question-next-two-and-why",
       ],
       pedagogicalLayers: ["mechanics"],
       deliveryRequirements: ["displayed-text", "typed-input"],
@@ -598,6 +680,7 @@ export const sequencesTopicSeed: TopicSeed = {
       knowledgeAssetIds: [
         "asset.number-pattern.exam-pattern",
         "asset.number-pattern.savings-application",
+              "asset.number-pattern.question-next-two-and-rule",
       ],
       pedagogicalLayers: ["exam-patterns"],
       deliveryRequirements: ["displayed-text", "typed-input"],
@@ -703,6 +786,7 @@ export const sequencesTopicSeed: TopicSeed = {
       knowledgeAssetIds: [
         "asset.arithmetic-sequence.finding-term-example",
         "asset.arithmetic-sequence.general-term-representation",
+              "asset.arithmetic-sequence.question-term-far-along",
       ],
       pedagogicalLayers: ["mechanics"],
       deliveryRequirements: ["displayed-text", "typed-input"],
@@ -720,6 +804,7 @@ export const sequencesTopicSeed: TopicSeed = {
         "asset.arithmetic-sequence.exam-pattern",
         "asset.arithmetic-sequence.evenly-spaced-representation",
         "asset.arithmetic-sequence.repayment-application",
+              "asset.arithmetic-sequence.question-which-position",
       ],
       pedagogicalLayers: ["exam-patterns"],
       deliveryRequirements: ["displayed-text", "typed-input"],
@@ -804,6 +889,7 @@ export const sequencesTopicSeed: TopicSeed = {
       knowledgeAssetIds: [
         "asset.quadratic-sequence.finding-rule-example",
         "asset.quadratic-sequence.building-rule-procedure",
+              "asset.quadratic-sequence.question-two-rows-of-gaps",
       ],
       pedagogicalLayers: ["mechanics"],
       deliveryRequirements: ["displayed-text", "typed-input"],
@@ -821,6 +907,7 @@ export const sequencesTopicSeed: TopicSeed = {
         "asset.quadratic-sequence.exam-pattern",
         "asset.quadratic-sequence.curving-points-representation",
         "asset.quadratic-sequence.seating-application",
+              "asset.quadratic-sequence.question-general-term-then-far",
       ],
       pedagogicalLayers: ["exam-patterns"],
       deliveryRequirements: ["displayed-text", "typed-input"],
@@ -905,6 +992,7 @@ export const sequencesTopicSeed: TopicSeed = {
       knowledgeAssetIds: [
         "asset.sequence-as-function.rewriting-procedure",
         "asset.sequence-as-function.half-position-non-example",
+              "asset.sequence-as-function.question-is-50-a-term",
       ],
       pedagogicalLayers: ["mechanics"],
       deliveryRequirements: ["displayed-text", "typed-input"],
@@ -926,6 +1014,7 @@ export const sequencesTopicSeed: TopicSeed = {
         // in reflection.
         "asset.sequence-as-function.joined-line-misconception",
         "asset.sequence-as-function.delivery-application",
+              "asset.sequence-as-function.question-position-and-membership",
       ],
       pedagogicalLayers: ["exam-patterns"],
       deliveryRequirements: ["displayed-text", "typed-input"],

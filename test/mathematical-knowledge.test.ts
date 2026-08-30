@@ -11,6 +11,8 @@ import {
   LearningExperience,
   learningExperience,
 } from "../src/index.js";
+import { candidateLearningOpportunity } from "../src/contracts/core-contracts.js";
+import { materialFor } from "../cli/describe.js";
 import { evidenceTypeCollection } from "../cli/session.js";
 
 test("the curriculum resolves as a consistent versioned catalogue", () => {
@@ -316,6 +318,84 @@ test("every knowledge asset is used by at least one experience", () => {
   for (const asset of luminaCurriculum.assets) {
     assert.ok(used.has(asset.id), `${asset.id} is written but no experience shows it to anyone`);
   }
+});
+
+test("an experience that asks for an answer poses a question", () => {
+  // Twenty-four experiences declared `expectedEvidenceTypes: ["practice-attempt"]`,
+  // both surfaces collected an answer, every guard in this file passed, and no
+  // asset in the corpus posed a question. A learner who chose "Try a question"
+  // was shown a worked example -- which gave away the method -- and then an
+  // answer prompt, and typed a number in reply to nothing at all.
+  //
+  // Nothing could see it. `expectedEvidenceTypes` said what the surface should
+  // collect and never what the learner should be asked, and there was no asset
+  // kind that could hold a question, so the corpus could not be wrong about
+  // this in a way any type or test could detect. Found by walking a session.
+  //
+  // The check is on `question` assets rather than on a question mark, because
+  // "Write down the next two terms" is a question and does not end in one.
+  for (const experience of luminaCurriculum.experiences) {
+    if (experience.status !== "published") continue;
+    if (!experience.expectedEvidenceTypes.includes("practice-attempt")) continue;
+
+    const asks = experience.knowledgeAssetIds.some((assetId) => {
+      const asset = luminaCurriculum.assets.find((candidate) => candidate.id === assetId);
+      return asset?.kind === "question" && asset.status === "published";
+    });
+    assert.ok(
+      asks,
+      `${experience.id} takes an answer from a learner without asking them anything`,
+    );
+  }
+});
+
+test("a question is the last thing a learner reads before answering", () => {
+  // A question shown above the material that supports it is a question asked
+  // too early. The thing immediately above the answer box has to be the thing
+  // being asked.
+  //
+  // The experience is built here, with the question declared FIRST, because the
+  // corpus happens to list its questions last already -- so a test using real
+  // content would pass whether or not anything sorted, and did. Declaration
+  // order must not be what makes this true.
+  const question = luminaCurriculum.assets.find((asset) => asset.kind === "question");
+  assert.ok(question);
+  const support = luminaCurriculum.assets.find((asset) =>
+    asset.kind === "example" && asset.conceptIds.some((id) => question.conceptIds.includes(id)),
+  );
+  assert.ok(support, "no supporting material shares a concept with a question");
+
+  const experience = learningExperience({
+    id: "experience.test.question-ordering",
+    title: "Question first, on purpose",
+    intent: "practice",
+    targetConceptIds: [question.conceptIds[0] as string],
+    knowledgeAssetIds: [question.id, support.id],
+    pedagogicalLayers: ["mechanics"],
+    deliveryRequirements: ["displayed-text", "typed-input"],
+    learnerInteractionRequirements: ["practice-input"],
+    expectedEvidenceTypes: ["practice-attempt"],
+    completionSemantics: { requiresLearnerInteraction: true, evidenceRequiredForCompletion: true },
+    version: "math-lumina.seed.v1",
+  });
+
+  const lines = materialFor(
+    candidateLearningOpportunity({
+      id: "opportunity.test.practise",
+      kind: "practise",
+      conceptId: question.conceptIds[0] as string,
+      learningExperienceId: experience.id,
+    }),
+    {
+      topics: luminaCurriculum.topics,
+      concepts: luminaCurriculum.concepts,
+      assets: luminaCurriculum.assets,
+      experiences: [...luminaCurriculum.experiences, experience],
+    },
+  );
+
+  assert.ok(lines.includes(support.content), "the supporting material was not shown at all");
+  assert.equal(lines.at(-1), question.content, "the question was not the last thing shown");
 });
 
 test("a learner can actually supply every kind of evidence the corpus asks for", () => {
